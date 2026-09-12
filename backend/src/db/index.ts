@@ -1,7 +1,7 @@
 import { neon } from "@neondatabase/serverless";
 import { drizzle } from "drizzle-orm/neon-http";
 import * as dotenv from "dotenv";
-import * as schema from "./db/schema/index";
+import * as schema from "../db/schema/index";
 
 dotenv.config();
 
@@ -11,7 +11,6 @@ if (!process.env.DATABASE_URL) {
 
 const sql = neon(process.env.DATABASE_URL);
 
-// Neon HTTP driver expects { client, schema } in a single config object
 export const db = drizzle({ client: sql, schema });
 
-export * from "./db/schema/index";
+export * from "../db/schema/index";

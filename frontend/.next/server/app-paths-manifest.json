@@ -1,0 +1,11 @@
+{
+  "/page": "app/page.js",
+  "/tasks/page": "app/tasks/page.js",
+  "/shadow-blocks/page": "app/shadow-blocks/page.js",
+  "/trains/page": "app/trains/page.js",
+  "/conflicts/page": "app/conflicts/page.js",
+  "/emergency/page": "app/emergency/page.js",
+  "/explain/page": "app/explain/page.js",
+  "/system/page": "app/system/page.js",
+  "/planning/page": "app/planning/page.js"
+}

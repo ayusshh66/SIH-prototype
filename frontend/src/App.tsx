@@ -1,33 +1,59 @@
 import React from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
-import { AppShell } from '@/layout/AppShell';
-import { DashboardPage } from '@/pages/DashboardPage';
-import { PlanningPage } from '@/pages/PlanningPage';
-import { TasksPage } from '@/pages/TasksPage';
-import { ShadowBlocksPage } from '@/pages/ShadowBlocksPage';
-import { TrainsPage } from '@/pages/TrainsPage';
-import { ConflictsPage } from '@/pages/ConflictsPage';
-import { WhatIfPage } from '@/pages/WhatIfPage';
-import { EmergencyPage } from '@/pages/EmergencyPage';
-import { SystemPage } from '@/pages/SystemPage';
+import { Shell } from './components/domain/Shell/Shell';
+import { DashboardPage } from './features/dashboard/DashboardPage';
+import { PlanningSchedulePage } from './features/planning/PlanningSchedulePage';
+import { MaintenanceTasksPage } from './features/tasks/MaintenanceTasksPage';
+import { ShadowBlocksPage } from './features/shadowBlocks/ShadowBlocksPage';
+import { ConflictsAlertsPage } from './features/conflicts/ConflictsAlertsPage';
+import { WhatIfScenariosPage } from './features/whatIf/WhatIfScenariosPage';
 
 export const App: React.FC = () => {
   return (
     <BrowserRouter>
-      <AppShell>
-        <Routes>
-          <Route path="/" element={<DashboardPage />} />
-          <Route path="/planning" element={<PlanningPage />} />
-          <Route path="/tasks" element={<TasksPage />} />
-          <Route path="/shadow-blocks" element={<ShadowBlocksPage />} />
-          <Route path="/trains" element={<TrainsPage />} />
-          <Route path="/conflicts" element={<ConflictsPage />} />
-          <Route path="/what-if" element={<WhatIfPage />} />
-          <Route path="/emergency" element={<EmergencyPage />} />
-          <Route path="/system" element={<SystemPage />} />
+      <Routes>
+        <Route path="/" element={<Shell />}>
+          <Route index element={<DashboardPage />} />
+          <Route path="planning" element={<PlanningSchedulePage />} />
+          <Route path="tasks" element={<MaintenanceTasksPage />} />
+          <Route path="shadow-blocks" element={<ShadowBlocksPage />} />
+          <Route path="conflicts" element={<ConflictsAlertsPage />} />
+          <Route path="what-if" element={<WhatIfScenariosPage />} />
+          <Route
+            path="trains"
+            element={
+              <div className="p-4 font-mono text-text-muted uppercase tracking-widest">
+                Trains - In Development
+              </div>
+            }
+          />
+          <Route
+            path="emergency"
+            element={
+              <div className="p-4 font-mono text-text-muted uppercase tracking-widest">
+                Emergency - In Development
+              </div>
+            }
+          />
+          <Route
+            path="explain"
+            element={
+              <div className="p-4 font-mono text-text-muted uppercase tracking-widest">
+                Explain - In Development
+              </div>
+            }
+          />
+          <Route
+            path="system"
+            element={
+              <div className="p-4 font-mono text-text-muted uppercase tracking-widest">
+                System - In Development
+              </div>
+            }
+          />
           <Route path="*" element={<Navigate to="/" replace />} />
-        </Routes>
-      </AppShell>
+        </Route>
+      </Routes>
     </BrowserRouter>
   );
 };

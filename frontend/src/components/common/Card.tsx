@@ -20,18 +20,35 @@ export const Card: React.FC<CardProps> = ({
   style,
 }) => {
   return (
-    <div className={`panel ${className}`} style={style}>
+    <div
+      className={`bg-surface-card border-2 border-surface-border shadow-[4px_4px_0px_0px_rgba(31,41,55,1)] flex flex-col ${className}`}
+      style={style}
+    >
       {(title || subtitle || actions) && (
-        <div className="panel-header">
+        <div className="px-4 py-2.5 border-b-2 border-surface-border bg-background-main flex items-center justify-between gap-4">
           <div>
-            {title && <div className="panel-title">{title}</div>}
-            {subtitle && <div className="panel-subtitle">{subtitle}</div>}
+            {title && (
+              <div className="font-mono text-sm uppercase font-bold text-text-muted">
+                {title}
+              </div>
+            )}
+            {subtitle && (
+              <div className="text-xs text-text-muted mt-0.5">
+                {subtitle}
+              </div>
+            )}
           </div>
-          {actions && <div className="panel-actions">{actions}</div>}
+          {actions && <div className="flex items-center gap-2">{actions}</div>}
         </div>
       )}
-      <div className="panel-body">{children}</div>
-      {footer && <div className="panel-footer" style={{ padding: 'var(--space-3) var(--space-5)', borderTop: '1px solid var(--border-subtle)', background: 'var(--bg-surface-raised)' }}>{footer}</div>}
+      <div className="p-4 flex-1">{children}</div>
+      {footer && (
+        <div className="px-4 py-3 border-t-2 border-surface-border bg-background-main/50">
+          {footer}
+        </div>
+      )}
     </div>
   );
 };
+
+export default Card;

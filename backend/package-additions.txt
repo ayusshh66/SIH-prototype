@@ -1,0 +1,18 @@
+Install:
+npm install express cors helmet dotenv drizzle-orm @neondatabase/serverless redis
+npm install -D typescript tsx drizzle-kit @types/express @types/cors @types/node
+
+Recommended package.json scripts:
+"scripts": {
+  "dev": "tsx watch src/server.ts",
+  "start": "tsx src/server.ts",
+  "db:generate": "drizzle-kit generate",
+  "db:migrate": "drizzle-kit migrate",
+  "db:seed": "tsx src/db/seed.ts"
+}
+
+Run:
+npm run db:generate
+npm run db:migrate
+npm run db:seed
+npm run dev

@@ -9,14 +9,18 @@ export const getCorridors = async (req: Request, res: Response) => {
 };
 
 export const getCorridorById = async (req: Request, res: Response) => {
-  const corridor = await db.select().from(corridors).where(eq(corridors.id, req.params.id));
+  const corridorId = req.params.id as string;
+  const corridor = await db.select().from(corridors).where(eq(corridors.id, corridorId as any));
   res.json({ data: corridor[0] || null });
 };
 
 export const getCorridorWindows = async (req: Request, res: Response) => {
+  const corridorId = req.params.id as string;
+
   const windows = await db
     .select()
     .from(blockWindows)
-    .where(eq(blockWindows.corridorId, req.params.id));
+    .where(eq(blockWindows.corridorId, corridorId as any));
+
   res.json({ data: windows });
 };

@@ -1,4 +1,3 @@
-"use client";
 import React, { useState } from 'react';
 import { ScenarioConfigForm } from './ScenarioConfigForm';
 import { ScheduleDiffViewer } from './ScheduleDiffViewer';
@@ -7,7 +6,7 @@ export const WhatIfScenariosPage: React.FC = () => {
   const [isSimulating, setIsSimulating] = useState(false);
   const [result, setResult] = useState<any>(null);
 
-  const handleSimulate = (data: any) => {
+  const handleSimulate = (_data: any) => {
     setIsSimulating(true);
     // Mocking an async solver delay
     setTimeout(() => {

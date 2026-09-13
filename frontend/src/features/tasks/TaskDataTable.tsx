@@ -1,4 +1,3 @@
-"use client";
 import React, { useState } from 'react';
 import { MaintenanceTask } from '../../types/api';
 import { Badge } from '../../components/common/Badge';

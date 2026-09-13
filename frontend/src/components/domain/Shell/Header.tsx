@@ -1,7 +1,5 @@
-"use client";
 import React, { useState, useEffect } from 'react';
 import { Train, Bell, Activity } from 'lucide-react';
-import { Badge } from '../../common/Badge';
 
 export const Header: React.FC = () => {
   const [time, setTime] = useState(new Date());
@@ -18,17 +16,21 @@ export const Header: React.FC = () => {
           <Train size={18} className="text-text-primary" />
         </div>
         <div>
-          <h1 className="text-sm font-bold tracking-widest text-text-primary uppercase leading-tight">IR Operations Command</h1>
-          <p className="text-[10px] text-text-muted font-mono uppercase tracking-wider">AI Block Planning System</p>
+          <h1 className="text-sm font-bold tracking-widest text-text-primary uppercase leading-tight">
+            IR Operations Command
+          </h1>
+          <p className="text-[10px] text-text-muted font-mono uppercase tracking-wider">
+            AI Block Planning System
+          </p>
         </div>
       </div>
-      
+
       <div className="flex items-center gap-6">
         <div className="hidden md:flex items-center gap-2 px-3 py-1 bg-surface-card border-2 border-surface-border">
           <Activity size={14} className="text-status-optimal" />
           <span className="text-xs font-mono font-bold text-status-optimal">SYSTEM ACTIVE</span>
         </div>
-        
+
         <div className="text-xs font-mono text-text-muted bg-surface-card px-3 py-1 border-2 border-surface-border shadow-[2px_2px_0px_0px_rgba(31,41,55,1)]">
           {time.toISOString().replace('T', ' ').slice(0, 19)} UTC
         </div>
@@ -41,3 +43,5 @@ export const Header: React.FC = () => {
     </header>
   );
 };
+
+export default Header;

@@ -1,19 +1,19 @@
 import React, { useState } from 'react';
-import { SectionHeader } from '@/components/domain/SectionHeader';
-import { PriorityBadge } from '@/components/domain/PriorityBadge';
-import { OptimizationBadge } from '@/components/domain/OptimizationBadge';
-import { DepartmentBadge } from '@/components/domain/DepartmentBadge';
-import { ConflictIndicator } from '@/components/domain/ConflictIndicator';
-import { TrainImpactIndicator } from '@/components/domain/TrainImpactIndicator';
-import { Button } from '@/components/common/Button';
-import { Input } from '@/components/common/Input';
-import { Card } from '@/components/common/Card';
-import { Tabs } from '@/components/common/Tabs';
-import { Skeleton } from '@/components/common/Skeleton';
-import { EmptyState } from '@/components/common/EmptyState';
-import { ErrorState } from '@/components/common/ErrorState';
-import { Modal } from '@/components/common/Modal';
-import { DetailDrawer } from '@/components/domain/DetailDrawer';
+import { SectionHeader } from '../../components/domain/SectionHeader';
+import { PriorityBadge } from '../../components/domain/PriorityBadge';
+import { OptimizationBadge } from '../../components/domain/OptimizationBadge';
+import { DepartmentBadge } from '../../components/domain/DepartmentBadge';
+import { ConflictIndicator } from '../../components/domain/ConflictIndicator';
+import { TrainImpactIndicator } from '../../components/domain/TrainImpactIndicator';
+import { Button } from '../../components/common/Button';
+import { Input } from '../../components/common/Input';
+import { Card } from '../../components/common/Card';
+import { Tabs } from '../../components/common/Tabs';
+import { Skeleton } from '../../components/common/Skeleton';
+import { EmptyState } from '../../components/common/EmptyState';
+import { ErrorState } from '../../components/common/ErrorState';
+import { Modal } from '../../components/common/Modal';
+import { DetailDrawer } from '../../components/domain/DetailDrawer';
 
 export const SystemPage: React.FC = () => {
   const [activeTab, setActiveTab] = useState('status');
@@ -27,17 +27,17 @@ export const SystemPage: React.FC = () => {
   ];
 
   return (
-    <div>
+    <div className="space-y-6">
       <SectionHeader
         title="Design System & Operations Foundation"
-        description="Living specification of reusable UI primitives, domain status tokens, and accessibility standards for Developer A and Developer B."
+        description="Living specification of reusable UI primitives, domain status tokens, and accessibility standards."
         badge={
-          <span className="badge badge-opt-optimal">
+          <span className="badge badge-optimal font-mono text-xs">
             FOUNDATION V1.0.0
           </span>
         }
         actions={
-          <div style={{ display: 'flex', gap: 'var(--space-2)' }}>
+          <div className="flex gap-2">
             <Button variant="outline" size="sm" onClick={() => setModalOpen(true)}>
               Open Test Modal
             </Button>
@@ -52,15 +52,14 @@ export const SystemPage: React.FC = () => {
 
       {/* Tab 1: Domain Status System */}
       {activeTab === 'status' && (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-5)', marginTop: 'var(--space-4)' }}>
-          {/* Priority Statuses */}
+        <div className="space-y-6 mt-4">
           <Card title="1. Task & Defect Priority Scale (P1 - P4)">
-            <div style={{ display: 'flex', gap: 'var(--space-3)', flexWrap: 'wrap', alignItems: 'center' }}>
+            <div className="flex gap-3 flex-wrap items-center">
               <PriorityBadge priority="CRITICAL" />
               <PriorityBadge priority="HIGH" />
               <PriorityBadge priority="MEDIUM" />
               <PriorityBadge priority="LOW" />
-              <span style={{ color: 'var(--border-strong)' }}>|</span>
+              <span className="text-text-muted">|</span>
               <PriorityBadge priority="P1" />
               <PriorityBadge priority="P2" />
               <PriorityBadge priority="P3" />
@@ -68,9 +67,8 @@ export const SystemPage: React.FC = () => {
             </div>
           </Card>
 
-          {/* Optimization Statuses */}
           <Card title="2. Solver Optimization Outcome Statuses">
-            <div style={{ display: 'flex', gap: 'var(--space-3)', flexWrap: 'wrap', alignItems: 'center' }}>
+            <div className="flex gap-3 flex-wrap items-center">
               <OptimizationBadge status="OPTIMAL" />
               <OptimizationBadge status="FEASIBLE" />
               <OptimizationBadge status="PARTIAL" />
@@ -79,18 +77,16 @@ export const SystemPage: React.FC = () => {
             </div>
           </Card>
 
-          {/* Department Badges */}
           <Card title="3. Railway Maintenance Departments">
-            <div style={{ display: 'flex', gap: 'var(--space-3)', flexWrap: 'wrap', alignItems: 'center' }}>
+            <div className="flex gap-3 flex-wrap items-center">
               <DepartmentBadge department="ENG" />
               <DepartmentBadge department="TRD" />
               <DepartmentBadge department="SNT" />
             </div>
           </Card>
 
-          {/* Conflicts */}
           <Card title="4. Operational Conflict Classifications">
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-2)' }}>
+            <div className="space-y-3">
               <ConflictIndicator
                 type="TRAIN_CONFLICT"
                 severity="HIGH"
@@ -116,9 +112,9 @@ export const SystemPage: React.FC = () => {
 
       {/* Tab 2: Design Primitives */}
       {activeTab === 'primitives' && (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-5)', marginTop: 'var(--space-4)' }}>
+        <div className="space-y-6 mt-4">
           <Card title="Interactive Buttons">
-            <div style={{ display: 'flex', gap: 'var(--space-3)', flexWrap: 'wrap', alignItems: 'center' }}>
+            <div className="flex gap-3 flex-wrap items-center">
               <Button variant="primary">Primary Action</Button>
               <Button variant="secondary">Secondary Action</Button>
               <Button variant="outline">Outline Action</Button>
@@ -130,7 +126,7 @@ export const SystemPage: React.FC = () => {
           </Card>
 
           <Card title="Form Inputs">
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: 'var(--space-4)' }}>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <Input label="Corridor Section Code" defaultValue="NDLS-AGC-SEC12" />
               <Input label="Search Filter" placeholder="Search tasks..." />
               <Input label="Kilometer Marker" defaultValue="45.500" helperText="Precision within 3 decimal places" />
@@ -138,7 +134,7 @@ export const SystemPage: React.FC = () => {
           </Card>
 
           <Card title="Train Impact Indicators">
-            <div style={{ display: 'flex', gap: 'var(--space-3)', flexWrap: 'wrap' }}>
+            <div className="flex gap-3 flex-wrap">
               <TrainImpactIndicator trainNumber="22436" trainName="Vande Bharat" trainType="EXPRESS" delayMinutes={0} />
               <TrainImpactIndicator trainNumber="12002" trainName="Bhopal Shatabdi" trainType="EXPRESS" delayMinutes={25} />
             </div>
@@ -148,13 +144,13 @@ export const SystemPage: React.FC = () => {
 
       {/* Tab 3: Loading & State Tokens */}
       {activeTab === 'states' && (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-5)', marginTop: 'var(--space-4)' }}>
+        <div className="space-y-6 mt-4">
           <Card title="Shimmer Loading Skeletons">
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-2)' }}>
+            <div className="space-y-2">
               <Skeleton height="24px" width="60%" />
               <Skeleton height="16px" width="90%" />
               <Skeleton height="16px" width="75%" />
-              <div style={{ display: 'flex', gap: 'var(--space-2)', marginTop: 'var(--space-2)' }}>
+              <div className="flex gap-2 pt-2">
                 <Skeleton height="32px" width="120px" />
                 <Skeleton height="32px" width="120px" />
               </div>
@@ -196,7 +192,7 @@ export const SystemPage: React.FC = () => {
           </>
         }
       >
-        <p style={{ fontSize: 'var(--text-sm)', color: 'var(--text-secondary)' }}>
+        <p className="text-sm text-text-muted">
           This dialog verifies keyboard accessibility (Tab focus trap, Enter submit, Escape dismiss) for operational confirmations.
         </p>
       </Modal>
@@ -213,10 +209,12 @@ export const SystemPage: React.FC = () => {
           </Button>
         }
       >
-        <p style={{ fontSize: 'var(--text-sm)', color: 'var(--text-secondary)' }}>
+        <p className="text-sm text-text-muted">
           Standard drawer used for inspecting blocks, tasks, and conflicts without leaving the main operational canvas.
         </p>
       </DetailDrawer>
     </div>
   );
 };
+
+export default SystemPage;

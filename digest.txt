@@ -117,8 +117,6 @@ Directory structure:
     └── frontend/
         ├── README.md
         ├── index.html
-        ├── next-env.d.ts
-        ├── next.config.ts
         ├── package.json
         ├── postcss.config.js
         ├── tailwind.config.js
@@ -126,6 +124,7 @@ Directory structure:
         ├── tsconfig.json
         ├── tsconfig.node.json
         ├── vite.config.ts
+        ├── .env.example
         ├── .oxlintrc.json
         └── src/
             ├── App.css
@@ -134,28 +133,6 @@ Directory structure:
             ├── main.tsx
             ├── api/
             │   └── client.ts
-            ├── app/
-            │   ├── globals.css
-            │   ├── layout.tsx
-            │   ├── page.tsx
-            │   ├── conflicts/
-            │   │   └── page.tsx
-            │   ├── emergency/
-            │   │   └── page.tsx
-            │   ├── explain/
-            │   │   └── page.tsx
-            │   ├── planning/
-            │   │   └── page.tsx
-            │   ├── shadow-blocks/
-            │   │   └── page.tsx
-            │   ├── system/
-            │   │   └── page.tsx
-            │   ├── tasks/
-            │   │   └── page.tsx
-            │   ├── trains/
-            │   │   └── page.tsx
-            │   └── what-if/
-            │       └── page.tsx
             ├── components/
             │   ├── common/
             │   │   ├── Badge.tsx
@@ -196,7 +173,10 @@ Directory structure:
             │   │   ├── DashboardPage.tsx
             │   │   ├── KpiGrid.tsx
             │   │   └── RecentRunsCard.tsx
+            │   ├── emergency/
+            │   │   └── EmergencyPage.tsx
             │   ├── explain/
+            │   │   ├── ExplainPage.tsx
             │   │   └── ExplanationDrawer.tsx
             │   ├── planning/
             │   │   ├── BlockDetailDrawer.tsx
@@ -206,19 +186,19 @@ Directory structure:
             │   ├── shadowBlocks/
             │   │   ├── ShadowBlockCard.tsx
             │   │   └── ShadowBlocksPage.tsx
+            │   ├── system/
+            │   │   └── SystemPage.tsx
             │   ├── tasks/
             │   │   ├── CriticalityFactorBars.tsx
             │   │   ├── MaintenanceTasksPage.tsx
             │   │   ├── TaskDataTable.tsx
             │   │   └── TaskDetailSheet.tsx
+            │   ├── trains/
+            │   │   └── TrainsPage.tsx
             │   └── whatIf/
             │       ├── ScenarioConfigForm.tsx
             │       ├── ScheduleDiffViewer.tsx
             │       └── WhatIfScenariosPage.tsx
-            ├── layout/
-            │   ├── AppShell.tsx
-            │   ├── Header.tsx
-            │   └── Sidebar.tsx
             ├── mocks/
             │   ├── mockData.ts
             │   └── sampleData.ts
@@ -226,20 +206,10 @@ Directory structure:
             │   ├── base.css
             │   ├── components.css
             │   └── tokens.css
-            ├── types/
-            │   ├── api.ts
-            │   ├── declarations.d.ts
-            │   └── domain.ts
-            └── views/
-                ├── ConflictsPage.tsx
-                ├── DashboardPage.tsx
-                ├── EmergencyPage.tsx
-                ├── PlanningPage.tsx
-                ├── ShadowBlocksPage.tsx
-                ├── SystemPage.tsx
-                ├── TasksPage.tsx
-                ├── TrainsPage.tsx
-                └── WhatIfPage.tsx
+            └── types/
+                ├── api.ts
+                ├── declarations.d.ts
+                └── domain.ts
 
 ================================================
 FILE: FRONTEND_API_MAPPING.md
@@ -15986,32 +15956,6 @@ FILE: frontend/index.html
 
 
 ================================================
-FILE: frontend/next-env.d.ts
-================================================
-/// <reference types="next" />
-/// <reference types="next/image-types/global" />
-/// <reference path="./.next/types/routes.d.ts" />
-
-// NOTE: This file should not be edited
-// see https://nextjs.org/docs/app/api-reference/config/typescript for more information.
-
-
-
-================================================
-FILE: frontend/next.config.ts
-================================================
-import type { NextConfig } from 'next';
-import path from 'path';
-
-const nextConfig: NextConfig = {
-  outputFileTracingRoot: path.resolve(process.cwd()),
-};
-
-export default nextConfig;
-
-
-
-================================================
 FILE: frontend/package.json
 ================================================
 {
@@ -16020,17 +15964,13 @@ FILE: frontend/package.json
   "version": "0.0.0",
   "type": "module",
   "scripts": {
-    "dev": "next dev",
-    "build": "next build",
-    "start": "next start",
-    "lint": "next lint",
-    "vite:dev": "vite",
-    "vite:build": "tsc -b && vite build",
-    "vite:preview": "vite preview"
+    "dev": "vite",
+    "build": "tsc -b && vite build",
+    "lint": "oxlint",
+    "preview": "vite preview"
   },
   "dependencies": {
     "lucide-react": "^1.45.0",
-    "next": "^15.5.25",
     "react": "^19.2.8",
     "react-dom": "^19.2.8",
     "react-router-dom": "^7.18.3"
@@ -16117,12 +16057,11 @@ FILE: frontend/tsconfig.app.json
     "target": "es2023",
     "lib": ["ES2023", "DOM"],
     "module": "esnext",
-    "types": ["node"],
+    "types": ["vite/client", "node"],
     "skipLibCheck": true,
 
     /* Bundler mode */
     "moduleResolution": "bundler",
-    "verbatimModuleSyntax": true,
     "moduleDetection": "force",
     "noEmit": true,
     "jsx": "react-jsx",
@@ -16144,44 +16083,10 @@ FILE: frontend/tsconfig.app.json
 FILE: frontend/tsconfig.json
 ================================================
 {
-  "compilerOptions": {
-    "target": "ES2017",
-    "lib": [
-      "dom",
-      "dom.iterable",
-      "esnext"
-    ],
-    "allowJs": true,
-    "skipLibCheck": true,
-    "strict": false,
-    "noEmit": true,
-    "incremental": true,
-    "module": "esnext",
-    "esModuleInterop": true,
-    "moduleResolution": "bundler",
-    "resolveJsonModule": true,
-    "isolatedModules": true,
-    "jsx": "preserve",
-    "paths": {
-      "@/*": [
-        "./src/*"
-      ]
-    },
-    "plugins": [
-      {
-        "name": "next"
-      }
-    ],
-    "strictNullChecks": true
-  },
-  "include": [
-    "next-env.d.ts",
-    ".next/types/**/*.ts",
-    "**/*.ts",
-    "**/*.tsx"
-  ],
-  "exclude": [
-    "node_modules"
+  "files": [],
+  "references": [
+    { "path": "./tsconfig.app.json" },
+    { "path": "./tsconfig.node.json" }
   ]
 }
 
@@ -16236,6 +16141,15 @@ export default defineConfig({
 
 
 ================================================
+FILE: frontend/.env.example
+================================================
+# Frontend Environment Configuration
+# Set to 'false' to connect to live backend API instead of local mock data
+VITE_USE_MOCK=true
+
+
+
+================================================
 FILE: frontend/.oxlintrc.json
 ================================================
 {
@@ -16268,6 +16182,10 @@ import { MaintenanceTasksPage } from './features/tasks/MaintenanceTasksPage';
 import { ShadowBlocksPage } from './features/shadowBlocks/ShadowBlocksPage';
 import { ConflictsAlertsPage } from './features/conflicts/ConflictsAlertsPage';
 import { WhatIfScenariosPage } from './features/whatIf/WhatIfScenariosPage';
+import { TrainsPage } from './features/trains/TrainsPage';
+import { EmergencyPage } from './features/emergency/EmergencyPage';
+import { ExplainPage } from './features/explain/ExplainPage';
+import { SystemPage } from './features/system/SystemPage';
 
 export const App: React.FC = () => {
   return (
@@ -16278,40 +16196,12 @@ export const App: React.FC = () => {
           <Route path="planning" element={<PlanningSchedulePage />} />
           <Route path="tasks" element={<MaintenanceTasksPage />} />
           <Route path="shadow-blocks" element={<ShadowBlocksPage />} />
+          <Route path="trains" element={<TrainsPage />} />
           <Route path="conflicts" element={<ConflictsAlertsPage />} />
           <Route path="what-if" element={<WhatIfScenariosPage />} />
-          <Route
-            path="trains"
-            element={
-              <div className="p-4 font-mono text-text-muted uppercase tracking-widest">
-                Trains - In Development
-              </div>
-            }
-          />
-          <Route
-            path="emergency"
-            element={
-              <div className="p-4 font-mono text-text-muted uppercase tracking-widest">
-                Emergency - In Development
-              </div>
-            }
-          />
-          <Route
-            path="explain"
-            element={
-              <div className="p-4 font-mono text-text-muted uppercase tracking-widest">
-                Explain - In Development
-              </div>
-            }
-          />
-          <Route
-            path="system"
-            element={
-              <div className="p-4 font-mono text-text-muted uppercase tracking-widest">
-                System - In Development
-              </div>
-            }
-          />
+          <Route path="emergency" element={<EmergencyPage />} />
+          <Route path="explain" element={<ExplainPage />} />
+          <Route path="system" element={<SystemPage />} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Route>
       </Routes>
@@ -16329,6 +16219,16 @@ FILE: frontend/src/index.css
 @import './styles/tokens.css';
 @import './styles/base.css';
 @import './styles/components.css';
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  body {
+    @apply bg-background-main text-text-primary font-sans;
+  }
+}
 
 
 
@@ -16354,189 +16254,49 @@ if (rootEl) {
 ================================================
 FILE: frontend/src/api/client.ts
 ================================================
-import { mockDashboardData, mockBlocks, mockTasks, mockShadowBlocks } from '../mocks/mockData';
+import {
+  mockDashboardData,
+  mockBlocks,
+  mockTasks,
+  mockShadowBlocks,
+} from '../mocks/mockData';
 
-const USE_MOCK = process.env.NEXT_PUBLIC_USE_MOCK_AI === "true" || true; // forcing true for prototype
+// Vite environment-based mock switch:
+// Defaults to true for development if not explicitly set to 'false' via VITE_USE_MOCK=false
+const USE_MOCK =
+  import.meta.env.VITE_USE_MOCK === undefined
+    ? true
+    : import.meta.env.VITE_USE_MOCK === 'true';
 
 export const getDashboardData = async () => {
   if (USE_MOCK) return { success: true, data: mockDashboardData };
   const res = await fetch('/api/planning/dashboard');
+  if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
   return res.json();
 };
 
 export const getBlocks = async (corridorId?: string) => {
   if (USE_MOCK) return { success: true, data: mockBlocks };
-  const res = await fetch(`/api/blocks${corridorId ? `?corridorId=${corridorId}` : ''}`);
+  const res = await fetch(
+    `/api/blocks${corridorId ? `?corridorId=${encodeURIComponent(corridorId)}` : ''}`
+  );
+  if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
   return res.json();
 };
 
 export const getTasks = async () => {
   if (USE_MOCK) return { success: true, data: mockTasks };
   const res = await fetch('/api/maintenance/tasks');
+  if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
   return res.json();
 };
 
 export const getShadowBlocks = async () => {
   if (USE_MOCK) return { success: true, data: mockShadowBlocks };
   const res = await fetch('/api/planning/shadow-blocks/candidates');
+  if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
   return res.json();
 };
-
-
-
-================================================
-FILE: frontend/src/app/globals.css
-================================================
-@import '../styles/tokens.css';
-@import '../styles/base.css';
-@import '../styles/components.css';
-
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
-
-@layer base {
-  body {
-    @apply bg-background-main text-text-primary font-sans;
-  }
-}
-
-
-
-================================================
-FILE: frontend/src/app/layout.tsx
-================================================
-import type { Metadata } from "next";
-import "./globals.css";
-import { Header } from "../components/domain/Shell/Header";
-import { Sidebar } from "../components/domain/Shell/Sidebar";
-
-export const metadata: Metadata = {
-  title: "IR Operations Command",
-  description: "Indian Railways AI-Powered Automatic Block Planning System",
-};
-
-export default function RootLayout({
-  children,
-}: Readonly<{
-  children: React.ReactNode;
-}>) {
-  return (
-    <html lang="en">
-      <body className="min-h-screen bg-background-main text-text-primary flex flex-col font-sans">
-        <Header />
-        <div className="flex flex-1 pt-14">
-          <Sidebar />
-          <main className="flex-1 ml-16 md:ml-64 p-6 min-h-[calc(100vh-3.5rem)] bg-background-main">
-            {children}
-          </main>
-        </div>
-      </body>
-    </html>
-  );
-}
-
-
-
-================================================
-FILE: frontend/src/app/page.tsx
-================================================
-import { DashboardPage } from '../features/dashboard/DashboardPage';
-
-export default function Home() {
-  return <DashboardPage />;
-}
-
-
-
-================================================
-FILE: frontend/src/app/conflicts/page.tsx
-================================================
-import { ConflictsAlertsPage } from '../../features/conflicts/ConflictsAlertsPage';
-
-export default function Conflicts() {
-  return <ConflictsAlertsPage />;
-}
-
-
-
-================================================
-FILE: frontend/src/app/emergency/page.tsx
-================================================
-export default function Emergency() {
-  return <div className="p-4 font-mono text-text-muted uppercase tracking-widest">Emergency - In Development</div>;
-}
-
-
-
-================================================
-FILE: frontend/src/app/explain/page.tsx
-================================================
-export default function Explain() {
-  return <div className="p-4 font-mono text-text-muted uppercase tracking-widest">Explain - In Development</div>;
-}
-
-
-
-================================================
-FILE: frontend/src/app/planning/page.tsx
-================================================
-import { PlanningSchedulePage } from '../../features/planning/PlanningSchedulePage';
-
-export default function Planning() {
-  return <PlanningSchedulePage />;
-}
-
-
-
-================================================
-FILE: frontend/src/app/shadow-blocks/page.tsx
-================================================
-import { ShadowBlocksPage } from '../../features/shadowBlocks/ShadowBlocksPage';
-
-export default function ShadowBlocks() {
-  return <ShadowBlocksPage />;
-}
-
-
-
-================================================
-FILE: frontend/src/app/system/page.tsx
-================================================
-export default function System() {
-  return <div className="p-4 font-mono text-text-muted uppercase tracking-widest">System - In Development</div>;
-}
-
-
-
-================================================
-FILE: frontend/src/app/tasks/page.tsx
-================================================
-import { MaintenanceTasksPage } from '../../features/tasks/MaintenanceTasksPage';
-
-export default function Tasks() {
-  return <MaintenanceTasksPage />;
-}
-
-
-
-================================================
-FILE: frontend/src/app/trains/page.tsx
-================================================
-export default function Trains() {
-  return <div className="p-4 font-mono text-text-muted uppercase tracking-widest">Trains - In Development</div>;
-}
-
-
-
-================================================
-FILE: frontend/src/app/what-if/page.tsx
-================================================
-import { WhatIfScenariosPage } from '../../features/whatIf/WhatIfScenariosPage';
-
-export default function WhatIf() {
-  return <WhatIfScenariosPage />;
-}
 
 
 
@@ -16732,8 +16492,6 @@ export default Card;
 ================================================
 FILE: frontend/src/components/common/Drawer.tsx
 ================================================
-'use client';
-
 import React, { useEffect, useState } from 'react';
 import { X } from 'lucide-react';
 
@@ -16756,9 +16514,9 @@ export const Drawer: React.FC<DrawerProps> = ({
 }) => {
   const [render, setRender] = useState(isOpen);
 
-  useEffect(() => {
-    if (isOpen) setRender(true);
-  }, [isOpen]);
+  if (isOpen && !render) {
+    setRender(true);
+  }
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -17942,10 +17700,8 @@ export const TrainImpactIndicator: React.FC<TrainImpactIndicatorProps> = ({
 ================================================
 FILE: frontend/src/components/domain/Shell/Header.tsx
 ================================================
-"use client";
 import React, { useState, useEffect } from 'react';
 import { Train, Bell, Activity } from 'lucide-react';
-import { Badge } from '../../common/Badge';
 
 export const Header: React.FC = () => {
   const [time, setTime] = useState(new Date());
@@ -17962,17 +17718,21 @@ export const Header: React.FC = () => {
           <Train size={18} className="text-text-primary" />
         </div>
         <div>
-          <h1 className="text-sm font-bold tracking-widest text-text-primary uppercase leading-tight">IR Operations Command</h1>
-          <p className="text-[10px] text-text-muted font-mono uppercase tracking-wider">AI Block Planning System</p>
+          <h1 className="text-sm font-bold tracking-widest text-text-primary uppercase leading-tight">
+            IR Operations Command
+          </h1>
+          <p className="text-[10px] text-text-muted font-mono uppercase tracking-wider">
+            AI Block Planning System
+          </p>
         </div>
       </div>
-      
+
       <div className="flex items-center gap-6">
         <div className="hidden md:flex items-center gap-2 px-3 py-1 bg-surface-card border-2 border-surface-border">
           <Activity size={14} className="text-status-optimal" />
           <span className="text-xs font-mono font-bold text-status-optimal">SYSTEM ACTIVE</span>
         </div>
-        
+
         <div className="text-xs font-mono text-text-muted bg-surface-card px-3 py-1 border-2 border-surface-border shadow-[2px_2px_0px_0px_rgba(31,41,55,1)]">
           {time.toISOString().replace('T', ' ').slice(0, 19)} UTC
         </div>
@@ -17985,6 +17745,8 @@ export const Header: React.FC = () => {
     </header>
   );
 };
+
+export default Header;
 
 
 
@@ -18015,11 +17777,20 @@ export const Shell: React.FC = () => {
 ================================================
 FILE: frontend/src/components/domain/Shell/Sidebar.tsx
 ================================================
-"use client";
 import React from 'react';
-import Link from 'next/link';
-import { usePathname } from 'next/navigation';
-import { LayoutDashboard, Calendar, Wrench, Combine, Activity, AlertTriangle, GitBranch, BellElectric, ShieldAlert, Server } from 'lucide-react';
+import { NavLink, useLocation } from 'react-router-dom';
+import {
+  LayoutDashboard,
+  Calendar,
+  Wrench,
+  Combine,
+  Activity,
+  AlertTriangle,
+  GitBranch,
+  BellElectric,
+  ShieldAlert,
+  Server,
+} from 'lucide-react';
 
 const navItems = [
   { path: '/', label: 'Dashboard', icon: LayoutDashboard },
@@ -18035,40 +17806,50 @@ const navItems = [
 ];
 
 export const Sidebar: React.FC = () => {
-  const pathname = usePathname();
-  
+  const location = useLocation();
+
   return (
     <aside className="w-16 md:w-64 bg-background-main border-r-2 border-surface-border h-[calc(100vh-3.5rem)] flex flex-col fixed left-0 top-14 z-20">
       <nav className="flex-1 overflow-y-auto py-4">
         <ul className="space-y-2 px-2">
           {navItems.map((item) => {
-            const isActive = pathname === item.path;
+            const isActive =
+              item.path === '/'
+                ? location.pathname === '/'
+                : location.pathname.startsWith(item.path);
+
             return (
-            <li key={item.path}>
-              <Link
-                href={item.path}
-                className={`flex items-center gap-3 px-3 py-2 font-mono text-sm tracking-wide transition-all border-2 ${
-                  isActive
-                    ? 'bg-surface-card text-text-primary border-surface-border shadow-[4px_4px_0px_0px_rgba(31,41,55,1)] translate-x-1'
-                    : 'text-text-muted border-transparent hover:text-text-primary hover:bg-surface-card hover:border-surface-border'
-                }`}
-              >
-                <item.icon size={18} />
-                <span className="hidden md:inline-block uppercase font-bold">{item.label}</span>
-              </Link>
-            </li>
-          )})}
+              <li key={item.path}>
+                <NavLink
+                  to={item.path}
+                  className={`flex items-center gap-3 px-3 py-2 font-mono text-sm tracking-wide transition-all border-2 ${
+                    isActive
+                      ? 'bg-surface-card text-text-primary border-surface-border shadow-[4px_4px_0px_0px_rgba(31,41,55,1)] translate-x-1'
+                      : 'text-text-muted border-transparent hover:text-text-primary hover:bg-surface-card hover:border-surface-border'
+                  }`}
+                >
+                  <item.icon size={18} />
+                  <span className="hidden md:inline-block uppercase font-bold">
+                    {item.label}
+                  </span>
+                </NavLink>
+              </li>
+            );
+          })}
         </ul>
       </nav>
       <div className="p-4 border-t-2 border-surface-border">
         <div className="text-[10px] text-text-muted font-mono uppercase tracking-widest text-center hidden md:block">
-          Division: Delhi<br/>
+          Division: Delhi
+          <br />
           Zone: NR
         </div>
       </div>
     </aside>
   );
 };
+
+export default Sidebar;
 
 
 
@@ -18261,7 +18042,6 @@ export const ConflictCategoryTabs: React.FC<Props> = ({ activeTab, onTabChange }
 ================================================
 FILE: frontend/src/features/conflicts/ConflictsAlertsPage.tsx
 ================================================
-"use client";
 import React, { useState } from 'react';
 import { ConflictAlertCard } from './ConflictAlertCard';
 import { ConflictCategoryTabs } from './ConflictCategoryTabs';
@@ -18368,7 +18148,6 @@ export const CorridorStatusBar: React.FC = () => {
 ================================================
 FILE: frontend/src/features/dashboard/DashboardPage.tsx
 ================================================
-"use client";
 import React, { useEffect, useState } from 'react';
 import { getDashboardData } from '../../api/client';
 import { KpiGrid } from './KpiGrid';
@@ -18512,11 +18291,275 @@ export const RecentRunsCard: React.FC<{ runs: any[] }> = ({ runs }) => {
 
 
 ================================================
+FILE: frontend/src/features/emergency/EmergencyPage.tsx
+================================================
+import React, { useState } from 'react';
+import { SectionHeader } from '../../components/domain/SectionHeader';
+import { Card } from '../../components/common/Card';
+import { Button } from '../../components/common/Button';
+import { Flame, CheckCircle, AlertTriangle } from 'lucide-react';
+
+export const EmergencyPage: React.FC = () => {
+  const [selectedSlot, setSelectedSlot] = useState<string | null>(null);
+  const [submitted, setSubmitted] = useState(false);
+
+  return (
+    <div className="space-y-6">
+      <SectionHeader
+        title="Emergency Maintenance Planning"
+        description="Expedited operational workflow for unscheduled safety-critical defects requiring immediate track possession."
+        badge={
+          <span className="badge badge-critical font-mono text-xs">
+            PRIORITY EXPEDITED
+          </span>
+        }
+      />
+
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Fast-Entry Incident Card */}
+        <Card title="1. Fast-Entry Emergency Defect Intake">
+          <div className="space-y-4">
+            <div>
+              <label className="block text-xs font-mono uppercase text-text-muted mb-1">Defect Type</label>
+              <select className="w-full bg-background-main border-2 border-surface-border px-3 py-2 text-sm font-mono text-text-primary focus:outline-none">
+                <option value="NEW_USFD_DEFECT">NEW_USFD_DEFECT (Transverse Rail Fissure)</option>
+                <option value="TRACK_FAILURE">TRACK_FAILURE (Buckled Rail / Weld Failure)</option>
+                <option value="SIGNAL_FAILURE">SIGNAL_FAILURE (Interlocking Drop)</option>
+                <option value="OTHER">OTHER (Obstruction / Derailment Risk)</option>
+              </select>
+            </div>
+
+            <div>
+              <label className="block text-xs font-mono uppercase text-text-muted mb-1">Kilometer Location</label>
+              <input
+                className="w-full bg-background-main border-2 border-surface-border px-3 py-2 text-sm font-mono text-text-primary focus:outline-none"
+                defaultValue="45.300"
+              />
+            </div>
+
+            <div>
+              <label className="block text-xs font-mono uppercase text-text-muted mb-1">Estimated Clearance Window (Minutes)</label>
+              <input
+                type="number"
+                className="w-full bg-background-main border-2 border-surface-border px-3 py-2 text-sm font-mono text-text-primary focus:outline-none"
+                defaultValue="120"
+              />
+            </div>
+
+            <Button
+              variant="danger"
+              icon={<Flame size={16} />}
+              onClick={() => setSubmitted(true)}
+            >
+              Evaluate Emergency Slot
+            </Button>
+
+            {submitted && (
+              <div className="p-3 bg-status-critical/10 border-2 border-status-critical text-status-critical text-xs font-mono flex items-center gap-2">
+                <AlertTriangle size={16} />
+                <span>Emergency defect dispatched to optimization solver. Priority level set to P1 (IMMEDIATE).</span>
+              </div>
+            )}
+          </div>
+        </Card>
+
+        {/* Immediate Feasible Possession Slots */}
+        <Card title="2. Expedited Feasible Possession Slots" subtitle="Minimum train disruption emergency windows">
+          <div className="space-y-3">
+            {[
+              { id: 'slot-1', time: '11:00 - 13:00 (120 Mins)', impact: 'Requires looping freight train BOXN-402 at Palwal' },
+              { id: 'slot-2', time: '13:30 - 15:30 (120 Mins)', impact: 'Delays Gatimaan Express by 14 mins' },
+              { id: 'slot-3', time: '16:00 - 18:00 (120 Mins)', impact: 'Overlaps existing TRD inspection block' },
+            ].map((slot) => (
+              <div
+                key={slot.id}
+                className={`p-4 bg-background-main border-2 transition-all flex items-center justify-between ${
+                  selectedSlot === slot.id
+                    ? 'border-status-optimal shadow-[2px_2px_0px_0px_rgba(16,185,129,1)]'
+                    : 'border-surface-border'
+                }`}
+              >
+                <div>
+                  <div className="font-mono text-sm font-bold text-text-primary">{slot.time}</div>
+                  <div className="text-xs text-text-muted mt-1">{slot.impact}</div>
+                </div>
+                <Button
+                  variant={selectedSlot === slot.id ? 'primary' : 'outline'}
+                  size="sm"
+                  onClick={() => setSelectedSlot(slot.id)}
+                >
+                  {selectedSlot === slot.id ? 'Selected' : 'Select Slot'}
+                </Button>
+              </div>
+            ))}
+
+            {selectedSlot && (
+              <div className="pt-2">
+                <Button
+                  variant="primary"
+                  className="w-full"
+                  icon={<CheckCircle size={16} />}
+                  onClick={() => alert(`Emergency slot ${selectedSlot} confirmed and broadcast to section controller.`)}
+                >
+                  Confirm Emergency Block Possession
+                </Button>
+              </div>
+            )}
+          </div>
+        </Card>
+      </div>
+    </div>
+  );
+};
+
+export default EmergencyPage;
+
+
+
+================================================
+FILE: frontend/src/features/explain/ExplainPage.tsx
+================================================
+import React, { useState } from 'react';
+import { SectionHeader } from '../../components/domain/SectionHeader';
+import { Card } from '../../components/common/Card';
+import { Button } from '../../components/common/Button';
+import { ExplanationDrawer } from './ExplanationDrawer';
+import type { Explanation } from '../../types/api';
+import { ShieldCheck, Search } from 'lucide-react';
+
+const SAMPLE_EXPLANATIONS: Explanation[] = [
+  {
+    explanation_id: "EXP-BLK-01",
+    entity_type: "BLOCK",
+    entity_id: "BLK-NDLS-01",
+    summary: "Maintenance block scheduled during nocturnal freight corridor lull (23:00 - 01:30) to minimize passenger disruption while co-locating TRD cantilever and ENG rail defect repairs.",
+    reason_codes: ["NOCTURNAL_INTERVAL_OPTIMAL", "SHADOW_BLOCK_COMPATIBLE", "CREW_CONCURRENCY_OK"],
+    evidence: {
+      passenger_train_conflicts: 0,
+      freight_diversion_penalty_minutes: 12,
+      saved_possession_minutes: 95,
+      department_overlap_ratio: 0.85
+    },
+    deterministic_inputs: {
+      section: "NDLS-AGC (Km 45.0 - 46.5)",
+      primary_task: "TSK-ENG-NDLS-045-01",
+      secondary_task: "TSK-TRD-NDLS-046-02",
+      power_shutdown_required: true
+    },
+    generated_by: "AI_EXPLAINABILITY_ENGINE_V1"
+  },
+  {
+    explanation_id: "EXP-GRP-02",
+    entity_type: "GROUPING",
+    entity_id: "SB-NDLS-301",
+    summary: "TRD maintenance combined into engineering possession window because both activities require track isolation within 1.5 km and TRD team is certified for concurrent track work.",
+    reason_codes: ["SPATIAL_PROXIMITY_UNDER_2KM", "OHE_SHUTDOWN_SHARED", "SAFETY_CLEARANCE_VALID"],
+    evidence: {
+      spatial_distance_km: 0.2,
+      power_shutdown_shared: true,
+      corridor_occupancy_savings: "38%"
+    },
+    deterministic_inputs: {
+      location_start_km: 45.0,
+      location_end_km: 46.5,
+      participating_departments: ["ENG", "TRD"]
+    },
+    generated_by: "SHADOW_BLOCK_OPTIMIZER"
+  },
+  {
+    explanation_id: "EXP-REJ-03",
+    entity_type: "REJECTION",
+    entity_id: "TSK-SNT-NDLS-099",
+    summary: "Signal relay replacement rejected from Block BLK-NDLS-01 due to insufficient headway with Gatimaan Express passage scheduled at 02:05.",
+    reason_codes: ["HEADWAY_VIOLATION", "BUFFER_BELOW_MINIMUM", "PASSENGER_TRAIN_HIGH_PRIORITY"],
+    evidence: {
+      required_buffer_minutes: 30,
+      available_buffer_minutes: 14,
+      priority_train: "12050 Gatimaan Exp"
+    },
+    deterministic_inputs: {
+      conflict_km: 45.2,
+      train_speed_kmh: 160
+    },
+    generated_by: "COMPATIBILITY_CHECKER"
+  }
+];
+
+export const ExplainPage: React.FC = () => {
+  const [selectedExplanation, setSelectedExplanation] = useState<Explanation | null>(null);
+  const [drawerOpen, setDrawerOpen] = useState(false);
+
+  const handleInspect = (explanation: Explanation) => {
+    setSelectedExplanation(explanation);
+    setDrawerOpen(true);
+  };
+
+  return (
+    <div className="space-y-6">
+      <SectionHeader
+        title="Decision Explainability & Proof Traces"
+        description="Audit-ready deterministic proof traces, constraint validation reasons, and AI optimization rationales."
+        badge={
+          <span className="badge badge-optimal font-mono text-xs flex items-center gap-1">
+            <ShieldCheck size={14} />
+            AUDIT PROOF ATTACHED
+          </span>
+        }
+      />
+
+      <div className="grid grid-cols-1 gap-4">
+        {SAMPLE_EXPLANATIONS.map((exp) => (
+          <Card
+            key={exp.explanation_id}
+            title={`${exp.entity_type} // ${exp.entity_id}`}
+            subtitle={`Trace ID: ${exp.explanation_id} Â· Generated By: ${exp.generated_by}`}
+            actions={
+              <Button
+                variant="primary"
+                size="sm"
+                icon={<Search size={14} />}
+                onClick={() => handleInspect(exp)}
+              >
+                Inspect Proof Trace
+              </Button>
+            }
+          >
+            <p className="text-sm font-mono text-text-primary mb-3">
+              {exp.summary}
+            </p>
+            <div className="flex flex-wrap gap-2">
+              {exp.reason_codes.map((code) => (
+                <span
+                  key={code}
+                  className="bg-background-main border-2 border-surface-border px-2 py-0.5 font-mono text-xs text-status-optimal"
+                >
+                  {code}
+                </span>
+              ))}
+            </div>
+          </Card>
+        ))}
+      </div>
+
+      <ExplanationDrawer
+        explanation={selectedExplanation}
+        isOpen={drawerOpen}
+        onClose={() => setDrawerOpen(false)}
+      />
+    </div>
+  );
+};
+
+export default ExplainPage;
+
+
+
+================================================
 FILE: frontend/src/features/explain/ExplanationDrawer.tsx
 ================================================
 import React from 'react';
 import { Drawer } from '../../components/common/Drawer';
-import { Explanation } from '../../types/api';
+import type { Explanation } from '../../types/api';
 import { Badge } from '../../components/common/Badge';
 
 interface Props {
@@ -18699,50 +18742,80 @@ export const BlockGanttBar: React.FC<{ block: any, onClick: () => void }> = ({ b
 ================================================
 FILE: frontend/src/features/planning/PlanningSchedulePage.tsx
 ================================================
-"use client";
 import React, { useEffect, useState } from 'react';
 import { getBlocks } from '../../api/client';
 import { ScheduleTimelineCanvas } from './ScheduleTimelineCanvas';
 import { BlockDetailDrawer } from './BlockDetailDrawer';
 import { Button } from '../../components/common/Button';
+import { Railway3DViewPlaceholder } from '../../components/domain/Railway3DViewPlaceholder';
 
 export const PlanningSchedulePage: React.FC = () => {
   const [blocks, setBlocks] = useState<any[]>([]);
   const [selectedBlockId, setSelectedBlockId] = useState<string | null>(null);
 
   useEffect(() => {
-    getBlocks().then(res => {
+    getBlocks().then((res) => {
       if (res.success) setBlocks(res.data);
     });
   }, []);
 
-  const selectedBlock = blocks.find(b => b.id === selectedBlockId);
+  const selectedBlock = blocks.find((b) => b.id === selectedBlockId);
 
   return (
-    <div className="space-y-6 h-full flex flex-col">
+    <div className="space-y-6 flex flex-col">
+      {/* â”€â”€ 1. Planning Controls â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
       <div className="flex items-center justify-between shrink-0">
         <div>
-          <h2 className="text-2xl font-bold uppercase tracking-widest text-text-primary">Planning Schedule</h2>
-          <p className="text-text-muted font-mono text-sm mt-1">MULTI-DEPARTMENT POSSESSION TIMELINE</p>
+          <h2 className="text-2xl font-bold uppercase tracking-widest text-text-primary">
+            Planning Schedule
+          </h2>
+          <p className="text-text-muted font-mono text-sm mt-1">
+            MULTI-DEPARTMENT POSSESSION TIMELINE & 3D DIGITAL TWIN
+          </p>
         </div>
         <div className="flex gap-4">
           <Button variant="secondary">Filters</Button>
           <Button variant="primary">Run Optimizer</Button>
         </div>
       </div>
-      
-      <div className="bg-surface-card border-2 border-surface-border shadow-[4px_4px_0px_0px_rgba(31,41,55,1)] flex-1 overflow-hidden relative flex flex-col">
-         <ScheduleTimelineCanvas blocks={blocks} onBlockClick={setSelectedBlockId} />
+
+      {/* â”€â”€ 2. Schedule Timeline Canvas â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
+      <div className="bg-surface-card border-2 border-surface-border shadow-[4px_4px_0px_0px_rgba(31,41,55,1)] flex flex-col">
+        <div className="px-4 py-2 border-b-2 border-surface-border bg-background-main font-mono text-xs uppercase font-bold text-text-muted">
+          Corridor Possession Timeline
+        </div>
+        <div className="p-4">
+          <ScheduleTimelineCanvas
+            blocks={blocks}
+            onBlockClick={setSelectedBlockId}
+          />
+        </div>
       </div>
 
-      <BlockDetailDrawer 
-        block={selectedBlock} 
-        isOpen={!!selectedBlock} 
-        onClose={() => setSelectedBlockId(null)} 
+      {/* â”€â”€ 3. Railway3DView â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
+      <div className="bg-surface-card border-2 border-surface-border shadow-[4px_4px_0px_0px_rgba(31,41,55,1)] flex flex-col">
+        <div className="px-4 py-2 border-b-2 border-surface-border bg-background-main font-mono text-xs uppercase font-bold text-text-muted">
+          Corridor Digital Twin // Spatial Viewport
+        </div>
+        <div className="p-2">
+          <Railway3DViewPlaceholder
+            corridorId="NDLS-AGC"
+            selectedBlockId={selectedBlockId}
+          />
+        </div>
+      </div>
+
+      {/* â”€â”€ Block Detail Inspection Drawer â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
+      <BlockDetailDrawer
+        block={selectedBlock}
+        isOpen={!!selectedBlock}
+        onClose={() => setSelectedBlockId(null)}
       />
     </div>
   );
 };
+
+export default PlanningSchedulePage;
 
 
 
@@ -18901,7 +18974,6 @@ export const ShadowBlockCard: React.FC<{ candidate: ShadowBlockCandidate }> = ({
 ================================================
 FILE: frontend/src/features/shadowBlocks/ShadowBlocksPage.tsx
 ================================================
-"use client";
 import React, { useEffect, useState } from 'react';
 import { getShadowBlocks } from '../../api/client';
 import { ShadowBlockCard } from './ShadowBlockCard';
@@ -18950,6 +19022,232 @@ export const ShadowBlocksPage: React.FC = () => {
     </div>
   );
 };
+
+
+
+================================================
+FILE: frontend/src/features/system/SystemPage.tsx
+================================================
+import React, { useState } from 'react';
+import { SectionHeader } from '../../components/domain/SectionHeader';
+import { PriorityBadge } from '../../components/domain/PriorityBadge';
+import { OptimizationBadge } from '../../components/domain/OptimizationBadge';
+import { DepartmentBadge } from '../../components/domain/DepartmentBadge';
+import { ConflictIndicator } from '../../components/domain/ConflictIndicator';
+import { TrainImpactIndicator } from '../../components/domain/TrainImpactIndicator';
+import { Button } from '../../components/common/Button';
+import { Input } from '../../components/common/Input';
+import { Card } from '../../components/common/Card';
+import { Tabs } from '../../components/common/Tabs';
+import { Skeleton } from '../../components/common/Skeleton';
+import { EmptyState } from '../../components/common/EmptyState';
+import { ErrorState } from '../../components/common/ErrorState';
+import { Modal } from '../../components/common/Modal';
+import { DetailDrawer } from '../../components/domain/DetailDrawer';
+
+export const SystemPage: React.FC = () => {
+  const [activeTab, setActiveTab] = useState('status');
+  const [modalOpen, setModalOpen] = useState(false);
+  const [drawerOpen, setDrawerOpen] = useState(false);
+
+  const tabs = [
+    { id: 'status', label: 'Domain Status System' },
+    { id: 'primitives', label: 'Design Primitives' },
+    { id: 'states', label: 'Loading & State Tokens' },
+  ];
+
+  return (
+    <div className="space-y-6">
+      <SectionHeader
+        title="Design System & Operations Foundation"
+        description="Living specification of reusable UI primitives, domain status tokens, and accessibility standards."
+        badge={
+          <span className="badge badge-optimal font-mono text-xs">
+            FOUNDATION V1.0.0
+          </span>
+        }
+        actions={
+          <div className="flex gap-2">
+            <Button variant="outline" size="sm" onClick={() => setModalOpen(true)}>
+              Open Test Modal
+            </Button>
+            <Button variant="secondary" size="sm" onClick={() => setDrawerOpen(true)}>
+              Open Test Drawer
+            </Button>
+          </div>
+        }
+      />
+
+      <Tabs tabs={tabs} activeTab={activeTab} onChange={setActiveTab} />
+
+      {/* Tab 1: Domain Status System */}
+      {activeTab === 'status' && (
+        <div className="space-y-6 mt-4">
+          <Card title="1. Task & Defect Priority Scale (P1 - P4)">
+            <div className="flex gap-3 flex-wrap items-center">
+              <PriorityBadge priority="CRITICAL" />
+              <PriorityBadge priority="HIGH" />
+              <PriorityBadge priority="MEDIUM" />
+              <PriorityBadge priority="LOW" />
+              <span className="text-text-muted">|</span>
+              <PriorityBadge priority="P1" />
+              <PriorityBadge priority="P2" />
+              <PriorityBadge priority="P3" />
+              <PriorityBadge priority="P4" />
+            </div>
+          </Card>
+
+          <Card title="2. Solver Optimization Outcome Statuses">
+            <div className="flex gap-3 flex-wrap items-center">
+              <OptimizationBadge status="OPTIMAL" />
+              <OptimizationBadge status="FEASIBLE" />
+              <OptimizationBadge status="PARTIAL" />
+              <OptimizationBadge status="INFEASIBLE" />
+              <OptimizationBadge status="FAILED" />
+            </div>
+          </Card>
+
+          <Card title="3. Railway Maintenance Departments">
+            <div className="flex gap-3 flex-wrap items-center">
+              <DepartmentBadge department="ENG" />
+              <DepartmentBadge department="TRD" />
+              <DepartmentBadge department="SNT" />
+            </div>
+          </Card>
+
+          <Card title="4. Operational Conflict Classifications">
+            <div className="space-y-3">
+              <ConflictIndicator
+                type="TRAIN_CONFLICT"
+                severity="HIGH"
+                affectedEntityId="TSK-001 / TRN-12002"
+                description="Overlaps high-priority passenger timetable slot."
+              />
+              <ConflictIndicator
+                type="RESOURCE_CONFLICT"
+                severity="CRITICAL"
+                affectedEntityId="RES-VEH-12"
+                description="Machinery double-allocated across 2 concurrent sections."
+              />
+              <ConflictIndicator
+                type="SAFETY_CONFLICT"
+                severity="CRITICAL"
+                affectedEntityId="TSK-088"
+                description="Interlocking clearance rule IR-SIG-402 breach."
+              />
+            </div>
+          </Card>
+        </div>
+      )}
+
+      {/* Tab 2: Design Primitives */}
+      {activeTab === 'primitives' && (
+        <div className="space-y-6 mt-4">
+          <Card title="Interactive Buttons">
+            <div className="flex gap-3 flex-wrap items-center">
+              <Button variant="primary">Primary Action</Button>
+              <Button variant="secondary">Secondary Action</Button>
+              <Button variant="outline">Outline Action</Button>
+              <Button variant="danger">Critical Danger</Button>
+              <Button variant="ghost">Ghost Button</Button>
+              <Button variant="primary" size="sm">Small</Button>
+              <Button variant="primary" size="lg">Large</Button>
+            </div>
+          </Card>
+
+          <Card title="Form Inputs">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <Input label="Corridor Section Code" defaultValue="NDLS-AGC-SEC12" />
+              <Input label="Search Filter" placeholder="Search tasks..." />
+              <Input label="Kilometer Marker" defaultValue="45.500" helperText="Precision within 3 decimal places" />
+            </div>
+          </Card>
+
+          <Card title="Train Impact Indicators">
+            <div className="flex gap-3 flex-wrap">
+              <TrainImpactIndicator trainNumber="22436" trainName="Vande Bharat" trainType="EXPRESS" delayMinutes={0} />
+              <TrainImpactIndicator trainNumber="12002" trainName="Bhopal Shatabdi" trainType="EXPRESS" delayMinutes={25} />
+            </div>
+          </Card>
+        </div>
+      )}
+
+      {/* Tab 3: Loading & State Tokens */}
+      {activeTab === 'states' && (
+        <div className="space-y-6 mt-4">
+          <Card title="Shimmer Loading Skeletons">
+            <div className="space-y-2">
+              <Skeleton height="24px" width="60%" />
+              <Skeleton height="16px" width="90%" />
+              <Skeleton height="16px" width="75%" />
+              <div className="flex gap-2 pt-2">
+                <Skeleton height="32px" width="120px" />
+                <Skeleton height="32px" width="120px" />
+              </div>
+            </div>
+          </Card>
+
+          <Card title="Empty State Pattern">
+            <EmptyState
+              title="No Active Corridor Possession Blocks"
+              description="Click 'Run Optimizer' to evaluate pending maintenance tasks against the train timetable."
+              actionLabel="Run Optimizer Now"
+              onAction={() => alert('Optimization triggered')}
+            />
+          </Card>
+
+          <Card title="Error State Pattern">
+            <ErrorState
+              title="Constraint Solver Boundary Violation"
+              message="Failed to compute conflict-free schedule: No feasible window without disrupting P1 critical services."
+              onRetry={() => alert('Retrying solver')}
+            />
+          </Card>
+        </div>
+      )}
+
+      {/* Test Modal */}
+      <Modal
+        isOpen={modalOpen}
+        onClose={() => setModalOpen(false)}
+        title="Operations Dialog Test"
+        footer={
+          <>
+            <Button variant="secondary" size="sm" onClick={() => setModalOpen(false)}>
+              Cancel
+            </Button>
+            <Button variant="primary" size="sm" onClick={() => setModalOpen(false)}>
+              Confirm Decision
+            </Button>
+          </>
+        }
+      >
+        <p className="text-sm text-text-muted">
+          This dialog verifies keyboard accessibility (Tab focus trap, Enter submit, Escape dismiss) for operational confirmations.
+        </p>
+      </Modal>
+
+      {/* Test Drawer */}
+      <DetailDrawer
+        isOpen={drawerOpen}
+        onClose={() => setDrawerOpen(false)}
+        title="Slide-out Inspection Drawer"
+        subtitle="Used for inspecting blocks, tasks, and conflicts"
+        actions={
+          <Button variant="secondary" size="sm" onClick={() => setDrawerOpen(false)}>
+            Close Drawer
+          </Button>
+        }
+      >
+        <p className="text-sm text-text-muted">
+          Standard drawer used for inspecting blocks, tasks, and conflicts without leaving the main operational canvas.
+        </p>
+      </DetailDrawer>
+    </div>
+  );
+};
+
+export default SystemPage;
 
 
 
@@ -19019,7 +19317,6 @@ export const CriticalityFactorBars: React.FC<Props> = ({ score, factors }) => {
 ================================================
 FILE: frontend/src/features/tasks/MaintenanceTasksPage.tsx
 ================================================
-"use client";
 import React, { useEffect, useState } from 'react';
 import { getTasks } from '../../api/client';
 import { TaskDataTable } from './TaskDataTable';
@@ -19063,7 +19360,6 @@ export const MaintenanceTasksPage: React.FC = () => {
 ================================================
 FILE: frontend/src/features/tasks/TaskDataTable.tsx
 ================================================
-"use client";
 import React, { useState } from 'react';
 import { MaintenanceTask } from '../../types/api';
 import { Badge } from '../../components/common/Badge';
@@ -19227,9 +19523,62 @@ export const TaskDetailSheet: React.FC<Props> = ({ task, isOpen, onClose }) => {
 
 
 ================================================
+FILE: frontend/src/features/trains/TrainsPage.tsx
+================================================
+import React from 'react';
+import { SectionHeader } from '../../components/domain/SectionHeader';
+import { Card } from '../../components/common/Card';
+import { TrainImpactIndicator } from '../../components/domain/TrainImpactIndicator';
+import { SAMPLE_TRAIN_IMPACT } from '../../mocks/sampleData';
+
+export const TrainsPage: React.FC = () => {
+  return (
+    <div className="space-y-6">
+      <SectionHeader
+        title="Trains & Movement Timetable"
+        description="Scheduled passenger and freight train paths, speed classes, and estimated maintenance disruption penalties."
+        badge={
+          <span className="badge badge-optimal font-mono text-xs">
+            {SAMPLE_TRAIN_IMPACT.length} SERVICES TRACKED
+          </span>
+        }
+      />
+
+      <Card
+        title="Train Impact & Delay Analysis"
+        subtitle="Simulated passage delays resulting from active maintenance block proposals"
+      >
+        <div className="space-y-3">
+          {SAMPLE_TRAIN_IMPACT.map((train) => (
+            <div
+              key={train.trainNumber}
+              className="flex items-center justify-between p-4 bg-background-main border-2 border-surface-border"
+            >
+              <TrainImpactIndicator
+                trainNumber={train.trainNumber}
+                trainName={train.trainName}
+                trainType={train.trainType}
+                speedClass={train.speedClass}
+                delayMinutes={train.delayMinutes}
+              />
+              <div className="text-xs font-mono text-text-muted">
+                SECTION: {train.affectedSection}
+              </div>
+            </div>
+          ))}
+        </div>
+      </Card>
+    </div>
+  );
+};
+
+export default TrainsPage;
+
+
+
+================================================
 FILE: frontend/src/features/whatIf/ScenarioConfigForm.tsx
 ================================================
-"use client";
 import React, { useState } from 'react';
 import { Card } from '../../components/common/Card';
 import { Button } from '../../components/common/Button';
@@ -19377,7 +19726,6 @@ export const ScheduleDiffViewer: React.FC<Props> = ({ result }) => {
 ================================================
 FILE: frontend/src/features/whatIf/WhatIfScenariosPage.tsx
 ================================================
-"use client";
 import React, { useState } from 'react';
 import { ScenarioConfigForm } from './ScenarioConfigForm';
 import { ScheduleDiffViewer } from './ScheduleDiffViewer';
@@ -19386,7 +19734,7 @@ export const WhatIfScenariosPage: React.FC = () => {
   const [isSimulating, setIsSimulating] = useState(false);
   const [result, setResult] = useState<any>(null);
 
-  const handleSimulate = (data: any) => {
+  const handleSimulate = (_data: any) => {
     setIsSimulating(true);
     // Mocking an async solver delay
     setTimeout(() => {
@@ -19437,333 +19785,9 @@ export const WhatIfScenariosPage: React.FC = () => {
 
 
 ================================================
-FILE: frontend/src/layout/AppShell.tsx
-================================================
-import React, { useState } from 'react';
-import { Sidebar } from './Sidebar';
-import { Header } from './Header';
-
-export interface AppShellProps {
-  children: React.ReactNode;
-}
-
-export const AppShell: React.FC<AppShellProps> = ({ children }) => {
-  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
-  const [activeCorridorId, setActiveCorridorId] = useState('c01a-ndls-agc');
-
-  return (
-    <div className="app-shell">
-      {/* Fixed Navigation Sidebar */}
-      <Sidebar
-        collapsed={sidebarCollapsed}
-        onToggleCollapse={() => setSidebarCollapsed(!sidebarCollapsed)}
-      />
-
-      {/* Main App Canvas */}
-      <div className={`app-main-wrapper ${sidebarCollapsed ? 'sidebar-collapsed' : ''}`}>
-        <Header
-          activeCorridorId={activeCorridorId}
-          onCorridorChange={(id) => setActiveCorridorId(id)}
-        />
-        <main className="main-content" role="main">
-          {children}
-        </main>
-      </div>
-    </div>
-  );
-};
-
-
-
-================================================
-FILE: frontend/src/layout/Header.tsx
-================================================
-import React, { useState, useEffect } from 'react';
-import { useLocation, Link } from 'react-router-dom';
-import { NAV_ITEMS } from '@/constants/navigation';
-import { SAMPLE_CORRIDORS } from '@/mocks/sampleData';
-import { MapPin, Clock, AlertTriangle, ShieldCheck, ChevronDown } from 'lucide-react';
-
-export interface HeaderProps {
-  activeCorridorId: string;
-  onCorridorChange: (corridorId: string) => void;
-}
-
-export const Header: React.FC<HeaderProps> = ({
-  activeCorridorId,
-  onCorridorChange,
-}) => {
-  const location = useLocation();
-  const currentNav = NAV_ITEMS.find((item) => item.path === location.pathname) || NAV_ITEMS[0];
-  const activeCorridor = SAMPLE_CORRIDORS.find((c) => c.id === activeCorridorId) || SAMPLE_CORRIDORS[0];
-
-  const [timeStr, setTimeStr] = useState('');
-
-  useEffect(() => {
-    const updateTime = () => {
-      const now = new Date();
-      // Format as IST time (UTC+5:30)
-      const istStr = now.toLocaleTimeString('en-GB', {
-        timeZone: 'Asia/Kolkata',
-        hour12: false,
-        hour: '2-digit',
-        minute: '2-digit',
-        second: '2-digit',
-      });
-      setTimeStr(`${istStr} IST`);
-    };
-
-    updateTime();
-    const interval = setInterval(updateTime, 1000);
-    return () => clearInterval(interval);
-  }, []);
-
-  const [dropdownOpen, setDropdownOpen] = useState(false);
-
-  return (
-    <header className="app-header">
-      {/* Left: Breadcrumbs & Current Page Title */}
-      <div className="header-left">
-        <div className="breadcrumb-area">
-          <span>Operations Control</span>
-          <span style={{ color: 'var(--border-strong)' }}>/</span>
-          <span className="current">{currentNav.label}</span>
-        </div>
-      </div>
-
-      {/* Right: Corridor Selector, Live Clock, System Health */}
-      <div className="header-right">
-        {/* Corridor Selector */}
-        <div style={{ position: 'relative' }}>
-          <button
-            className="corridor-selector-pill"
-            onClick={() => setDropdownOpen(!dropdownOpen)}
-            aria-expanded={dropdownOpen}
-            aria-haspopup="listbox"
-            title="Switch Corridor"
-          >
-            <MapPin size={13} />
-            <span>{activeCorridor.code} (Km {activeCorridor.startKm.toFixed(0)} - {activeCorridor.endKm.toFixed(0)})</span>
-            <ChevronDown size={12} />
-          </button>
-
-          {dropdownOpen && (
-            <div
-              style={{
-                position: 'absolute',
-                top: 'calc(100% + 4px)',
-                right: 0,
-                backgroundColor: 'var(--bg-surface-raised)',
-                border: '1px solid var(--border-default)',
-                borderRadius: 'var(--radius-md)',
-                boxShadow: 'var(--shadow-panel)',
-                width: '280px',
-                zIndex: 60,
-                overflow: 'hidden',
-              }}
-            >
-              <div style={{ padding: '8px 12px', fontSize: '11px', color: 'var(--text-muted)', borderBottom: '1px solid var(--border-subtle)', fontWeight: 600 }}>
-                SELECT ACTIVE RAILWAY CORRIDOR
-              </div>
-              {SAMPLE_CORRIDORS.map((corr) => (
-                <button
-                  key={corr.id}
-                  onClick={() => {
-                    onCorridorChange(corr.id);
-                    setDropdownOpen(false);
-                  }}
-                  style={{
-                    width: '100%',
-                    padding: '8px 12px',
-                    textAlign: 'left',
-                    background: corr.id === activeCorridorId ? 'var(--ir-blue-bg)' : 'transparent',
-                    border: 'none',
-                    display: 'flex',
-                    flexDirection: 'column',
-                    gap: '2px',
-                    cursor: 'pointer',
-                  }}
-                >
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <span style={{ fontWeight: 600, color: 'var(--text-primary)', fontSize: 'var(--text-xs)' }}>
-                      {corr.code}
-                    </span>
-                    <span style={{ fontSize: '10px', color: 'var(--status-optimal)', fontFamily: 'var(--font-mono)' }}>
-                      {corr.status}
-                    </span>
-                  </div>
-                  <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>
-                    {corr.name}
-                  </div>
-                </button>
-              ))}
-            </div>
-          )}
-        </div>
-
-        {/* Live Operations Clock */}
-        <div className="clock-indicator" title="Indian Standard Time">
-          <Clock size={12} style={{ color: 'var(--text-cyan)' }} />
-          <span>{timeStr || '00:00:00 IST'}</span>
-        </div>
-
-        {/* Active Conflict Alert Shortcut */}
-        <Link
-          to="/conflicts"
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: '6px',
-            padding: '4px 10px',
-            borderRadius: 'var(--radius-sm)',
-            background: 'var(--priority-critical-bg)',
-            border: '1px solid var(--priority-critical-border)',
-            color: 'var(--priority-critical)',
-            fontSize: 'var(--text-xs)',
-            fontWeight: 700,
-            fontFamily: 'var(--font-mono)',
-          }}
-          title="3 Active Operational Conflicts"
-        >
-          <AlertTriangle size={12} />
-          <span>3 CONFLICTS</span>
-        </Link>
-
-        {/* Engine Status Pill */}
-        <div
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: '6px',
-            padding: '4px 10px',
-            borderRadius: 'var(--radius-sm)',
-            background: 'var(--status-optimal-bg)',
-            border: '1px solid var(--status-optimal-border)',
-            color: 'var(--status-optimal)',
-            fontSize: 'var(--text-xs)',
-            fontWeight: 600,
-            fontFamily: 'var(--font-mono)',
-          }}
-          title="Deterministic Solver Engine Online"
-        >
-          <ShieldCheck size={12} />
-          <span>AI ENGINE ONLINE</span>
-        </div>
-      </div>
-    </header>
-  );
-};
-
-
-
-================================================
-FILE: frontend/src/layout/Sidebar.tsx
-================================================
-import React from 'react';
-import { NavLink } from 'react-router-dom';
-import { NAV_ITEMS } from '@/constants/navigation';
-import { ChevronLeft, ChevronRight } from 'lucide-react';
-
-export interface SidebarProps {
-  collapsed: boolean;
-  onToggleCollapse: () => void;
-}
-
-export const Sidebar: React.FC<SidebarProps> = ({
-  collapsed,
-  onToggleCollapse,
-}) => {
-  return (
-    <aside
-      className={`app-sidebar ${collapsed ? 'collapsed' : ''}`}
-      aria-label="Operations Navigation"
-    >
-      {/* Brand Header */}
-      <div className="sidebar-header">
-        <div className="railway-brand">
-          <div className="railway-emblem" aria-hidden="true">
-            IR
-          </div>
-          {!collapsed && (
-            <div className="sidebar-brand-text">
-              <div style={{ lineHeight: 1.1, fontSize: 'var(--text-sm)', fontWeight: 700 }}>
-                IR-ABPS
-              </div>
-              <div
-                style={{
-                  fontSize: '10px',
-                  color: 'var(--text-muted)',
-                  letterSpacing: '0.04em',
-                  textTransform: 'uppercase',
-                  marginTop: '1px',
-                }}
-              >
-                Block Planning
-              </div>
-            </div>
-          )}
-        </div>
-        <button
-          className="btn btn-ghost"
-          onClick={onToggleCollapse}
-          aria-label={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
-          style={{ padding: '4px', color: 'var(--text-muted)' }}
-        >
-          {collapsed ? <ChevronRight size={16} /> : <ChevronLeft size={16} />}
-        </button>
-      </div>
-
-      {/* Navigation List */}
-      <nav className="sidebar-nav">
-        {NAV_ITEMS.map((item) => {
-          const Icon = item.icon;
-          return (
-            <NavLink
-              key={item.id}
-              to={item.path}
-              className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}
-              title={collapsed ? `${item.label} â€” ${item.description}` : item.description}
-            >
-              <Icon className="nav-icon" aria-hidden="true" />
-              {!collapsed && <span className="nav-label">{item.label}</span>}
-              {!collapsed && item.badge && (
-                <span className={`nav-badge ${item.badgeType === 'danger' ? 'danger' : ''}`}>
-                  {item.badge}
-                </span>
-              )}
-            </NavLink>
-          );
-        })}
-      </nav>
-
-      {/* Operations Meta Footer */}
-      {!collapsed && (
-        <div
-          style={{
-            padding: 'var(--space-3) var(--space-4)',
-            borderTop: '1px solid var(--border-subtle)',
-            fontSize: '11px',
-            fontFamily: 'var(--font-mono)',
-            color: 'var(--text-muted)',
-            display: 'flex',
-            flexDirection: 'column',
-            gap: '2px',
-          }}
-        >
-          <div style={{ color: 'var(--text-secondary)' }}>SIH26027 // PROTOTYPE</div>
-          <div>SOLVER: MIP_DETERMINISTIC</div>
-        </div>
-      )}
-    </aside>
-  );
-};
-
-
-
-================================================
 FILE: frontend/src/mocks/mockData.ts
 ================================================
-import { MaintenanceTask, BlockStatus, OptimizationResult, Conflict, ShadowBlockCandidate, TaskType } from '../types/api';
+import type { MaintenanceTask, OptimizationResult, ShadowBlockCandidate } from '../types/api';
 
 export const mockTasks: MaintenanceTask[] = [
   {
@@ -21337,1432 +21361,5 @@ export interface TrainImpactItem {
   impactLevel: 'CRITICAL' | 'HIGH' | 'MEDIUM' | 'LOW' | 'NONE';
   affectedSection: string;
 }
-
-
-
-================================================
-FILE: frontend/src/views/ConflictsPage.tsx
-================================================
-import React from 'react';
-import { SectionHeader } from '@/components/domain/SectionHeader';
-import { Card } from '@/components/common/Card';
-import { ConflictIndicator } from '@/components/domain/ConflictIndicator';
-import { SAMPLE_CONFLICTS } from '@/mocks/sampleData';
-
-export const ConflictsPage: React.FC = () => {
-  return (
-    <div>
-      <SectionHeader
-        title="Unified Operational Conflicts & Alerts"
-        description="Active operational rule breaches across train passages, resource allocations, possession windows, and safety interlocking."
-        badge={
-          <span className="badge badge-priority-critical">
-            3 ACTIVE CONFLICTS
-          </span>
-        }
-      />
-
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-4)' }}>
-        {SAMPLE_CONFLICTS.map((conf) => (
-          <Card
-            key={conf.id}
-            title={conf.title}
-            subtitle={`Conflict ID: ${conf.id} Â· Timestamp: ${conf.timestamp}`}
-          >
-            <ConflictIndicator
-              type={conf.type}
-              severity={conf.severity}
-              affectedEntityId={conf.affectedEntityId}
-              description={conf.description}
-            />
-            <div
-              style={{
-                marginTop: 'var(--space-3)',
-                padding: 'var(--space-2) var(--space-3)',
-                background: 'var(--bg-surface-raised)',
-                borderRadius: 'var(--radius-sm)',
-                fontSize: 'var(--text-xs)',
-                color: 'var(--text-secondary)',
-                display: 'flex',
-                justifyContent: 'space-between',
-              }}
-            >
-              <span>Affected Section: {conf.sectionId}</span>
-              <span style={{ color: 'var(--text-cyan)', fontFamily: 'var(--font-mono)' }}>
-                DETERMINISTIC_PROOF_ATTACHED
-              </span>
-            </div>
-          </Card>
-        ))}
-      </div>
-    </div>
-  );
-};
-
-
-
-================================================
-FILE: frontend/src/views/DashboardPage.tsx
-================================================
-import React, { useState } from 'react';
-import { SectionHeader } from '@/components/domain/SectionHeader';
-import { KpiCard } from '@/components/domain/KpiCard';
-import { OptimizationBadge } from '@/components/domain/OptimizationBadge';
-import { ConflictIndicator } from '@/components/domain/ConflictIndicator';
-import { Card } from '@/components/common/Card';
-import { Button } from '@/components/common/Button';
-import { DetailDrawer } from '@/components/domain/DetailDrawer';
-import { PriorityBadge } from '@/components/domain/PriorityBadge';
-import { DepartmentBadge } from '@/components/domain/DepartmentBadge';
-import { SAMPLE_KPIS, SAMPLE_CONFLICTS } from '@/mocks/sampleData';
-import { Calendar, Play, Eye } from 'lucide-react';
-
-export const DashboardPage: React.FC = () => {
-  const [drawerOpen, setDrawerOpen] = useState(false);
-  const [selectedItem, setSelectedItem] = useState<string | null>(null);
-
-  return (
-    <div>
-      <SectionHeader
-        title="Operations Control Dashboard"
-        description="High-density overview of corridor health, scheduled maintenance possessions, and active operational conflicts."
-        badge={<OptimizationBadge status="OPTIMAL" />}
-        actions={
-          <>
-            <Button
-              variant="outline"
-              size="sm"
-              icon={<Calendar size={14} />}
-              onClick={() => {
-                setSelectedItem('Inspection Schedule Overview');
-                setDrawerOpen(true);
-              }}
-            >
-              Cycle Overview
-            </Button>
-            <Button
-              variant="primary"
-              size="sm"
-              icon={<Play size={14} />}
-              onClick={() => alert('Schedule Optimizer solver hook â€” Reserved for Developer A implementation.')}
-            >
-              Run Optimizer
-            </Button>
-          </>
-        }
-      />
-
-      {/* KPI Grid */}
-      <div
-        style={{
-          display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))',
-          gap: 'var(--space-4)',
-          marginBottom: 'var(--space-6)',
-        }}
-      >
-        {SAMPLE_KPIS.map((kpi) => (
-          <KpiCard
-            key={kpi.id}
-            label={kpi.label}
-            value={kpi.value}
-            subtext={kpi.subtext}
-            accent={
-              kpi.status === 'critical'
-                ? 'critical'
-                : kpi.status === 'warning'
-                ? 'high'
-                : 'optimal'
-            }
-          />
-        ))}
-      </div>
-
-      {/* Two Column Operational Layout */}
-      <div
-        style={{
-          display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fit, minmax(460px, 1fr))',
-          gap: 'var(--space-5)',
-        }}
-      >
-        {/* Left: Active Optimization Run Summary */}
-        <Card
-          title="Active Optimization Run (RUN-20261103-01)"
-          subtitle="Generated via Multi-Objective Constraint Solver"
-          actions={<OptimizationBadge status="OPTIMAL" />}
-          footer={
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%', fontSize: 'var(--text-xs)', color: 'var(--text-muted)' }}>
-              <span>Solver Runtime: 1,840 ms Â· 1,450 iterations</span>
-              <Button
-                variant="ghost"
-                size="sm"
-                icon={<Eye size={12} />}
-                onClick={() => {
-                  setSelectedItem('Run RUN-20261103-01 Audit Proof');
-                  setDrawerOpen(true);
-                }}
-              >
-                Inspect Proof
-              </Button>
-            </div>
-          }
-        >
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-3)' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 12px', background: 'var(--bg-surface-raised)', borderRadius: 'var(--radius-sm)' }}>
-              <span style={{ fontSize: 'var(--text-sm)', color: 'var(--text-secondary)' }}>Tasks Considered / Scheduled</span>
-              <span style={{ fontWeight: 700, fontFamily: 'var(--font-mono)' }}>25 / 18 Tasks (72%)</span>
-            </div>
-            <div style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 12px', background: 'var(--bg-surface-raised)', borderRadius: 'var(--radius-sm)' }}>
-              <span style={{ fontSize: 'var(--text-sm)', color: 'var(--text-secondary)' }}>Total Block Duration</span>
-              <span style={{ fontWeight: 700, fontFamily: 'var(--font-mono)' }}>720 Mins (12.0h)</span>
-            </div>
-            <div style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 12px', background: 'var(--bg-surface-raised)', borderRadius: 'var(--radius-sm)' }}>
-              <span style={{ fontSize: 'var(--text-sm)', color: 'var(--text-secondary)' }}>Baseline Disruption Reduction</span>
-              <span style={{ fontWeight: 700, fontFamily: 'var(--font-mono)', color: 'var(--status-optimal)' }}>-20.8% Train Delay</span>
-            </div>
-            <div style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 12px', background: 'var(--bg-surface-raised)', borderRadius: 'var(--radius-sm)' }}>
-              <span style={{ fontSize: 'var(--text-sm)', color: 'var(--text-secondary)' }}>Objective Score</span>
-              <span style={{ fontWeight: 700, fontFamily: 'var(--font-mono)', color: 'var(--text-cyan)' }}>0.82 / 1.00</span>
-            </div>
-          </div>
-        </Card>
-
-        {/* Right: Operational Conflicts Ticker */}
-        <Card
-          title="Active Operational Conflicts"
-          subtitle="Violations requiring operator review or slot shifting"
-          actions={
-            <span style={{ fontSize: 'var(--text-xs)', color: 'var(--priority-critical)', fontWeight: 700, fontFamily: 'var(--font-mono)' }}>
-              3 UNRESOLVED
-            </span>
-          }
-        >
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-3)' }}>
-            {SAMPLE_CONFLICTS.map((conf) => (
-              <div
-                key={conf.id}
-                onClick={() => {
-                  setSelectedItem(`Conflict: ${conf.id} (${conf.type})`);
-                  setDrawerOpen(true);
-                }}
-                style={{ cursor: 'pointer' }}
-              >
-                <ConflictIndicator
-                  type={conf.type}
-                  severity={conf.severity}
-                  affectedEntityId={conf.affectedEntityId}
-                  description={conf.description}
-                />
-              </div>
-            ))}
-          </div>
-        </Card>
-      </div>
-
-      {/* Inspection Drawer */}
-      <DetailDrawer
-        isOpen={drawerOpen}
-        onClose={() => setDrawerOpen(false)}
-        title={selectedItem || 'Operational Inspection'}
-        subtitle="Deterministic evidence trace"
-        badge={<PriorityBadge priority="P1" />}
-        actions={
-          <Button variant="secondary" size="sm" onClick={() => setDrawerOpen(false)}>
-            Close Drawer
-          </Button>
-        }
-      >
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-4)' }}>
-          <div style={{ fontSize: 'var(--text-sm)', color: 'var(--text-secondary)' }}>
-            This detail drawer is the reusable inspection component pre-wired for Developer A and Developer B to display task breakdowns, conflict proofs, and deterministic solver outputs.
-          </div>
-          <div style={{ display: 'flex', gap: 'var(--space-2)' }}>
-            <DepartmentBadge department="ENG" />
-            <DepartmentBadge department="TRD" />
-            <DepartmentBadge department="SNT" />
-          </div>
-          <div style={{ padding: '12px', background: 'var(--bg-surface-raised)', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border-default)', fontSize: 'var(--text-xs)', fontFamily: 'var(--font-mono)' }}>
-            ENTITY_ID: {selectedItem || 'TSK-ENG-NDLS-045-01'}<br />
-            STATUS: ACTIVE_VERIFIED<br />
-            EVIDENCE: DETERMINISTIC_SOLVER_OK
-          </div>
-        </div>
-      </DetailDrawer>
-    </div>
-  );
-};
-
-
-
-================================================
-FILE: frontend/src/views/EmergencyPage.tsx
-================================================
-import React from 'react';
-import { SectionHeader } from '@/components/domain/SectionHeader';
-import { Card } from '@/components/common/Card';
-import { Button } from '@/components/common/Button';
-import { Flame } from 'lucide-react';
-
-export const EmergencyPage: React.FC = () => {
-  return (
-    <div>
-      <SectionHeader
-        title="Emergency Maintenance Planning"
-        description="Expedited operational workflow for unscheduled safety-critical defects requiring immediate track possession."
-        badge={
-          <span className="badge badge-priority-critical">
-            PRIORITY EXPEDITED
-          </span>
-        }
-      />
-
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(420px, 1fr))', gap: 'var(--space-5)' }}>
-        {/* Fast-Entry Incident Card */}
-        <Card title="1. Fast-Entry Emergency Defect Intake">
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-3)' }}>
-            <div className="input-group">
-              <label className="input-label">Defect Type</label>
-              <select className="input-control">
-                <option value="NEW_USFD_DEFECT">NEW_USFD_DEFECT (Transverse Rail Fissure)</option>
-                <option value="TRACK_FAILURE">TRACK_FAILURE (Buckled Rail / Weld Failure)</option>
-                <option value="SIGNAL_FAILURE">SIGNAL_FAILURE (Interlocking Drop)</option>
-                <option value="OTHER">OTHER (Obstruction / Derailment Risk)</option>
-              </select>
-            </div>
-
-            <div className="input-group">
-              <label className="input-label">Kilometer Location</label>
-              <input className="input-control font-mono" defaultValue="45.300" />
-            </div>
-
-            <Button
-              variant="danger"
-              icon={<Flame size={14} />}
-              onClick={() => alert('Emergency defect evaluated â€” Ready for Developer B emergency re-optimizer.')}
-            >
-              Evaluate Emergency Slot
-            </Button>
-          </div>
-        </Card>
-
-        {/* Immediate Feasible Possession Slots */}
-        <Card title="2. Expedited Feasible Possession Slots" subtitle="Minimum train disruption emergency windows">
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-2)' }}>
-            <div
-              style={{
-                padding: 'var(--space-3)',
-                background: 'var(--bg-surface-raised)',
-                borderRadius: 'var(--radius-sm)',
-                border: '1px solid var(--border-subtle)',
-                display: 'flex',
-                justifyContent: 'space-between',
-                alignItems: 'center',
-              }}
-            >
-              <div>
-                <div style={{ fontWeight: 600, fontSize: 'var(--text-sm)', color: 'var(--text-primary)' }}>
-                  Slot 1: 11:00 - 13:00 (120 Mins)
-                </div>
-                <div style={{ fontSize: 'var(--text-xs)', color: 'var(--text-muted)' }}>
-                  Requires looping freight train BOXN-402 at Palwal
-                </div>
-              </div>
-              <Button variant="outline" size="sm">
-                Select Slot
-              </Button>
-            </div>
-          </div>
-        </Card>
-      </div>
-    </div>
-  );
-};
-
-
-
-================================================
-FILE: frontend/src/views/PlanningPage.tsx
-================================================
-import React, { useState } from 'react';
-import { SectionHeader } from '@/components/domain/SectionHeader';
-import { OptimizationBadge } from '@/components/domain/OptimizationBadge';
-import { Railway3DViewPlaceholder } from '@/components/domain/Railway3DViewPlaceholder';
-import { Card } from '@/components/common/Card';
-import { Button } from '@/components/common/Button';
-import { DepartmentBadge } from '@/components/domain/DepartmentBadge';
-import { Play, ZoomIn, ZoomOut, Filter } from 'lucide-react';
-
-/**
- * Planning Page
- * Architecture strictly fulfills Requirement Â§8:
- * Planning Page
- * â”œâ”€â”€ Planning Controls
- * â”œâ”€â”€ Schedule Timeline
- * â””â”€â”€ Railway3DView
- */
-export const PlanningPage: React.FC = () => {
-  const [horizon, setHorizon] = useState<'WEEKLY' | 'MONTHLY'>('WEEKLY');
-  const [mode, setMode] = useState('BALANCED');
-  const [zoomLevel, setZoomLevel] = useState(1.0);
-  const [activeTab, setActiveTab] = useState<'both' | 'timeline' | '3d'>('both');
-
-  return (
-    <div>
-      <SectionHeader
-        title="Corridor Planning & Schedule Visualizer"
-        description="Multi-department maintenance possessions, train movement intervals, and spatial corridor twin."
-        badge={<OptimizationBadge status="OPTIMAL" />}
-        actions={
-          <div style={{ display: 'flex', gap: 'var(--space-2)' }}>
-            <Button
-              variant="outline"
-              size="sm"
-              icon={<Filter size={14} />}
-              onClick={() => alert('Filter drawer reserved for Developer A')}
-            >
-              Filters
-            </Button>
-            <Button
-              variant="primary"
-              size="sm"
-              icon={<Play size={14} />}
-              onClick={() => alert('Triggering schedule optimization solver')}
-            >
-              Run Optimization
-            </Button>
-          </div>
-        }
-      />
-
-      {/* â”€â”€ 1. Planning Controls â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
-      <Card className="planning-controls-card" style={{ marginBottom: 'var(--space-5)' }}>
-        <div
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            flexWrap: 'wrap',
-            gap: 'var(--space-4)',
-          }}
-        >
-          {/* Horizon & Mode Controls */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-4)', flexWrap: 'wrap' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-              <span style={{ fontSize: 'var(--text-xs)', color: 'var(--text-secondary)', fontWeight: 600 }}>
-                HORIZON:
-              </span>
-              <div style={{ display: 'flex', background: 'var(--bg-surface-raised)', borderRadius: 'var(--radius-sm)', padding: '2px', border: '1px solid var(--border-subtle)' }}>
-                <button
-                  className={`btn btn-sm ${horizon === 'WEEKLY' ? 'btn-primary' : 'btn-ghost'}`}
-                  onClick={() => setHorizon('WEEKLY')}
-                  style={{ padding: '2px 8px', fontSize: 'var(--text-xs)' }}
-                >
-                  Weekly (7D)
-                </button>
-                <button
-                  className={`btn btn-sm ${horizon === 'MONTHLY' ? 'btn-primary' : 'btn-ghost'}`}
-                  onClick={() => setHorizon('MONTHLY')}
-                  style={{ padding: '2px 8px', fontSize: 'var(--text-xs)' }}
-                >
-                  Monthly (30D)
-                </button>
-              </div>
-            </div>
-
-            <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-              <span style={{ fontSize: 'var(--text-xs)', color: 'var(--text-secondary)', fontWeight: 600 }}>
-                MODE:
-              </span>
-              <select
-                value={mode}
-                onChange={(e) => setMode(e.target.value)}
-                className="input-control"
-                style={{ padding: '4px 8px', fontSize: 'var(--text-xs)' }}
-              >
-                <option value="BALANCED">BALANCED (Multi-Objective)</option>
-                <option value="SAFETY_FIRST">SAFETY_FIRST (Zero Overlap)</option>
-                <option value="DISRUPTION_MINIMIZATION">DISRUPTION_MIN (Punctuality Priority)</option>
-                <option value="EMERGENCY">EMERGENCY (Expedited Clearance)</option>
-              </select>
-            </div>
-
-            <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-              <span style={{ fontSize: 'var(--text-xs)', color: 'var(--text-secondary)', fontWeight: 600 }}>
-                VIEW:
-              </span>
-              <div style={{ display: 'flex', background: 'var(--bg-surface-raised)', borderRadius: 'var(--radius-sm)', padding: '2px', border: '1px solid var(--border-subtle)' }}>
-                <button
-                  className={`btn btn-sm ${activeTab === 'both' ? 'btn-secondary' : 'btn-ghost'}`}
-                  onClick={() => setActiveTab('both')}
-                  style={{ padding: '2px 8px', fontSize: 'var(--text-xs)' }}
-                >
-                  Split View
-                </button>
-                <button
-                  className={`btn btn-sm ${activeTab === 'timeline' ? 'btn-secondary' : 'btn-ghost'}`}
-                  onClick={() => setActiveTab('timeline')}
-                  style={{ padding: '2px 8px', fontSize: 'var(--text-xs)' }}
-                >
-                  Timeline Only
-                </button>
-                <button
-                  className={`btn btn-sm ${activeTab === '3d' ? 'btn-secondary' : 'btn-ghost'}`}
-                  onClick={() => setActiveTab('3d')}
-                  style={{ padding: '2px 8px', fontSize: 'var(--text-xs)' }}
-                >
-                  3D View Only
-                </button>
-              </div>
-            </div>
-          </div>
-
-          {/* Timeline Zoom & Date Selector */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)' }}>
-            <span style={{ fontSize: 'var(--text-xs)', color: 'var(--text-muted)', fontFamily: 'var(--font-mono)' }}>
-              WINDOW: 2026-11-03 TO 2026-11-10
-            </span>
-            <button
-              className="btn btn-secondary btn-sm"
-              onClick={() => setZoomLevel(Math.max(0.5, zoomLevel - 0.25))}
-              aria-label="Zoom out"
-            >
-              <ZoomOut size={13} />
-            </button>
-            <span style={{ fontSize: 'var(--text-xs)', fontFamily: 'var(--font-mono)', minWidth: '36px', textAlign: 'center' }}>
-              {zoomLevel.toFixed(1)}x
-            </span>
-            <button
-              className="btn btn-secondary btn-sm"
-              onClick={() => setZoomLevel(Math.min(2.0, zoomLevel + 0.25))}
-              aria-label="Zoom in"
-            >
-              <ZoomIn size={13} />
-            </button>
-          </div>
-        </div>
-      </Card>
-
-      {/* â”€â”€ 2. Schedule Timeline Placeholder â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
-      {(activeTab === 'both' || activeTab === 'timeline') && (
-        <Card
-          title="Schedule Timeline Canvas"
-          subtitle="Gantt-style possession block bars with spatial corridor alignment (Km 0 - 195)"
-          actions={
-            <div style={{ display: 'flex', gap: '6px' }}>
-              <DepartmentBadge department="ENG" />
-              <DepartmentBadge department="TRD" />
-              <DepartmentBadge department="SNT" />
-            </div>
-          }
-          style={{ marginBottom: 'var(--space-5)' }}
-        >
-          {/* Mock Timeline Preview Canvas */}
-          <div
-            style={{
-              background: 'var(--bg-canvas)',
-              border: '1px solid var(--border-default)',
-              borderRadius: 'var(--radius-md)',
-              padding: 'var(--space-4)',
-              minHeight: '260px',
-              display: 'flex',
-              flexDirection: 'column',
-              gap: 'var(--space-3)',
-            }}
-          >
-            {/* Time ruler bar */}
-            <div
-              style={{
-                display: 'grid',
-                gridTemplateColumns: '80px repeat(6, 1fr)',
-                borderBottom: '1px solid var(--border-default)',
-                paddingBottom: '8px',
-                fontSize: '11px',
-                fontFamily: 'var(--font-mono)',
-                color: 'var(--text-muted)',
-              }}
-            >
-              <span>SECTION</span>
-              <span>20:00</span>
-              <span>22:00</span>
-              <span>00:00 (NIGHT)</span>
-              <span>02:00 (NIGHT)</span>
-              <span>04:00</span>
-              <span>06:00</span>
-            </div>
-
-            {/* Track 1: NDLS - AGC (Km 0 - 60) */}
-            <div style={{ display: 'grid', gridTemplateColumns: '80px 1fr', gap: '8px', alignItems: 'center' }}>
-              <span style={{ fontSize: 'var(--text-xs)', fontFamily: 'var(--font-mono)', color: 'var(--text-secondary)' }}>
-                Km 0-60
-              </span>
-              <div
-                style={{
-                  height: '38px',
-                  background: 'var(--bg-surface-raised)',
-                  borderRadius: 'var(--radius-sm)',
-                  position: 'relative',
-                  overflow: 'hidden',
-                  border: '1px solid var(--border-subtle)',
-                }}
-              >
-                {/* Night window overlay band */}
-                <div
-                  style={{
-                    position: 'absolute',
-                    left: '33%',
-                    width: '33%',
-                    top: 0,
-                    bottom: 0,
-                    background: 'rgba(37, 99, 235, 0.05)',
-                    borderLeft: '1px dashed rgba(37, 99, 235, 0.2)',
-                    borderRight: '1px dashed rgba(37, 99, 235, 0.2)',
-                  }}
-                  title="Approved Night Possession Window (23:00 - 04:00)"
-                />
-                {/* Sample Block Bar */}
-                <div
-                  style={{
-                    position: 'absolute',
-                    left: '38%',
-                    width: '24%',
-                    top: '4px',
-                    bottom: '4px',
-                    background: 'linear-gradient(90deg, #1D4ED8, #3B82F6)',
-                    borderRadius: 'var(--radius-xs)',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'space-between',
-                    padding: '0 8px',
-                    color: '#ffffff',
-                    fontSize: '11px',
-                    fontWeight: 600,
-                    fontFamily: 'var(--font-mono)',
-                    boxShadow: '0 2px 6px rgba(0, 0, 0, 0.4)',
-                    cursor: 'pointer',
-                  }}
-                  title="Block BLK-NDLS-01 (150 mins) â€” Multi-Department"
-                  onClick={() => alert('Block detail drawer will open here.')}
-                >
-                  <span>BLK-NDLS-01 [ENG + TRD]</span>
-                  <span style={{ fontSize: '10px', color: '#93C5FD' }}>150m (95m saved)</span>
-                </div>
-              </div>
-            </div>
-
-            {/* Track 2: AGC Section (Km 120 - 180) */}
-            <div style={{ display: 'grid', gridTemplateColumns: '80px 1fr', gap: '8px', alignItems: 'center' }}>
-              <span style={{ fontSize: 'var(--text-xs)', fontFamily: 'var(--font-mono)', color: 'var(--text-secondary)' }}>
-                Km 120-180
-              </span>
-              <div
-                style={{
-                  height: '38px',
-                  background: 'var(--bg-surface-raised)',
-                  borderRadius: 'var(--radius-sm)',
-                  position: 'relative',
-                  overflow: 'hidden',
-                  border: '1px solid var(--border-subtle)',
-                }}
-              >
-                {/* Sample Secondary Block Bar */}
-                <div
-                  style={{
-                    position: 'absolute',
-                    left: '52%',
-                    width: '18%',
-                    top: '4px',
-                    bottom: '4px',
-                    background: 'linear-gradient(90deg, #059669, #10B981)',
-                    borderRadius: 'var(--radius-xs)',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'space-between',
-                    padding: '0 8px',
-                    color: '#ffffff',
-                    fontSize: '11px',
-                    fontWeight: 600,
-                    fontFamily: 'var(--font-mono)',
-                    boxShadow: '0 2px 6px rgba(0, 0, 0, 0.4)',
-                    cursor: 'pointer',
-                  }}
-                  title="Block BLK-AGC-02 (S&T Interlocking Maintenance)"
-                >
-                  <span>BLK-AGC-02 [SNT]</span>
-                  <span style={{ fontSize: '10px', color: '#A7F3D0' }}>120m</span>
-                </div>
-              </div>
-            </div>
-
-            <div style={{ fontSize: 'var(--text-xs)', color: 'var(--text-muted)', marginTop: 'auto', display: 'flex', justifyContent: 'space-between' }}>
-              <span>Interactive timeline canvas ready for Developer A Schedule Implementation.</span>
-              <span style={{ color: 'var(--status-optimal)' }}>âœ“ ZERO HARD CONFLICTS IN ACTIVE VIEW</span>
-            </div>
-          </div>
-        </Card>
-      )}
-
-      {/* â”€â”€ 3. Railway3DView Placeholder â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
-      {(activeTab === 'both' || activeTab === '3d') && (
-        <Card
-          title="Railway Digital Twin 3D Viewport"
-          subtitle="Spatial track geography, overhead catenary structures, and asset elevation models"
-          actions={
-            <span style={{ fontSize: 'var(--text-xs)', color: 'var(--text-cyan)', fontFamily: 'var(--font-mono)', fontWeight: 600 }}>
-              MOUNT_SURFACE_ACTIVE
-            </span>
-          }
-        >
-          <Railway3DViewPlaceholder
-            corridorId="NDLS-AGC"
-            selectedBlockId="BLK-NDLS-01"
-            zoomLevel={zoomLevel}
-          />
-        </Card>
-      )}
-    </div>
-  );
-};
-
-
-
-================================================
-FILE: frontend/src/views/ShadowBlocksPage.tsx
-================================================
-import React from 'react';
-import { SectionHeader } from '@/components/domain/SectionHeader';
-import { Card } from '@/components/common/Card';
-import { DepartmentBadge } from '@/components/domain/DepartmentBadge';
-import { Button } from '@/components/common/Button';
-import { ShieldAlert, CheckCircle2 } from 'lucide-react';
-
-export const ShadowBlocksPage: React.FC = () => {
-  return (
-    <div>
-      <SectionHeader
-        title="Shadow Block Opportunities"
-        description="Integrated, multi-department track possessions where secondary tasks piggyback on primary blocks to eliminate duplicate corridor closures."
-        badge={
-          <span className="badge badge-opt-optimal">
-            2 CANDIDATES DISCOVERED
-          </span>
-        }
-      />
-
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(420px, 1fr))', gap: 'var(--space-5)' }}>
-        {/* Candidate 1: Feasible */}
-        <Card
-          title="Candidate SB-NDLS-301 (NDLS - AGC Km 45.2 - 46.1)"
-          subtitle="Status: FEASIBLE Â· Benefit Score: 0.81"
-          actions={
-            <div style={{ display: 'flex', gap: '4px' }}>
-              <DepartmentBadge department="ENG" />
-              <DepartmentBadge department="TRD" />
-              <DepartmentBadge department="SNT" />
-            </div>
-          }
-          footer={
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%' }}>
-              <span style={{ fontSize: 'var(--text-xs)', color: 'var(--status-optimal)', display: 'flex', alignItems: 'center', gap: '4px' }}>
-                <CheckCircle2 size={13} />
-                <span>Zero Safety Rule Conflicts</span>
-              </span>
-              <Button variant="primary" size="sm">
-                Approve Shadow Block
-              </Button>
-            </div>
-          }
-        >
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-3)' }}>
-            <div style={{ padding: '8px 12px', background: 'var(--bg-surface-raised)', borderRadius: 'var(--radius-sm)', display: 'flex', justifyContent: 'space-between' }}>
-              <span style={{ fontSize: 'var(--text-sm)', color: 'var(--text-secondary)' }}>Proposed Window</span>
-              <span style={{ fontFamily: 'var(--font-mono)', fontSize: 'var(--text-xs)' }}>2026-11-03 23:00 - 01:30 (150m)</span>
-            </div>
-
-            <div style={{ padding: '8px 12px', background: 'var(--bg-surface-raised)', borderRadius: 'var(--radius-sm)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <span style={{ fontSize: 'var(--text-sm)', color: 'var(--text-secondary)' }}>Corridor Possession Saved</span>
-              <span style={{ fontWeight: 700, fontFamily: 'var(--font-mono)', color: 'var(--status-optimal)', fontSize: 'var(--text-base)' }}>
-                95 Minutes (37.5% Compression)
-              </span>
-            </div>
-
-            <div style={{ fontSize: 'var(--text-xs)', color: 'var(--text-muted)' }}>
-              Primary: TSK-001 (USFD Scan) Â· Piggybacked: TSK-010 (OHE Cantilever), TSK-021 (Point Sensor Overhaul).
-            </div>
-          </div>
-        </Card>
-
-        {/* Candidate 2: Rejected Unsafe Candidate */}
-        <Card
-          title="Candidate SB-NDLS-302 (Agra Cantt Km 88.4)"
-          subtitle="Status: REJECTED (SAFETY_CONFLICT)"
-          actions={
-            <div style={{ display: 'flex', gap: '4px' }}>
-              <DepartmentBadge department="ENG" />
-              <DepartmentBadge department="SNT" />
-            </div>
-          }
-          footer={
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%' }}>
-              <span style={{ fontSize: 'var(--text-xs)', color: 'var(--priority-critical)', display: 'flex', alignItems: 'center', gap: '4px' }}>
-                <ShieldAlert size={13} />
-                <span>Interlocking IR-SIG-402 Breach</span>
-              </span>
-              <Button variant="outline" size="sm">
-                Inspect Rejection Evidence
-              </Button>
-            </div>
-          }
-        >
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-3)' }}>
-            <div style={{ padding: '8px 12px', background: 'var(--bg-surface-raised)', borderRadius: 'var(--radius-sm)', display: 'flex', justifyContent: 'space-between' }}>
-              <span style={{ fontSize: 'var(--text-sm)', color: 'var(--text-secondary)' }}>Proposed Window</span>
-              <span style={{ fontFamily: 'var(--font-mono)', fontSize: 'var(--text-xs)' }}>2026-11-04 02:00 - 04:30 (150m)</span>
-            </div>
-
-            <div style={{ padding: '8px 12px', background: 'var(--priority-critical-bg)', border: '1px solid var(--priority-critical-border)', borderRadius: 'var(--radius-sm)', color: 'var(--priority-critical)', fontSize: 'var(--text-xs)' }}>
-              Deterministic Rejection: Concurrent point motor overhaul and heavy track tamping on Section 14 violates safety clearance rule.
-            </div>
-          </div>
-        </Card>
-      </div>
-    </div>
-  );
-};
-
-
-
-================================================
-FILE: frontend/src/views/SystemPage.tsx
-================================================
-import React, { useState } from 'react';
-import { SectionHeader } from '@/components/domain/SectionHeader';
-import { PriorityBadge } from '@/components/domain/PriorityBadge';
-import { OptimizationBadge } from '@/components/domain/OptimizationBadge';
-import { DepartmentBadge } from '@/components/domain/DepartmentBadge';
-import { ConflictIndicator } from '@/components/domain/ConflictIndicator';
-import { TrainImpactIndicator } from '@/components/domain/TrainImpactIndicator';
-import { Button } from '@/components/common/Button';
-import { Input } from '@/components/common/Input';
-import { Card } from '@/components/common/Card';
-import { Tabs } from '@/components/common/Tabs';
-import { Skeleton } from '@/components/common/Skeleton';
-import { EmptyState } from '@/components/common/EmptyState';
-import { ErrorState } from '@/components/common/ErrorState';
-import { Modal } from '@/components/common/Modal';
-import { DetailDrawer } from '@/components/domain/DetailDrawer';
-
-export const SystemPage: React.FC = () => {
-  const [activeTab, setActiveTab] = useState('status');
-  const [modalOpen, setModalOpen] = useState(false);
-  const [drawerOpen, setDrawerOpen] = useState(false);
-
-  const tabs = [
-    { id: 'status', label: 'Domain Status System' },
-    { id: 'primitives', label: 'Design Primitives' },
-    { id: 'states', label: 'Loading & State Tokens' },
-  ];
-
-  return (
-    <div>
-      <SectionHeader
-        title="Design System & Operations Foundation"
-        description="Living specification of reusable UI primitives, domain status tokens, and accessibility standards for Developer A and Developer B."
-        badge={
-          <span className="badge badge-opt-optimal">
-            FOUNDATION V1.0.0
-          </span>
-        }
-        actions={
-          <div style={{ display: 'flex', gap: 'var(--space-2)' }}>
-            <Button variant="outline" size="sm" onClick={() => setModalOpen(true)}>
-              Open Test Modal
-            </Button>
-            <Button variant="secondary" size="sm" onClick={() => setDrawerOpen(true)}>
-              Open Test Drawer
-            </Button>
-          </div>
-        }
-      />
-
-      <Tabs tabs={tabs} activeTab={activeTab} onChange={setActiveTab} />
-
-      {/* Tab 1: Domain Status System */}
-      {activeTab === 'status' && (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-5)', marginTop: 'var(--space-4)' }}>
-          {/* Priority Statuses */}
-          <Card title="1. Task & Defect Priority Scale (P1 - P4)">
-            <div style={{ display: 'flex', gap: 'var(--space-3)', flexWrap: 'wrap', alignItems: 'center' }}>
-              <PriorityBadge priority="CRITICAL" />
-              <PriorityBadge priority="HIGH" />
-              <PriorityBadge priority="MEDIUM" />
-              <PriorityBadge priority="LOW" />
-              <span style={{ color: 'var(--border-strong)' }}>|</span>
-              <PriorityBadge priority="P1" />
-              <PriorityBadge priority="P2" />
-              <PriorityBadge priority="P3" />
-              <PriorityBadge priority="P4" />
-            </div>
-          </Card>
-
-          {/* Optimization Statuses */}
-          <Card title="2. Solver Optimization Outcome Statuses">
-            <div style={{ display: 'flex', gap: 'var(--space-3)', flexWrap: 'wrap', alignItems: 'center' }}>
-              <OptimizationBadge status="OPTIMAL" />
-              <OptimizationBadge status="FEASIBLE" />
-              <OptimizationBadge status="PARTIAL" />
-              <OptimizationBadge status="INFEASIBLE" />
-              <OptimizationBadge status="FAILED" />
-            </div>
-          </Card>
-
-          {/* Department Badges */}
-          <Card title="3. Railway Maintenance Departments">
-            <div style={{ display: 'flex', gap: 'var(--space-3)', flexWrap: 'wrap', alignItems: 'center' }}>
-              <DepartmentBadge department="ENG" />
-              <DepartmentBadge department="TRD" />
-              <DepartmentBadge department="SNT" />
-            </div>
-          </Card>
-
-          {/* Conflicts */}
-          <Card title="4. Operational Conflict Classifications">
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-2)' }}>
-              <ConflictIndicator
-                type="TRAIN_CONFLICT"
-                severity="HIGH"
-                affectedEntityId="TSK-001 / TRN-12002"
-                description="Overlaps high-priority passenger timetable slot."
-              />
-              <ConflictIndicator
-                type="RESOURCE_CONFLICT"
-                severity="CRITICAL"
-                affectedEntityId="RES-VEH-12"
-                description="Machinery double-allocated across 2 concurrent sections."
-              />
-              <ConflictIndicator
-                type="SAFETY_CONFLICT"
-                severity="CRITICAL"
-                affectedEntityId="TSK-088"
-                description="Interlocking clearance rule IR-SIG-402 breach."
-              />
-            </div>
-          </Card>
-        </div>
-      )}
-
-      {/* Tab 2: Design Primitives */}
-      {activeTab === 'primitives' && (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-5)', marginTop: 'var(--space-4)' }}>
-          <Card title="Interactive Buttons">
-            <div style={{ display: 'flex', gap: 'var(--space-3)', flexWrap: 'wrap', alignItems: 'center' }}>
-              <Button variant="primary">Primary Action</Button>
-              <Button variant="secondary">Secondary Action</Button>
-              <Button variant="outline">Outline Action</Button>
-              <Button variant="danger">Critical Danger</Button>
-              <Button variant="ghost">Ghost Button</Button>
-              <Button variant="primary" size="sm">Small</Button>
-              <Button variant="primary" size="lg">Large</Button>
-            </div>
-          </Card>
-
-          <Card title="Form Inputs">
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: 'var(--space-4)' }}>
-              <Input label="Corridor Section Code" defaultValue="NDLS-AGC-SEC12" />
-              <Input label="Search Filter" placeholder="Search tasks..." />
-              <Input label="Kilometer Marker" defaultValue="45.500" helperText="Precision within 3 decimal places" />
-            </div>
-          </Card>
-
-          <Card title="Train Impact Indicators">
-            <div style={{ display: 'flex', gap: 'var(--space-3)', flexWrap: 'wrap' }}>
-              <TrainImpactIndicator trainNumber="22436" trainName="Vande Bharat" trainType="EXPRESS" delayMinutes={0} />
-              <TrainImpactIndicator trainNumber="12002" trainName="Bhopal Shatabdi" trainType="EXPRESS" delayMinutes={25} />
-            </div>
-          </Card>
-        </div>
-      )}
-
-      {/* Tab 3: Loading & State Tokens */}
-      {activeTab === 'states' && (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-5)', marginTop: 'var(--space-4)' }}>
-          <Card title="Shimmer Loading Skeletons">
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-2)' }}>
-              <Skeleton height="24px" width="60%" />
-              <Skeleton height="16px" width="90%" />
-              <Skeleton height="16px" width="75%" />
-              <div style={{ display: 'flex', gap: 'var(--space-2)', marginTop: 'var(--space-2)' }}>
-                <Skeleton height="32px" width="120px" />
-                <Skeleton height="32px" width="120px" />
-              </div>
-            </div>
-          </Card>
-
-          <Card title="Empty State Pattern">
-            <EmptyState
-              title="No Active Corridor Possession Blocks"
-              description="Click 'Run Optimizer' to evaluate pending maintenance tasks against the train timetable."
-              actionLabel="Run Optimizer Now"
-              onAction={() => alert('Optimization triggered')}
-            />
-          </Card>
-
-          <Card title="Error State Pattern">
-            <ErrorState
-              title="Constraint Solver Boundary Violation"
-              message="Failed to compute conflict-free schedule: No feasible window without disrupting P1 critical services."
-              onRetry={() => alert('Retrying solver')}
-            />
-          </Card>
-        </div>
-      )}
-
-      {/* Test Modal */}
-      <Modal
-        isOpen={modalOpen}
-        onClose={() => setModalOpen(false)}
-        title="Operations Dialog Test"
-        footer={
-          <>
-            <Button variant="secondary" size="sm" onClick={() => setModalOpen(false)}>
-              Cancel
-            </Button>
-            <Button variant="primary" size="sm" onClick={() => setModalOpen(false)}>
-              Confirm Decision
-            </Button>
-          </>
-        }
-      >
-        <p style={{ fontSize: 'var(--text-sm)', color: 'var(--text-secondary)' }}>
-          This dialog verifies keyboard accessibility (Tab focus trap, Enter submit, Escape dismiss) for operational confirmations.
-        </p>
-      </Modal>
-
-      {/* Test Drawer */}
-      <DetailDrawer
-        isOpen={drawerOpen}
-        onClose={() => setDrawerOpen(false)}
-        title="Slide-out Inspection Drawer"
-        subtitle="Used for inspecting blocks, tasks, and conflicts"
-        actions={
-          <Button variant="secondary" size="sm" onClick={() => setDrawerOpen(false)}>
-            Close Drawer
-          </Button>
-        }
-      >
-        <p style={{ fontSize: 'var(--text-sm)', color: 'var(--text-secondary)' }}>
-          Standard drawer used for inspecting blocks, tasks, and conflicts without leaving the main operational canvas.
-        </p>
-      </DetailDrawer>
-    </div>
-  );
-};
-
-
-
-================================================
-FILE: frontend/src/views/TasksPage.tsx
-================================================
-import React, { useState } from 'react';
-import { SectionHeader } from '@/components/domain/SectionHeader';
-import { PriorityBadge } from '@/components/domain/PriorityBadge';
-import { DepartmentBadge } from '@/components/domain/DepartmentBadge';
-import { Card } from '@/components/common/Card';
-import { Table, type Column } from '@/components/common/Table';
-import { Button } from '@/components/common/Button';
-import { DetailDrawer } from '@/components/domain/DetailDrawer';
-import { Input } from '@/components/common/Input';
-import { Search, Plus, Filter } from 'lucide-react';
-
-interface TaskRow {
-  taskCode: string;
-  department: 'ENG' | 'TRD' | 'SNT';
-  description: string;
-  locationKm: string;
-  durationMinutes: number;
-  priority: 'CRITICAL' | 'HIGH' | 'MEDIUM' | 'LOW';
-  score: number;
-  status: 'PENDING' | 'SCHEDULED';
-}
-
-const SAMPLE_TASKS: TaskRow[] = [
-  {
-    taskCode: 'TSK-ENG-NDLS-045-01',
-    department: 'ENG',
-    description: 'Rail head split testing and fishplate joint replacement',
-    locationKm: '45.500',
-    durationMinutes: 150,
-    priority: 'CRITICAL',
-    score: 94,
-    status: 'SCHEDULED',
-  },
-  {
-    taskCode: 'TSK-TRD-NDLS-046-02',
-    department: 'TRD',
-    description: '25kV Catenary contact wire tensioning and cantilever inspection',
-    locationKm: '46.100',
-    durationMinutes: 120,
-    priority: 'HIGH',
-    score: 82,
-    status: 'SCHEDULED',
-  },
-  {
-    taskCode: 'TSK-SNT-NDLS-045-03',
-    department: 'SNT',
-    description: 'Point machine 102A ground interlocking recalibration',
-    locationKm: '45.200',
-    durationMinutes: 90,
-    priority: 'HIGH',
-    score: 88,
-    status: 'SCHEDULED',
-  },
-  {
-    taskCode: 'TSK-ENG-NDLS-112-04',
-    department: 'ENG',
-    description: 'Routine USFD ultrasonic scanning across switch expansion joint',
-    locationKm: '112.400',
-    durationMinutes: 180,
-    priority: 'MEDIUM',
-    score: 62,
-    status: 'PENDING',
-  },
-];
-
-export const TasksPage: React.FC = () => {
-  const [search, setSearch] = useState('');
-  const [selectedTask, setSelectedTask] = useState<TaskRow | null>(null);
-
-  const filtered = SAMPLE_TASKS.filter((t) =>
-    t.taskCode.toLowerCase().includes(search.toLowerCase()) ||
-    t.description.toLowerCase().includes(search.toLowerCase())
-  );
-
-  const columns: Column<TaskRow>[] = [
-    {
-      key: 'taskCode',
-      header: 'Task Code',
-      render: (t) => (
-        <span style={{ fontWeight: 700, fontFamily: 'var(--font-mono)' }}>
-          {t.taskCode}
-        </span>
-      ),
-    },
-    {
-      key: 'department',
-      header: 'Dept',
-      render: (t) => <DepartmentBadge department={t.department} />,
-    },
-    {
-      key: 'description',
-      header: 'Description',
-      render: (t) => (
-        <span style={{ color: 'var(--text-secondary)' }}>
-          {t.description}
-        </span>
-      ),
-    },
-    {
-      key: 'locationKm',
-      header: 'Location',
-      render: (t) => (
-        <span style={{ fontFamily: 'var(--font-mono)', color: 'var(--text-cyan)' }}>
-          Km {t.locationKm}
-        </span>
-      ),
-    },
-    {
-      key: 'durationMinutes',
-      header: 'Duration',
-      render: (t) => (
-        <span style={{ fontFamily: 'var(--font-mono)' }}>
-          {t.durationMinutes}m
-        </span>
-      ),
-    },
-    {
-      key: 'priority',
-      header: 'Priority',
-      render: (t) => <PriorityBadge priority={t.priority} />,
-    },
-    {
-      key: 'score',
-      header: 'Score',
-      render: (t) => (
-        <span style={{ fontFamily: 'var(--font-mono)', fontWeight: 700 }}>
-          {t.score}
-        </span>
-      ),
-    },
-    {
-      key: 'status',
-      header: 'Status',
-      render: (t) => (
-        <span
-          style={{
-            fontSize: '11px',
-            fontFamily: 'var(--font-mono)',
-            padding: '2px 6px',
-            borderRadius: 'var(--radius-xs)',
-            background: t.status === 'SCHEDULED' ? 'var(--status-optimal-bg)' : 'var(--bg-surface-raised)',
-            color: t.status === 'SCHEDULED' ? 'var(--status-optimal)' : 'var(--text-muted)',
-          }}
-        >
-          {t.status}
-        </span>
-      ),
-    },
-  ];
-
-  return (
-    <div>
-      <SectionHeader
-        title="Maintenance Tasks Inventory"
-        description="Comprehensive repository of Civil Engineering (P-Way), Traction (TRD), and Signal & Telecommunication (S&T) work items."
-        badge={<PriorityBadge priority="CRITICAL" />}
-        actions={
-          <div style={{ display: 'flex', gap: 'var(--space-2)' }}>
-            <Button variant="outline" size="sm" icon={<Filter size={14} />}>
-              Filter Dept
-            </Button>
-            <Button variant="primary" size="sm" icon={<Plus size={14} />}>
-              New Work Item
-            </Button>
-          </div>
-        }
-      />
-
-      <Card style={{ marginBottom: 'var(--space-4)' }}>
-        <div style={{ display: 'flex', gap: 'var(--space-4)', alignItems: 'center' }}>
-          <div style={{ flex: 1 }}>
-            <Input
-              placeholder="Search by Task Code, Asset, or Description..."
-              icon={<Search size={16} />}
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-            />
-          </div>
-          <div style={{ fontSize: 'var(--text-xs)', color: 'var(--text-muted)', fontFamily: 'var(--font-mono)' }}>
-            COUNT: {filtered.length} / {SAMPLE_TASKS.length}
-          </div>
-        </div>
-      </Card>
-
-      <Table
-        columns={columns}
-        data={filtered}
-        keyExtractor={(item) => item.taskCode}
-        onRowClick={(task) => setSelectedTask(task)}
-      />
-
-      {/* Task Detail Sheet */}
-      <DetailDrawer
-        isOpen={Boolean(selectedTask)}
-        onClose={() => setSelectedTask(null)}
-        title={selectedTask?.taskCode || 'Task Detail'}
-        subtitle={selectedTask?.description}
-        badge={selectedTask ? <PriorityBadge priority={selectedTask.priority} /> : undefined}
-        actions={
-          <Button variant="secondary" size="sm" onClick={() => setSelectedTask(null)}>
-            Close
-          </Button>
-        }
-      >
-        {selectedTask && (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-4)' }}>
-            <div style={{ padding: '12px', background: 'var(--bg-surface-raised)', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border-default)' }}>
-              <div style={{ fontSize: 'var(--text-xs)', color: 'var(--text-muted)', textTransform: 'uppercase', marginBottom: '4px' }}>
-                Deterministic Criticality Score
-              </div>
-              <div style={{ fontSize: 'var(--text-2xl)', fontWeight: 800, fontFamily: 'var(--font-mono)', color: 'var(--priority-critical)' }}>
-                {selectedTask.score} / 100
-              </div>
-              <div style={{ fontSize: 'var(--text-xs)', color: 'var(--text-secondary)', marginTop: '4px' }}>
-                Model: criticality_v1_rule_2026Q4 Â· Mode: RULE_BASED
-              </div>
-            </div>
-
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-              <span style={{ fontSize: 'var(--text-xs)', fontWeight: 600, color: 'var(--text-secondary)' }}>
-                FACTOR CONTRIBUTIONS (WEIGHTED)
-              </span>
-              <div style={{ fontSize: 'var(--text-xs)', color: 'var(--text-muted)', display: 'flex', justifyContent: 'space-between' }}>
-                <span>Severity Factor: 0.28</span>
-                <span>Urgency Factor: 0.22</span>
-              </div>
-              <div style={{ fontSize: 'var(--text-xs)', color: 'var(--text-muted)', display: 'flex', justifyContent: 'space-between' }}>
-                <span>Safety Risk: 0.20</span>
-                <span>Traffic Density: 0.09</span>
-              </div>
-            </div>
-
-            <div style={{ fontSize: 'var(--text-xs)', color: 'var(--text-muted)', background: 'var(--bg-surface-raised)', padding: '8px', borderRadius: 'var(--radius-sm)' }}>
-              Ready for Developer B to implement full XGBoost/ML extensibility hooks as defined in FRONTEND_ARCHITECTURE.md Â§24.
-            </div>
-          </div>
-        )}
-      </DetailDrawer>
-    </div>
-  );
-};
-
-
-
-================================================
-FILE: frontend/src/views/TrainsPage.tsx
-================================================
-import React from 'react';
-import { SectionHeader } from '@/components/domain/SectionHeader';
-import { Card } from '@/components/common/Card';
-import { TrainImpactIndicator } from '@/components/domain/TrainImpactIndicator';
-import { SAMPLE_TRAIN_IMPACT } from '@/mocks/sampleData';
-
-export const TrainsPage: React.FC = () => {
-  return (
-    <div>
-      <SectionHeader
-        title="Trains & Movement Timetable"
-        description="Scheduled passenger and freight train paths, speed classes, and estimated maintenance disruption penalties."
-        badge={
-          <span className="badge badge-opt-feasible">
-            3 SERVICES TRACKED
-          </span>
-        }
-      />
-
-      <Card
-        title="Train Impact & Delay Analysis"
-        subtitle="Simulated passage delays resulting from active maintenance block proposals"
-        style={{ marginBottom: 'var(--space-5)' }}
-      >
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-3)' }}>
-          {SAMPLE_TRAIN_IMPACT.map((train) => (
-            <div
-              key={train.trainNumber}
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'space-between',
-                padding: 'var(--space-3) var(--space-4)',
-                background: 'var(--bg-surface-raised)',
-                borderRadius: 'var(--radius-md)',
-                border: '1px solid var(--border-subtle)',
-              }}
-            >
-              <TrainImpactIndicator
-                trainNumber={train.trainNumber}
-                trainName={train.trainName}
-                trainType={train.trainType}
-                speedClass={train.speedClass}
-                delayMinutes={train.delayMinutes}
-              />
-              <div style={{ fontSize: 'var(--text-xs)', color: 'var(--text-muted)', fontFamily: 'var(--font-mono)' }}>
-                SECTION: {train.affectedSection}
-              </div>
-            </div>
-          ))}
-        </div>
-      </Card>
-    </div>
-  );
-};
-
-
-
-================================================
-FILE: frontend/src/views/WhatIfPage.tsx
-================================================
-import React, { useState } from 'react';
-import { SectionHeader } from '@/components/domain/SectionHeader';
-import { Card } from '@/components/common/Card';
-import { Button } from '@/components/common/Button';
-import { GitFork, Play } from 'lucide-react';
-
-export const WhatIfPage: React.FC = () => {
-  const [scenarioType, setScenarioType] = useState('TRAIN_DELAY');
-  const [delayMinutes, setDelayMinutes] = useState(45);
-
-  return (
-    <div>
-      <SectionHeader
-        title="What-If Disruption Sandbox"
-        description="Simulate operational incidents (train delays, block window closures, duration surges) and preview AI re-optimized schedule diffs."
-        badge={
-          <span className="badge badge-opt-feasible">
-            SANDBOX MODE
-          </span>
-        }
-      />
-
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(420px, 1fr))', gap: 'var(--space-5)' }}>
-        {/* Scenario Config Form */}
-        <Card title="1. Configure Disruption Scenario">
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-4)' }}>
-            <div className="input-group">
-              <label className="input-label">Scenario Type</label>
-              <select
-                value={scenarioType}
-                onChange={(e) => setScenarioType(e.target.value)}
-                className="input-control"
-              >
-                <option value="TRAIN_DELAY">TRAIN_DELAY (Schedule Shift)</option>
-                <option value="BLOCK_UNAVAILABLE">BLOCK_UNAVAILABLE (Window Cancelled)</option>
-                <option value="RESOURCE_UNAVAILABLE">RESOURCE_UNAVAILABLE (Machine Breakdown)</option>
-                <option value="EMERGENCY_TASK_INSERTED">EMERGENCY_TASK_INSERTED (Urgent Defect)</option>
-                <option value="TASK_DURATION_CHANGED">TASK_DURATION_CHANGED (Duration Surge)</option>
-                <option value="TASK_ADDED">TASK_ADDED (New Ad-Hoc Task)</option>
-              </select>
-            </div>
-
-            {scenarioType === 'TRAIN_DELAY' && (
-              <div className="input-group">
-                <label className="input-label">Delay Magnitude (Minutes)</label>
-                <input
-                  type="number"
-                  value={delayMinutes}
-                  onChange={(e) => setDelayMinutes(Number(e.target.value))}
-                  className="input-control font-mono"
-                  min={5}
-                  max={180}
-                  step={5}
-                />
-              </div>
-            )}
-
-            <Button
-              variant="primary"
-              icon={<Play size={14} />}
-              onClick={() => alert('Simulate re-optimization â€” Ready for Developer B WhatIfEngine connection.')}
-            >
-              Run Re-Optimization
-            </Button>
-          </div>
-        </Card>
-
-        {/* Schedule Diff Preview Placeholder */}
-        <Card title="2. Simulated Schedule Diff" subtitle="Original vs. Simulated Re-optimization Comparison">
-          <div
-            style={{
-              padding: 'var(--space-6)',
-              background: 'var(--bg-canvas)',
-              borderRadius: 'var(--radius-md)',
-              border: '1px dashed var(--border-default)',
-              textAlign: 'center',
-              color: 'var(--text-muted)',
-              fontSize: 'var(--text-sm)',
-            }}
-          >
-            <GitFork size={32} style={{ margin: '0 auto var(--space-2)', color: 'var(--text-cyan)' }} />
-            <div style={{ fontWeight: 600, color: 'var(--text-primary)' }}>
-              Awaiting Simulation Trigger
-            </div>
-            <div style={{ fontSize: 'var(--text-xs)', marginTop: '4px' }}>
-              Select parameters on the left and click "Run Re-Optimization" to render shifted blocks and delta metrics.
-            </div>
-          </div>
-        </Card>
-      </div>
-    </div>
-  );
-};
 
 

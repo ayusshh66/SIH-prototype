@@ -1,4 +1,4 @@
-import { MaintenanceTask, BlockStatus, OptimizationResult, Conflict, ShadowBlockCandidate, TaskType } from '../types/api';
+import type { MaintenanceTask, OptimizationResult, ShadowBlockCandidate } from '../types/api';
 
 export const mockTasks: MaintenanceTask[] = [
   {

@@ -1,5 +1,3 @@
-'use client';
-
 import React, { useEffect, useState } from 'react';
 import { X } from 'lucide-react';
 
@@ -22,9 +20,9 @@ export const Drawer: React.FC<DrawerProps> = ({
 }) => {
   const [render, setRender] = useState(isOpen);
 
-  useEffect(() => {
-    if (isOpen) setRender(true);
-  }, [isOpen]);
+  if (isOpen && !render) {
+    setRender(true);
+  }
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {

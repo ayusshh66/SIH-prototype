@@ -1,6 +1,6 @@
 import React from 'react';
 import { Drawer } from '../../components/common/Drawer';
-import { Explanation } from '../../types/api';
+import type { Explanation } from '../../types/api';
 import { Badge } from '../../components/common/Badge';
 
 interface Props {

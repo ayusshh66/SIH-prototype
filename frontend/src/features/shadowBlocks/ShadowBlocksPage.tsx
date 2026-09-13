@@ -1,4 +1,3 @@
-"use client";
 import React, { useEffect, useState } from 'react';
 import { getShadowBlocks } from '../../api/client';
 import { ShadowBlockCard } from './ShadowBlockCard';

@@ -7,6 +7,10 @@ import { MaintenanceTasksPage } from './features/tasks/MaintenanceTasksPage';
 import { ShadowBlocksPage } from './features/shadowBlocks/ShadowBlocksPage';
 import { ConflictsAlertsPage } from './features/conflicts/ConflictsAlertsPage';
 import { WhatIfScenariosPage } from './features/whatIf/WhatIfScenariosPage';
+import { TrainsPage } from './features/trains/TrainsPage';
+import { EmergencyPage } from './features/emergency/EmergencyPage';
+import { ExplainPage } from './features/explain/ExplainPage';
+import { SystemPage } from './features/system/SystemPage';
 
 export const App: React.FC = () => {
   return (
@@ -17,40 +21,12 @@ export const App: React.FC = () => {
           <Route path="planning" element={<PlanningSchedulePage />} />
           <Route path="tasks" element={<MaintenanceTasksPage />} />
           <Route path="shadow-blocks" element={<ShadowBlocksPage />} />
+          <Route path="trains" element={<TrainsPage />} />
           <Route path="conflicts" element={<ConflictsAlertsPage />} />
           <Route path="what-if" element={<WhatIfScenariosPage />} />
-          <Route
-            path="trains"
-            element={
-              <div className="p-4 font-mono text-text-muted uppercase tracking-widest">
-                Trains - In Development
-              </div>
-            }
-          />
-          <Route
-            path="emergency"
-            element={
-              <div className="p-4 font-mono text-text-muted uppercase tracking-widest">
-                Emergency - In Development
-              </div>
-            }
-          />
-          <Route
-            path="explain"
-            element={
-              <div className="p-4 font-mono text-text-muted uppercase tracking-widest">
-                Explain - In Development
-              </div>
-            }
-          />
-          <Route
-            path="system"
-            element={
-              <div className="p-4 font-mono text-text-muted uppercase tracking-widest">
-                System - In Development
-              </div>
-            }
-          />
+          <Route path="emergency" element={<EmergencyPage />} />
+          <Route path="explain" element={<ExplainPage />} />
+          <Route path="system" element={<SystemPage />} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Route>
       </Routes>

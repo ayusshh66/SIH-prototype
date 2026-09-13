@@ -47,11 +47,18 @@ class ExplainabilityEngine:
         Derives a deterministic explanation_id from the canonical content
         of the explanation entity and evidence.
         """
+        # Strip non-deterministic execution timing like runtime_ms from the hash payload
+        cleaned_evidence = dict(evidence)
+        if "solver_statistics" in cleaned_evidence and isinstance(cleaned_evidence["solver_statistics"], dict):
+            cleaned_evidence["solver_statistics"] = {
+                k: v for k, v in cleaned_evidence["solver_statistics"].items() if k != "runtime_ms"
+            }
+
         payload = {
             "entity_type": entity_type,
             "entity_id": str(entity_id),
             "reason_codes": sorted(reason_codes),
-            "evidence": evidence,
+            "evidence": cleaned_evidence,
             "deterministic_inputs": deterministic_inputs,
         }
         serialized = json.dumps(payload, sort_keys=True, default=str)

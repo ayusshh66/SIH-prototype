@@ -8,3 +8,10 @@
 # Datasource local storage ignored files
 /dataSources/
 /dataSources.local.xml
+/digest.txt
+/AGENT_TOOL_CONTRACT.md
+/AI_ARCHITECTURE.md
+/AI_DOMAIN_CONTRACT.md
+/BACKEND_AI_INTEGRATION.md
+/TEST_CASE_SPEC.md
+/OPTIMIZATION_CONTRACT.md

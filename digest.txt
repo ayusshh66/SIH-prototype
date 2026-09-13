@@ -1,44 +1,116 @@
 Directory structure:
 └── AI-RMP/
-    └── ai/
-        ├── __init__.py
-        ├── AGENT_TOOL_CONTRACT.md
-        ├── AI_ARCHITECTURE.md
-        ├── AI_DOMAIN_CONTRACT.md
-        ├── BACKEND_AI_INTEGRATION.md
-        ├── OPTIMIZATION_CONTRACT.md
-        ├── TEST_CASE_SPEC.md
-        ├── compatibility/
-        │   ├── __init__.py
-        │   ├── engine.py
-        │   └── test_compatibility.py
-        ├── criticality/
-        │   ├── __init__.py
-        │   ├── engine.py
-        │   └── test_criticality.py
-        ├── data/
-        │   ├── __init__.py
-        │   ├── generator.py
-        │   ├── test_generator.py
-        │   └── validator.py
-        ├── explainability/
-        │   ├── __init__.py
-        │   ├── engine.py
-        │   └── test_engine.py
-        ├── optimization/
-        │   ├── __init__.py
-        │   ├── baseline.py
-        │   ├── engine.py
-        │   └── test_optimization.py
-        ├── scenarios/
-        │   ├── __init__.py
-        │   ├── emergency.py
-        │   ├── test_scenarios.py
-        │   └── what_if.py
-        └── shadow_blocks/
-            ├── __init__.py
-            ├── engine.py
-            └── test_shadow_blocks.py
+    ├── ai/
+    │   ├── __init__.py
+    │   ├── AGENT_TOOL_CONTRACT.md
+    │   ├── AI_ARCHITECTURE.md
+    │   ├── AI_DOMAIN_CONTRACT.md
+    │   ├── BACKEND_AI_INTEGRATION.md
+    │   ├── OPTIMIZATION_CONTRACT.md
+    │   ├── TEST_CASE_SPEC.md
+    │   ├── agents/
+    │   │   ├── __init__.py
+    │   │   ├── orchestrator.py
+    │   │   ├── test_orchestrator.py
+    │   │   └── tools.py
+    │   ├── compatibility/
+    │   │   ├── __init__.py
+    │   │   ├── engine.py
+    │   │   └── test_compatibility.py
+    │   ├── criticality/
+    │   │   ├── __init__.py
+    │   │   ├── engine.py
+    │   │   └── test_criticality.py
+    │   ├── data/
+    │   │   ├── __init__.py
+    │   │   ├── generator.py
+    │   │   ├── test_generator.py
+    │   │   └── validator.py
+    │   ├── explainability/
+    │   │   ├── __init__.py
+    │   │   ├── engine.py
+    │   │   └── test_engine.py
+    │   ├── optimization/
+    │   │   ├── __init__.py
+    │   │   ├── baseline.py
+    │   │   ├── engine.py
+    │   │   └── test_optimization.py
+    │   ├── scenarios/
+    │   │   ├── __init__.py
+    │   │   ├── emergency.py
+    │   │   ├── test_scenarios.py
+    │   │   └── what_if.py
+    │   └── shadow_blocks/
+    │       ├── __init__.py
+    │       ├── engine.py
+    │       └── test_shadow_blocks.py
+    └── backend/
+        ├── README.md
+        ├── drizzle.config.ts
+        ├── package-additions.txt
+        ├── package.json
+        ├── tsconfig.json
+        ├── drizzle/
+        │   ├── 0000_white_sentry.sql
+        │   └── meta/
+        │       ├── 0000_snapshot.json
+        │       └── _journal.json
+        └── src/
+            ├── app.ts
+            ├── server.ts
+            ├── db/
+            │   ├── index.ts
+            │   ├── seed.ts
+            │   └── schema/
+            │       ├── assets.ts
+            │       ├── auditLogs.ts
+            │       ├── blocks.ts
+            │       ├── blockTasks.ts
+            │       ├── blockWindows.ts
+            │       ├── corridors.ts
+            │       ├── defects.ts
+            │       ├── departments.ts
+            │       ├── enums.ts
+            │       ├── index.ts
+            │       ├── maintenanceTasks.ts
+            │       ├── optimizationRuns.ts
+            │       ├── trainForecasts.ts
+            │       └── trains.ts
+            ├── lib/
+            │   └── redis.ts
+            ├── middleware/
+            │   └── error.ts
+            └── modules/
+                ├── assets/
+                │   ├── assets.controller.ts
+                │   ├── assets.routes.ts
+                │   └── routes.ts
+                ├── blocks/
+                │   ├── blocks.controller.ts
+                │   ├── blocks.routes.ts
+                │   └── routes.ts
+                ├── corridors/
+                │   ├── corridors.controller.ts
+                │   ├── corridors.routes.ts
+                │   └── routes.ts
+                ├── health/
+                │   └── routes.ts
+                ├── integration/
+                │   └── routes.ts
+                ├── maintenance/
+                │   ├── maintenance.controller.ts
+                │   ├── maintenance.routes.ts
+                │   └── routes.ts
+                ├── planning/
+                │   ├── optimizer.ts
+                │   ├── planning.controller.ts
+                │   ├── planning.routes.ts
+                │   ├── priority.engine.ts
+                │   └── routes.ts
+                └── trains/
+                    ├── routes.ts
+                    ├── trains.controller.ts
+                    └── trains.routes.ts
 
 ================================================
 FILE: ai/__init__.py
@@ -2135,6 +2207,1067 @@ A scenario is successful when:
 - timing and locations must be valid within the prototype domain
 - all tests must be reproducible from seeded synthetic data
 
+
+
+================================================
+FILE: ai/agents/__init__.py
+================================================
+"""
+ai/agents â€” Deterministic Agent Orchestration Layer.
+
+Coordinates criticality scoring, compatibility analysis, shadow block grouping,
+CP-SAT schedule optimization, scenario reoptimization, and explainability.
+Implements AGENT_TOOL_CONTRACT.md and AI_ARCHITECTURE.md Â§9.
+"""
+
+from ai.agents.orchestrator import AgentOrchestrator, orchestrate_planning
+from ai.agents.tools import (
+    calculate_criticality,
+    explain_schedule,
+    find_shadow_opportunities,
+    get_maintenance_tasks,
+    get_resources,
+    get_train_movements,
+    insert_emergency_task,
+    optimize_schedule,
+    run_what_if,
+)
+
+__all__ = [
+    "AgentOrchestrator",
+    "orchestrate_planning",
+    "get_maintenance_tasks",
+    "get_train_movements",
+    "get_resources",
+    "calculate_criticality",
+    "find_shadow_opportunities",
+    "optimize_schedule",
+    "run_what_if",
+    "insert_emergency_task",
+    "explain_schedule",
+]
+
+
+
+================================================
+FILE: ai/agents/orchestrator.py
+================================================
+"""
+Deterministic Agent Orchestration Service.
+
+Implements AGENT_TOOL_CONTRACT.md orchestration pattern and AI_ARCHITECTURE.md Â§9.
+
+Coordinates AI engines in strict sequence without duplicating domain logic or
+overriding engine decisions:
+  1. Input validation and gathering
+  2. Criticality scoring (CriticalityEngine)
+  3. Compatibility evaluation (CompatibilityEngine)
+  4. Shadow-block candidate generation (ShadowBlockEngine)
+  5. Schedule optimization (OptimizationEngine)
+  6. What-if or Emergency reoptimization when requested (WhatIfEngine / EmergencyEngine)
+  7. Deterministic explanations generation (ExplainabilityEngine)
+
+Returns a canonical orchestration result containing all artifacts, execution traces,
+and explanations.
+"""
+
+from __future__ import annotations
+
+import copy
+import hashlib
+import json
+from datetime import datetime, timezone
+from typing import Any, Dict, List, Optional
+
+from ai.criticality.engine import CriticalityEngine
+from ai.compatibility.engine import CompatibilityEngine
+from ai.shadow_blocks.engine import ShadowBlockEngine
+from ai.optimization.engine import OptimizationEngine
+from ai.scenarios.what_if import WhatIfEngine
+from ai.scenarios.emergency import EmergencyEngine
+from ai.explainability.engine import ExplainabilityEngine
+
+
+def _iso(dt: datetime) -> str:
+    return dt.astimezone(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+
+
+def _generate_orchestration_id(request: Dict[str, Any]) -> str:
+    """Generates a deterministic orchestration ID from request content."""
+    req_id = request.get("request_id")
+    if req_id:
+        h = hashlib.sha256(str(req_id).encode("utf-8")).hexdigest()[:8]
+        return f"orch_{req_id}_{h}"
+    
+    summary = {
+        "tasks": [t.get("task_id") for t in request.get("tasks", []) if isinstance(t, dict)],
+        "windows": [w.get("window_id") for w in request.get("maintenance_windows", request.get("windows", [])) if isinstance(w, dict)],
+        "mode": request.get("mode", "BALANCED"),
+    }
+    h = hashlib.sha256(json.dumps(summary, sort_keys=True).encode("utf-8")).hexdigest()[:12]
+    return f"orch_{h}"
+
+
+class AgentOrchestrator:
+    """
+    Deterministic agent orchestrator.
+    Manages end-to-end planning flows, invoking domain engines in strict order.
+    Never invents scheduling or safety decisions; engine outputs remain authoritative.
+    """
+
+    def __init__(
+        self,
+        criticality_engine: Optional[CriticalityEngine] = None,
+        compatibility_engine: Optional[CompatibilityEngine] = None,
+        shadow_block_engine: Optional[ShadowBlockEngine] = None,
+        optimization_engine: Optional[OptimizationEngine] = None,
+        what_if_engine: Optional[WhatIfEngine] = None,
+        emergency_engine: Optional[EmergencyEngine] = None,
+        explainability_engine: Optional[ExplainabilityEngine] = None,
+    ) -> None:
+        self.criticality_engine = criticality_engine or CriticalityEngine()
+        self.compatibility_engine = compatibility_engine or CompatibilityEngine()
+        self.shadow_block_engine = shadow_block_engine or ShadowBlockEngine()
+        self.optimization_engine = optimization_engine or OptimizationEngine()
+        self.what_if_engine = what_if_engine or WhatIfEngine(
+            optimizer=self.optimization_engine,
+            criticality_engine=self.criticality_engine,
+        )
+        self.emergency_engine = emergency_engine or EmergencyEngine(
+            optimizer=self.optimization_engine,
+            criticality_engine=self.criticality_engine,
+        )
+        self.explainability_engine = explainability_engine or ExplainabilityEngine()
+
+    def orchestrate(self, request: Any) -> Dict[str, Any]:
+        """
+        Executes the canonical planning sequence for a planning request.
+        """
+        sequence: List[str] = []
+        errors: List[str] = []
+
+        # â”€â”€ Step 1: Input Validation & Gathering â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+        sequence.append("VALIDATE")
+        if not isinstance(request, dict):
+            return {
+                "orchestration_id": "orch_invalid_request",
+                "request_id": "unknown",
+                "status": "FAILED",
+                "execution_sequence": sequence,
+                "criticality_scores": [],
+                "compatibility_candidates": [],
+                "shadow_block_candidates": [],
+                "optimization_result": None,
+                "scenario_result": None,
+                "emergency_result": None,
+                "explanations": [],
+                "errors": ["Request must be a dictionary."],
+                "generated_at": _iso(datetime.now(timezone.utc)),
+            }
+
+        orch_id = _generate_orchestration_id(request)
+        req_id = request.get("request_id", "unknown")
+
+        tasks = request.get("tasks")
+        if tasks is None or not isinstance(tasks, list):
+            errors.append("Missing or invalid required input: 'tasks' must be a list.")
+
+        windows = request.get("maintenance_windows", request.get("windows"))
+        if windows is None or not isinstance(windows, list):
+            errors.append("Missing or invalid required input: 'maintenance_windows' must be a list.")
+
+        resources = request.get("resources")
+        if resources is None or not isinstance(resources, list):
+            errors.append("Missing or invalid required input: 'resources' must be a list.")
+
+        train_movements = request.get("train_movements")
+        if train_movements is None or not isinstance(train_movements, list):
+            errors.append("Missing or invalid required input: 'train_movements' must be a list.")
+
+        if errors:
+            return {
+                "orchestration_id": orch_id,
+                "request_id": req_id,
+                "status": "FAILED",
+                "execution_sequence": sequence,
+                "criticality_scores": [],
+                "compatibility_candidates": [],
+                "shadow_block_candidates": [],
+                "optimization_result": None,
+                "scenario_result": None,
+                "emergency_result": None,
+                "explanations": [],
+                "errors": errors,
+                "generated_at": _iso(datetime.now(timezone.utc)),
+            }
+
+        constraints = request.get("constraints", {})
+        weights = request.get("weights", {})
+        mode = request.get("mode", "BALANCED")
+        solver_settings = request.get("solver_settings", {})
+
+        criticality_scores: List[Dict[str, Any]] = []
+        compatibility_candidates: List[Dict[str, Any]] = []
+        shadow_block_candidates: List[Dict[str, Any]] = []
+        optimization_result: Optional[Dict[str, Any]] = None
+        scenario_result: Optional[Dict[str, Any]] = None
+        emergency_result: Optional[Dict[str, Any]] = None
+        explanations: List[Dict[str, Any]] = []
+
+        try:
+            # â”€â”€ Step 2: Criticality Scoring â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+            sequence.append("CRITICALITY")
+            existing_scores = request.get("criticality_scores", [])
+            scored_ids = set()
+            for cs in existing_scores:
+                if isinstance(cs, dict) and "entity_id" in cs:
+                    criticality_scores.append(cs)
+                    scored_ids.add(cs["entity_id"])
+
+            for task in tasks:
+                tid = task.get("task_id", "")
+                if tid in scored_ids:
+                    continue
+                # Map task characteristics deterministically into feature format
+                p_hint = str(task.get("priority_hint", "MODERATE")).upper()
+                sev = task.get("severity", p_hint if p_hint in ("MINOR", "MODERATE", "SEVERE", "CRITICAL") else "MODERATE")
+                urg = float(task.get("urgency", 0.95 if p_hint == "CRITICAL" else 0.75 if p_hint == "HIGH" else 0.50))
+                s_class = str(task.get("safety_class", "NORMAL")).upper()
+                s_risk = float(task.get("safety_risk", 0.95 if s_class in ("HIGH_SAFETY", "INTERLOCKING") else 0.60 if s_class == "RESTRICTED" else 0.35))
+                trf = float(task.get("traffic_density", 0.50))
+                spd = task.get("speed_class", "HIGH")
+                ddl = task.get("deadline")
+
+                score_input = {
+                    "entity_id": tid,
+                    "severity": sev,
+                    "urgency": urg,
+                    "safety_risk": s_risk,
+                    "traffic_density": trf,
+                    "speed_class": spd,
+                    "deadline": ddl,
+                }
+                cs_record = self.criticality_engine.score(score_input)
+                criticality_scores.append(cs_record)
+                scored_ids.add(tid)
+
+            # â”€â”€ Step 3: Compatibility Evaluation â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+            sequence.append("COMPATIBILITY")
+            compatibility_candidates = self.compatibility_engine.find_compatible_tasks(
+                tasks=tasks,
+                windows=windows,
+                resources=resources,
+                constraints=constraints,
+            )
+
+            # â”€â”€ Step 4: Shadow-Block Generation â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+            sequence.append("SHADOW_BLOCKS")
+            shadow_block_candidates = self.shadow_block_engine.generate_shadow_blocks(
+                tasks=tasks,
+                compatibility_results=compatibility_candidates,
+                windows=windows,
+                resources=resources,
+                safety_constraints=constraints,
+            )
+
+            # â”€â”€ Step 5: Schedule Optimization â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+            sequence.append("OPTIMIZE")
+            opt_request = {
+                "request_id": f"opt_{orch_id}",
+                "mode": mode,
+                "tasks": tasks,
+                "criticality_scores": criticality_scores,
+                "train_movements": train_movements,
+                "resources": resources,
+                "maintenance_windows": windows,
+                "shadow_block_candidates": shadow_block_candidates,
+                "constraints": constraints,
+                "weights": weights,
+                "solver_settings": solver_settings,
+            }
+            optimization_result = self.optimization_engine.optimize(opt_request)
+
+            # â”€â”€ Step 6: What-If Scenario (if requested) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+            if request.get("scenario"):
+                sequence.append("SCENARIO")
+                scen = dict(request["scenario"])
+                if "base_schedule_id" not in scen:
+                    if request.get("current_schedule_id"):
+                        scen["base_schedule_id"] = request["current_schedule_id"]
+                    elif optimization_result.get("schedule_candidates"):
+                        scen["base_schedule_id"] = optimization_result["schedule_candidates"][0].get("schedule_id", "sched_base")
+
+                scenario_result = self.what_if_engine.reoptimize(
+                    scenario=scen,
+                    current_schedule=optimization_result,
+                    context=opt_request,
+                )
+                if scenario_result.get("errors"):
+                    errors.extend(scenario_result["errors"])
+
+            # â”€â”€ Step 7: Emergency Event (if requested) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+            if request.get("emergency_event"):
+                sequence.append("EMERGENCY")
+                emergency_state = dict(opt_request)
+                emergency_state["existing_tasks"] = tasks
+                emergency_state["windows"] = windows
+                emergency_result = self.emergency_engine.insert_emergency_event(
+                    event=request["emergency_event"],
+                    current_state=emergency_state,
+                )
+                if emergency_result.get("errors"):
+                    errors.extend(emergency_result["errors"])
+
+            # â”€â”€ Step 8: Deterministic Explanations â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+            sequence.append("EXPLAIN")
+            # 1. Schedule explanation
+            sched_exp = self.explainability_engine.explain_schedule(
+                optimization_result=optimization_result,
+                request=opt_request,
+            )
+            explanations.append(sched_exp)
+
+            # 2. Selected Block explanations
+            for cand in optimization_result.get("schedule_candidates", []):
+                for blk in cand.get("blocks", []):
+                    blk_id = blk.get("block_id")
+                    if blk_id:
+                        blk_exp = self.explainability_engine.explain_block(
+                            block_id=blk_id,
+                            schedule_candidate=cand,
+                            optimization_result=optimization_result,
+                            request=opt_request,
+                        )
+                        explanations.append(blk_exp)
+
+            # 3. Unscheduled Task explanations
+            for unsched_tid in optimization_result.get("unscheduled_task_ids", []):
+                unsched_exp = self.explainability_engine.explain_unscheduled_task(
+                    task_id=unsched_tid,
+                    optimization_result=optimization_result,
+                    request=opt_request,
+                )
+                explanations.append(unsched_exp)
+
+            # 4. Shadow block grouping explanations
+            for sb in shadow_block_candidates:
+                grp_exp = self.explainability_engine.explain_grouping(sb)
+                explanations.append(grp_exp)
+
+        except Exception as exc:
+            errors.append(f"Engine failure during execution ({sequence[-1]}): {exc}")
+            return {
+                "orchestration_id": orch_id,
+                "request_id": req_id,
+                "status": "FAILED",
+                "execution_sequence": sequence,
+                "criticality_scores": criticality_scores,
+                "compatibility_candidates": compatibility_candidates,
+                "shadow_block_candidates": shadow_block_candidates,
+                "optimization_result": optimization_result,
+                "scenario_result": scenario_result,
+                "emergency_result": emergency_result,
+                "explanations": explanations,
+                "errors": errors,
+                "generated_at": _iso(datetime.now(timezone.utc)),
+            }
+
+        # Determine overall status
+        opt_status = optimization_result.get("status", "FAILED")
+        if errors:
+            status = "PARTIAL" if opt_status in ("OPTIMAL", "FEASIBLE", "PARTIAL") else "FAILED"
+        elif opt_status in ("OPTIMAL", "FEASIBLE"):
+            status = "SUCCESS"
+        elif opt_status == "PARTIAL":
+            status = "PARTIAL"
+        else:
+            status = "FAILED"
+
+        return {
+            "orchestration_id": orch_id,
+            "request_id": req_id,
+            "status": status,
+            "execution_sequence": sequence,
+            "criticality_scores": criticality_scores,
+            "compatibility_candidates": compatibility_candidates,
+            "shadow_block_candidates": shadow_block_candidates,
+            "optimization_result": optimization_result,
+            "scenario_result": scenario_result,
+            "emergency_result": emergency_result,
+            "explanations": explanations,
+            "errors": errors,
+            "generated_at": _iso(datetime.now(timezone.utc)),
+        }
+
+
+def orchestrate_planning(request: Dict[str, Any]) -> Dict[str, Any]:
+    """
+    Convenience function to run the deterministic AgentOrchestrator.
+    """
+    orchestrator = AgentOrchestrator()
+    return orchestrator.orchestrate(request)
+
+
+
+================================================
+FILE: ai/agents/test_orchestrator.py
+================================================
+"""
+Tests for the Deterministic Agent Orchestration Service.
+
+Validates:
+  - Normal planning flow end-to-end.
+  - Actual engine call order using mocks (CRITICALITY -> COMPATIBILITY -> SHADOW_BLOCKS -> OPTIMIZE -> EXPLAIN).
+  - Scenario flow and call order (OPTIMIZE -> SCENARIO -> EXPLAIN).
+  - Scenario input/output consistency with WhatIfEngine and AGENT_TOOL_CONTRACT.md Â§7.
+  - Emergency flow and call order (OPTIMIZE -> EMERGENCY -> EXPLAIN).
+  - Engine failure propagation without unhandled crashes.
+  - Missing or invalid input handling.
+  - Deterministic repeatability across executions.
+  - Safety decisions remain owned by rule and optimization engines.
+  - Individual agent tools contract compliance (AGENT_TOOL_CONTRACT.md Â§1-Â§9).
+"""
+
+from __future__ import annotations
+
+import unittest
+from datetime import datetime, timedelta, timezone
+from unittest.mock import MagicMock
+
+try:
+    from ai.agents.orchestrator import AgentOrchestrator, orchestrate_planning
+    from ai.agents import tools
+except ImportError:
+    from orchestrator import AgentOrchestrator, orchestrate_planning
+    import tools
+
+
+def _iso(dt: datetime) -> str:
+    return dt.astimezone(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+
+
+def _make_task(
+    task_id="task_001",
+    section="sec_01",
+    department="ENGINEERING",
+    duration=60,
+    start_offset_h=8,
+    end_offset_h=11,
+    priority="HIGH",
+    safety_class="NORMAL",
+    base_date=None,
+):
+    base = base_date or datetime(2026, 11, 3, 0, 0, tzinfo=timezone.utc)
+    return {
+        "task_id": task_id,
+        "task_type": "USFD",
+        "railway_section_id": section,
+        "from_km": 10.0,
+        "to_km": 15.0,
+        "department": department,
+        "status": "PLANNED",
+        "requested_start": _iso(base + timedelta(hours=start_offset_h)),
+        "requested_end": _iso(base + timedelta(hours=end_offset_h)),
+        "estimated_duration_minutes": duration,
+        "required_resources": [{"resource_type": "USFD_VEHICLE", "count": 1}],
+        "priority_hint": priority,
+        "safety_class": safety_class,
+    }
+
+
+def _make_window(window_id="win_01", section="sec_01", start_offset_h=8, end_offset_h=12, base_date=None):
+    base = base_date or datetime(2026, 11, 3, 0, 0, tzinfo=timezone.utc)
+    return {
+        "window_id": window_id,
+        "section_id": section,
+        "start": _iso(base + timedelta(hours=start_offset_h)),
+        "end": _iso(base + timedelta(hours=end_offset_h)),
+        "window_type": "NIGHT",
+        "availability": "AVAILABLE",
+    }
+
+
+def _make_movement(mv_id="mv_01", section="sec_01", start_offset_h=13, end_offset_h=14, base_date=None):
+    base = base_date or datetime(2026, 11, 3, 0, 0, tzinfo=timezone.utc)
+    return {
+        "movement_id": mv_id,
+        "train_id": f"train_{mv_id}",
+        "section_id": section,
+        "from_km": 5.0,
+        "to_km": 20.0,
+        "movement_start": _iso(base + timedelta(hours=start_offset_h)),
+        "movement_end": _iso(base + timedelta(hours=end_offset_h)),
+        "direction": "UP",
+        "speed_class": "HIGH",
+        "traffic_density": 0.8,
+        "priority_class": "PASSENGER",
+    }
+
+
+def _make_resource(rid="res_01", rtype="USFD_VEHICLE"):
+    return {
+        "resource_id": rid,
+        "resource_type": rtype,
+        "department": "ENGINEERING",
+        "location": "sec_01",
+        "available_windows": [],
+        "capacity": 2,
+        "is_operational": True,
+    }
+
+
+class TestAgentOrchestrator(unittest.TestCase):
+    def setUp(self) -> None:
+        self.orchestrator = AgentOrchestrator()
+        self.base_request = {
+            "request_id": "orch_test_01",
+            "mode": "BALANCED",
+            "tasks": [
+                _make_task("t_01", section="sec_01", department="ENGINEERING", duration=60),
+                _make_task("t_02", section="sec_01", department="TRD", duration=60),
+            ],
+            "maintenance_windows": [
+                _make_window("win_01", section="sec_01", start_offset_h=8, end_offset_h=12),
+            ],
+            "resources": [
+                _make_resource("res_01", "USFD_VEHICLE"),
+            ],
+            "train_movements": [
+                _make_movement("mv_01", section="sec_01", start_offset_h=13, end_offset_h=14),
+            ],
+        }
+
+    # â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    # 1. Normal planning flow
+    # â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    def test_normal_planning_flow(self) -> None:
+        result = self.orchestrator.orchestrate(self.base_request)
+
+        self.assertIn(result["status"], ("SUCCESS", "PARTIAL"))
+        self.assertEqual(result["request_id"], "orch_test_01")
+        self.assertTrue(result["orchestration_id"].startswith("orch_"))
+        self.assertEqual(len(result["errors"]), 0)
+
+        # Output artifacts
+        self.assertEqual(len(result["criticality_scores"]), 2)
+        self.assertIsInstance(result["compatibility_candidates"], list)
+        self.assertIsInstance(result["shadow_block_candidates"], list)
+        self.assertIsNotNone(result["optimization_result"])
+        self.assertIn(result["optimization_result"]["status"], ("OPTIMAL", "FEASIBLE"))
+        self.assertGreater(len(result["explanations"]), 0)
+
+    # â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    # 2. Actual engine call order verification using mocks
+    # â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    def test_actual_engine_call_order_using_mocks(self) -> None:
+        """
+        Verify the actual invocation order of underlying engines using mock spies.
+        Enforces strict call order:
+          CRITICALITY -> COMPATIBILITY -> SHADOW_BLOCKS -> OPTIMIZE -> EXPLAIN
+        """
+        mock_crit = MagicMock()
+        mock_crit.score.return_value = {
+            "entity_id": "t_01",
+            "score": 0.8,
+            "priority_class": "P2",
+            "risk_level": "HIGH",
+            "feature_contributions": {},
+            "explanation": "test",
+            "model_version": "v1",
+            "scoring_mode": "RULE_BASED",
+        }
+
+        mock_compat = MagicMock()
+        mock_compat.find_compatible_tasks.return_value = [
+            {"candidate_id": "comp_1", "task_ids": ["t_01", "t_02"], "status": "COMPATIBLE", "safety_compatibility": True}
+        ]
+
+        mock_shadow = MagicMock()
+        mock_shadow.generate_shadow_blocks.return_value = [
+            {
+                "shadow_block_id": "sb_1",
+                "primary_task_id": "t_01",
+                "participating_task_ids": ["t_01", "t_02"],
+                "conflict_status": "FEASIBLE",
+                "potential_time_saving_minutes": 45,
+            }
+        ]
+
+        mock_opt = MagicMock()
+        mock_opt.optimize.return_value = {
+            "request_id": "opt_req_01",
+            "status": "OPTIMAL",
+            "objective_score": 0.85,
+            "selected_task_ids": ["t_01", "t_02"],
+            "unscheduled_task_ids": [],
+            "schedule_candidates": [
+                {
+                    "schedule_id": "sched_01",
+                    "task_ids": ["t_01", "t_02"],
+                    "blocks": [{"block_id": "win_01", "section_id": "sec_01"}],
+                }
+            ],
+            "train_conflicts": [],
+        }
+
+        mock_explain = MagicMock()
+        mock_explain.explain_schedule.return_value = {
+            "explanation_id": "exp_s",
+            "entity_type": "SCHEDULE",
+            "entity_id": "opt_req_01",
+            "summary": "Schedule optimal",
+            "reason_codes": ["schedule_optimal"],
+            "evidence": {},
+            "deterministic_inputs": {},
+            "generated_by": "EXPLAINABILITY_ENGINE",
+        }
+        mock_explain.explain_block.return_value = {
+            "explanation_id": "exp_b",
+            "entity_type": "BLOCK",
+            "entity_id": "win_01",
+            "summary": "Block selected",
+            "reason_codes": ["block_selected"],
+            "evidence": {},
+            "deterministic_inputs": {},
+            "generated_by": "EXPLAINABILITY_ENGINE",
+        }
+        mock_explain.explain_unscheduled_task.return_value = {
+            "explanation_id": "exp_u",
+            "entity_type": "TASK",
+            "entity_id": "t_02",
+            "summary": "Unscheduled",
+            "reason_codes": [],
+            "evidence": {},
+            "deterministic_inputs": {},
+            "generated_by": "EXPLAINABILITY_ENGINE",
+        }
+        mock_explain.explain_grouping.return_value = {
+            "explanation_id": "exp_g",
+            "entity_type": "GROUPING",
+            "entity_id": "sb_1",
+            "summary": "Grouped",
+            "reason_codes": [],
+            "evidence": {},
+            "deterministic_inputs": {},
+            "generated_by": "EXPLAINABILITY_ENGINE",
+        }
+
+        # Parent manager to track call order across all mocks
+        manager = MagicMock()
+        manager.attach_mock(mock_crit.score, "criticality_score")
+        manager.attach_mock(mock_compat.find_compatible_tasks, "compatibility_find")
+        manager.attach_mock(mock_shadow.generate_shadow_blocks, "shadow_blocks_generate")
+        manager.attach_mock(mock_opt.optimize, "optimization_optimize")
+        manager.attach_mock(mock_explain.explain_schedule, "explain_schedule")
+
+        orchestrator = AgentOrchestrator(
+            criticality_engine=mock_crit,
+            compatibility_engine=mock_compat,
+            shadow_block_engine=mock_shadow,
+            optimization_engine=mock_opt,
+            explainability_engine=mock_explain,
+        )
+
+        res = orchestrator.orchestrate(self.base_request)
+        self.assertEqual(res["status"], "SUCCESS")
+
+        # 1. Verify exact chronological call sequence
+        call_names = [c[0] for c in manager.mock_calls]
+        crit_idx = next(i for i, name in enumerate(call_names) if name == "criticality_score")
+        compat_idx = next(i for i, name in enumerate(call_names) if name == "compatibility_find")
+        shadow_idx = next(i for i, name in enumerate(call_names) if name == "shadow_blocks_generate")
+        opt_idx = next(i for i, name in enumerate(call_names) if name == "optimization_optimize")
+        explain_idx = next(i for i, name in enumerate(call_names) if name == "explain_schedule")
+
+        self.assertLess(crit_idx, compat_idx, "Criticality scoring must precede Compatibility evaluation")
+        self.assertLess(compat_idx, shadow_idx, "Compatibility evaluation must precede Shadow Block generation")
+        self.assertLess(shadow_idx, opt_idx, "Shadow Block generation must precede Optimization")
+        self.assertLess(opt_idx, explain_idx, "Optimization must precede Explainability generation")
+
+        # 2. Verify data passing contracts between engines
+        # Compatibility received tasks
+        _, compat_kwargs = mock_compat.find_compatible_tasks.call_args
+        self.assertEqual(len(compat_kwargs["tasks"]), 2)
+
+        # Shadow blocks received compatibility results from compatibility engine
+        _, shadow_kwargs = mock_shadow.generate_shadow_blocks.call_args
+        self.assertEqual(shadow_kwargs["compatibility_results"], mock_compat.find_compatible_tasks.return_value)
+
+        # Optimization received shadow block candidates and scores
+        opt_args, opt_kwargs = mock_opt.optimize.call_args
+        opt_req = opt_args[0] if opt_args else opt_kwargs.get("request")
+        self.assertEqual(opt_req["shadow_block_candidates"], mock_shadow.generate_shadow_blocks.return_value)
+        self.assertEqual(len(opt_req["criticality_scores"]), 2)
+
+        # Explainability received the optimizer result
+        exp_args, exp_kwargs = mock_explain.explain_schedule.call_args
+        self.assertEqual(exp_kwargs.get("optimization_result", exp_args[0] if exp_args else None), mock_opt.optimize.return_value)
+
+    # â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    # 3. Scenario flow & call order using mocks
+    # â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    def test_scenario_call_order_using_mocks(self) -> None:
+        """
+        Verify that What-If reoptimization is invoked after optimization and before explainability.
+        """
+        mock_opt = MagicMock()
+        mock_opt.optimize.return_value = {
+            "status": "FEASIBLE",
+            "schedule_candidates": [{"schedule_id": "sched_01", "task_ids": ["t_01"]}],
+            "selected_task_ids": ["t_01"],
+            "unscheduled_task_ids": [],
+            "train_conflicts": [],
+        }
+
+        mock_what_if = MagicMock()
+        mock_what_if.reoptimize.return_value = {
+            "original_schedule_id": "sched_01",
+            "new_schedule": {"schedule_id": "sched_new", "task_ids": ["t_01"]},
+            "changed_blocks": [],
+            "affected_tasks": ["t_01"],
+            "affected_trains": [],
+            "metric_differences": {"objective_score": 0.0},
+            "explanation": "Reoptimized plan",
+            "errors": [],
+        }
+
+        mock_explain = MagicMock()
+        mock_explain.explain_schedule.return_value = {
+            "explanation_id": "exp_s",
+            "entity_type": "SCHEDULE",
+            "entity_id": "sched_01",
+            "summary": "summary",
+            "reason_codes": [],
+            "evidence": {},
+            "deterministic_inputs": {},
+            "generated_by": "EXPLAINABILITY_ENGINE",
+        }
+
+        manager = MagicMock()
+        manager.attach_mock(mock_opt.optimize, "optimize")
+        manager.attach_mock(mock_what_if.reoptimize, "what_if_reoptimize")
+        manager.attach_mock(mock_explain.explain_schedule, "explain_schedule")
+
+        orchestrator = AgentOrchestrator(
+            optimization_engine=mock_opt,
+            what_if_engine=mock_what_if,
+            explainability_engine=mock_explain,
+        )
+
+        req = dict(
+            self.base_request,
+            scenario={
+                "scenario_id": "scen_test",
+                "scenario_type": "TRAIN_DELAY",
+                "base_schedule_id": "sched_01",
+                "affected_task_ids": ["t_01"],
+            },
+        )
+        res = orchestrator.orchestrate(req)
+        self.assertIsNotNone(res["scenario_result"])
+
+        call_names = [c[0] for c in manager.mock_calls]
+        opt_idx = call_names.index("optimize")
+        what_if_idx = call_names.index("what_if_reoptimize")
+        explain_idx = call_names.index("explain_schedule")
+
+        self.assertLess(opt_idx, what_if_idx, "Optimization must run before What-If")
+        self.assertLess(what_if_idx, explain_idx, "What-If must run before Explainability")
+
+    # â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    # 4. Scenario input/output consistency with WhatIfEngine and contract
+    # â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    def test_scenario_input_output_consistency(self) -> None:
+        """
+        Verify that scenario input/output is strictly consistent with WhatIfEngine
+        and AGENT_TOOL_CONTRACT.md Â§7.
+        """
+        req_with_scenario = dict(
+            self.base_request,
+            scenario={
+                "scenario_id": "scen_delay_01",
+                "scenario_type": "TRAIN_DELAY",
+                "base_schedule_id": "sched_base",
+                "affected_task_ids": ["t_01"],
+                "affected_train_ids": ["train_mv_01"],
+                "new_constraints": {"train_delay_minutes": 30},
+                "description": "Train delay 30m",
+            },
+        )
+        result = self.orchestrator.orchestrate(req_with_scenario)
+        scen_res = result["scenario_result"]
+
+        # Conformance to AGENT_TOOL_CONTRACT.md Â§7 output schema:
+        # original_schedule_id, new_schedule, changed_blocks, affected_tasks, affected_trains, metric_differences, explanation, errors
+        self.assertIn("original_schedule_id", scen_res)
+        self.assertIn("new_schedule", scen_res)
+        self.assertIn("changed_blocks", scen_res)
+        self.assertIn("affected_tasks", scen_res)
+        self.assertIn("affected_trains", scen_res)
+        self.assertIn("metric_differences", scen_res)
+        self.assertIn("explanation", scen_res)
+        self.assertIn("errors", scen_res)
+
+        self.assertIsInstance(scen_res["original_schedule_id"], str)
+        self.assertIsInstance(scen_res["changed_blocks"], list)
+        self.assertIsInstance(scen_res["affected_tasks"], list)
+        self.assertIsInstance(scen_res["affected_trains"], list)
+        self.assertIsInstance(scen_res["metric_differences"], dict)
+        self.assertIsInstance(scen_res["explanation"], str)
+        self.assertIsInstance(scen_res["errors"], list)
+
+    # â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    # 5. Emergency flow & call order
+    # â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    def test_emergency_flow(self) -> None:
+        req_with_emergency = dict(
+            self.base_request,
+            emergency_event={
+                "event_id": "emg_test_01",
+                "event_type": "NEW_USFD_DEFECT",
+                "section_id": "sec_01",
+                "severity": "CRITICAL",
+                "detected_at": "2026-11-03T08:00:00Z",
+                "impact_summary": "Urgent rail fracture scan",
+            },
+        )
+        result = self.orchestrator.orchestrate(req_with_emergency)
+
+        self.assertIn("EMERGENCY", result["execution_sequence"])
+        self.assertIsNotNone(result["emergency_result"])
+        self.assertIn("emergency_task", result["emergency_result"])
+
+    # â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    # 6. Engine failure propagation
+    # â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    def test_engine_failure_propagation(self) -> None:
+        # Mock an optimizer engine failure
+        mock_optimizer = MagicMock()
+        mock_optimizer.optimize.side_effect = RuntimeError("CP-SAT solver memory limit exceeded")
+
+        failing_orchestrator = AgentOrchestrator(optimization_engine=mock_optimizer)
+        result = failing_orchestrator.orchestrate(self.base_request)
+
+        self.assertEqual(result["status"], "FAILED")
+        self.assertIn("Engine failure during execution (OPTIMIZE): CP-SAT solver memory limit exceeded", result["errors"][0])
+        self.assertIsNone(result["optimization_result"])
+        # Upstream artifacts should still be preserved
+        self.assertEqual(len(result["criticality_scores"]), 2)
+        self.assertGreaterEqual(len(result["compatibility_candidates"]), 0)
+
+    # â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    # 7. Missing or invalid input handling
+    # â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    def test_missing_input_handling(self) -> None:
+        # 1. Non-dict request
+        res1 = self.orchestrator.orchestrate("not_a_dict")
+        self.assertEqual(res1["status"], "FAILED")
+        self.assertEqual(res1["execution_sequence"], ["VALIDATE"])
+        self.assertIn("Request must be a dictionary.", res1["errors"])
+
+        # 2. Missing tasks
+        res2 = self.orchestrator.orchestrate({
+            "maintenance_windows": [],
+            "resources": [],
+            "train_movements": [],
+        })
+        self.assertEqual(res2["status"], "FAILED")
+        self.assertTrue(any("tasks" in e for e in res2["errors"]))
+
+        # 3. Missing windows
+        res3 = self.orchestrator.orchestrate({
+            "tasks": [],
+            "resources": [],
+            "train_movements": [],
+        })
+        self.assertEqual(res3["status"], "FAILED")
+        self.assertTrue(any("maintenance_windows" in e for e in res3["errors"]))
+
+        # 4. Missing resources
+        res4 = self.orchestrator.orchestrate({
+            "tasks": [],
+            "maintenance_windows": [],
+            "train_movements": [],
+        })
+        self.assertEqual(res4["status"], "FAILED")
+        self.assertTrue(any("resources" in e for e in res4["errors"]))
+
+        # 5. Missing movements
+        res5 = self.orchestrator.orchestrate({
+            "tasks": [],
+            "maintenance_windows": [],
+            "resources": [],
+        })
+        self.assertEqual(res5["status"], "FAILED")
+        self.assertTrue(any("train_movements" in e for e in res5["errors"]))
+
+    # â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    # 8. Deterministic output
+    # â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    def test_deterministic_output(self) -> None:
+        res1 = self.orchestrator.orchestrate(self.base_request)
+        res2 = self.orchestrator.orchestrate(self.base_request)
+
+        self.assertEqual(res1["orchestration_id"], res2["orchestration_id"])
+        self.assertEqual(res1["status"], res2["status"])
+        self.assertEqual(res1["execution_sequence"], res2["execution_sequence"])
+        self.assertEqual(
+            [c["score"] for c in res1["criticality_scores"]],
+            [c["score"] for c in res2["criticality_scores"]],
+        )
+        self.assertEqual(
+            res1["optimization_result"]["selected_task_ids"],
+            res2["optimization_result"]["selected_task_ids"],
+        )
+        self.assertEqual(
+            [e["explanation_id"] for e in res1["explanations"]],
+            [e["explanation_id"] for e in res2["explanations"]],
+        )
+
+    # â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    # 9. Safety decisions remain owned by rule/optimization engines
+    # â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    def test_safety_decisions_remain_owned_by_rule_and_optimization_engines(self) -> None:
+        # Incompatible safety classes: INTERLOCKING and HIGH_SAFETY in same section
+        unsafe_task_1 = _make_task("t_safe_1", section="sec_01", safety_class="INTERLOCKING", duration=60)
+        unsafe_task_2 = _make_task("t_safe_2", section="sec_01", safety_class="HIGH_SAFETY", duration=60)
+
+        req = dict(
+            self.base_request,
+            tasks=[unsafe_task_1, unsafe_task_2],
+        )
+        result = self.orchestrator.orchestrate(req)
+
+        # 1. Compatibility engine detected safety conflict
+        compat_cand = next(
+            (c for c in result["compatibility_candidates"] if set(c["task_ids"]) == {"t_safe_1", "t_safe_2"}),
+            None,
+        )
+        if compat_cand:
+            self.assertFalse(compat_cand["safety_compatibility"])
+            self.assertEqual(compat_cand["status"], "REJECTED")
+
+        # 2. Optimization engine prevented simultaneous scheduling in the same block
+        opt_res = result["optimization_result"]
+        for cand in opt_res.get("schedule_candidates", []):
+            task_ids = set(cand.get("task_ids", []))
+            self.assertFalse(
+                {"t_safe_1", "t_safe_2"}.issubset(task_ids),
+                "Unsafe pair was scheduled together! Safety constraint violated.",
+            )
+
+        # 3. Orchestrator did not alter tasks or hardcode safety bypasses
+        self.assertEqual(unsafe_task_1["safety_class"], "INTERLOCKING")
+        self.assertEqual(unsafe_task_2["safety_class"], "HIGH_SAFETY")
+
+    # â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    # 10. Individual Agent Tools Contract Compliance
+    # â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    def test_agent_tools_contract_compliance(self) -> None:
+        ctx = self.base_request
+
+        # Tool 1: get_maintenance_tasks
+        t_res = tools.get_maintenance_tasks(department_filter=["ENGINEERING"], context=ctx)
+        self.assertEqual(t_res["count"], 1)
+        self.assertEqual(t_res["tasks"][0]["task_id"], "t_01")
+        self.assertEqual(t_res["errors"], [])
+
+        # Tool 2: get_train_movements
+        m_res = tools.get_train_movements(section_ids=["sec_01"], context=ctx)
+        self.assertEqual(m_res["count"], 1)
+        self.assertEqual(m_res["errors"], [])
+
+        # Tool 3: get_resources
+        r_res = tools.get_resources(resource_types=["USFD_VEHICLE"], context=ctx)
+        self.assertEqual(r_res["count"], 1)
+        self.assertEqual(r_res["errors"], [])
+
+        # Tool 4: calculate_criticality
+        c_res = tools.calculate_criticality({
+            "entity_id": "t_01",
+            "severity": "CRITICAL",
+            "urgency": 1.0,
+            "safety_risk": 1.0,
+            "traffic_density": 0.8,
+            "speed_class": "HIGH",
+        })
+        self.assertIsNotNone(c_res["criticality_score"])
+        self.assertEqual(c_res["criticality_score"]["priority_class"], "P1")
+        self.assertEqual(c_res["errors"], [])
+
+        # Tool 5: find_shadow_opportunities
+        s_res = tools.find_shadow_opportunities(context=ctx)
+        self.assertIsInstance(s_res["shadow_block_candidates"], list)
+        self.assertEqual(s_res["errors"], [])
+
+        # Tool 6: optimize_schedule
+        opt_req = {
+            "request_id": "test_opt",
+            "mode": "BALANCED",
+            "tasks": ctx["tasks"],
+            "criticality_scores": [c_res["criticality_score"]],
+            "train_movements": ctx["train_movements"],
+            "resources": ctx["resources"],
+            "maintenance_windows": ctx["maintenance_windows"],
+        }
+        o_res = tools.optimize_schedule(opt_req)
+        self.assertIsNotNone(o_res["result"])
+        self.assertEqual(o_res["errors"], [])
+
+        # Tool 7: run_what_if with current_schedule_id per AGENT_TOOL_CONTRACT.md Â§7
+        w_res = tools.run_what_if(
+            scenario={
+                "scenario_id": "w_test",
+                "scenario_type": "TRAIN_DELAY",
+                "affected_task_ids": ["t_01"],
+                "affected_train_ids": ["mv_01"],
+                "new_constraints": {"train_delay_minutes": 15},
+            },
+            current_schedule_id="sched_01",
+            context=opt_req,
+        )
+        self.assertEqual(w_res["original_schedule_id"], "sched_01")
+        self.assertIn("metric_differences", w_res)
+        self.assertIn("new_schedule", w_res)
+        self.assertIn("changed_blocks", w_res)
+        self.assertIn("affected_tasks", w_res)
+
+        # Tool 8: insert_emergency_task
+        e_res = tools.insert_emergency_task(
+            event={
+                "event_id": "emg_tool_test",
+                "event_type": "TRACK_FAILURE",
+                "section_id": "sec_01",
+                "severity": "CRITICAL",
+                "detected_at": "2026-11-03T08:00:00Z",
+                "impact_summary": "Broken rail",
+            },
+            existing_tasks=ctx["tasks"],
+            train_movements=ctx["train_movements"],
+            resources=ctx["resources"],
+            windows=ctx["maintenance_windows"],
+        )
+        self.assertIn("emergency_task", e_res)
+
+        # Tool 9: explain_schedule
+        exp_res = tools.explain_schedule(
+            entity_type="SCHEDULE",
+            entity_id="test_opt",
+            context={"optimization_result": o_res["result"], "request": opt_req},
+        )
+        self.assertIsNotNone(exp_res["explanation"])
+        self.assertEqual(exp_res["explanation"]["entity_type"], "SCHEDULE")
+
+
+if __name__ == "__main__":
+    unittest.main()
+
+
+
+================================================
+FILE: ai/agents/tools.py
+================================================
+[Binary file]
 
 
 ================================================
@@ -5841,11 +6974,18 @@ class ExplainabilityEngine:
         Derives a deterministic explanation_id from the canonical content
         of the explanation entity and evidence.
         """
+        # Strip non-deterministic execution timing like runtime_ms from the hash payload
+        cleaned_evidence = dict(evidence)
+        if "solver_statistics" in cleaned_evidence and isinstance(cleaned_evidence["solver_statistics"], dict):
+            cleaned_evidence["solver_statistics"] = {
+                k: v for k, v in cleaned_evidence["solver_statistics"].items() if k != "runtime_ms"
+            }
+
         payload = {
             "entity_type": entity_type,
             "entity_id": str(entity_id),
             "reason_codes": sorted(reason_codes),
-            "evidence": evidence,
+            "evidence": cleaned_evidence,
             "deterministic_inputs": deterministic_inputs,
         }
         serialized = json.dumps(payload, sort_keys=True, default=str)
@@ -9137,4 +10277,4336 @@ class TestSyntheticDataIntegration(unittest.TestCase):
 if __name__ == "__main__":
     unittest.main()
 
+
+
+================================================
+FILE: backend/README.md
+================================================
+# Automatic Railway Block Planning Backend
+
+This is the remaining backend layer for the schema already created in `src/db/schema.ts`.
+
+## Routes
+
+GET `/`
+GET `/api/health`
+
+### Corridors
+GET `/api/corridors`
+GET `/api/corridors/:id`
+POST `/api/corridors`
+PATCH `/api/corridors/:id`
+DELETE `/api/corridors/:id`
+
+### Assets
+GET `/api/assets`
+GET `/api/assets/:id`
+POST `/api/assets`
+PATCH `/api/assets/:id`
+
+### Maintenance
+GET `/api/maintenance/tasks`
+GET `/api/maintenance/tasks/all`
+GET `/api/maintenance/tasks/:id`
+POST `/api/maintenance/tasks`
+PATCH `/api/maintenance/tasks/:id`
+POST `/api/maintenance/tasks/:id/recalculate-priority`
+POST `/api/maintenance/tasks/:id/complete`
+
+### Trains / COA
+GET `/api/trains`
+POST `/api/trains`
+GET `/api/trains/forecasts`
+POST `/api/trains/forecasts`
+GET `/api/trains/block-windows`
+POST `/api/trains/block-windows`
+
+### Blocks
+GET `/api/blocks`
+GET `/api/blocks/:id`
+PATCH `/api/blocks/:id/status`
+
+### Planning
+POST `/api/planning/generate`
+GET `/api/planning/runs`
+GET `/api/planning/dashboard`
+
+### Integration simulator
+POST `/api/integration/tms/maintenance`
+POST `/api/integration/smms/maintenance`
+POST `/api/integration/tdms/maintenance`
+POST `/api/integration/coa/train`
+POST `/api/integration/coa/forecast`
+POST `/api/integration/coa/block-window`
+
+## Important
+
+Copy these files into your existing backend. Keep your existing `src/db/schema.ts`, `src/db/index.ts`, `.env`, and `drizzle.config.ts`.
+
+Then run migrations and start:
+
+npm run db:generate
+npm run db:migrate
+npm run dev
+
+The optimizer is intentionally prototype-sized for a hackathon. It prioritizes pending tasks, finds available corridor windows, rejects train conflicts, groups nearby compatible tasks, creates blocks, updates task status, and records optimization metrics.
+
+
+
+================================================
+FILE: backend/drizzle.config.ts
+================================================
+/// <reference types="node" />
+import 'dotenv/config';
+import { defineConfig } from 'drizzle-kit';
+
+export default defineConfig({
+  out: './drizzle',
+  schema: './src/db/schema/index.ts',
+  dialect: 'postgresql',
+  dbCredentials: {
+    url: process.env.DATABASE_URL!,
+  },
+});
+
+
+================================================
+FILE: backend/package-additions.txt
+================================================
+Install:
+npm install express cors helmet dotenv drizzle-orm @neondatabase/serverless redis
+npm install -D typescript tsx drizzle-kit @types/express @types/cors @types/node
+
+Recommended package.json scripts:
+"scripts": {
+  "dev": "tsx watch src/server.ts",
+  "start": "tsx src/server.ts",
+  "db:generate": "drizzle-kit generate",
+  "db:migrate": "drizzle-kit migrate",
+  "db:seed": "tsx src/db/seed.ts"
+}
+
+Run:
+npm run db:generate
+npm run db:migrate
+npm run db:seed
+npm run dev
+
+
+
+================================================
+FILE: backend/package.json
+================================================
+{
+  "name": "backend",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsx watch src/server.ts",
+    "start": "tsx src/server.ts",
+    "db:generate": "drizzle-kit generate",
+    "db:migrate": "drizzle-kit migrate",
+    "db:push": "drizzle-kit push",
+    "db:seed": "tsx src/db/seed.ts"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "devDependencies": {
+    "@types/cors": "^2.8.19",
+    "@types/express": "^5.0.6",
+    "@types/node": "^22.20.2",
+    "@types/pg": "^8.23.1",
+    "drizzle-kit": "^0.31.10",
+    "nodemon": "^3.1.14",
+    "tsx": "^4.23.13",
+    "typescript": "^7.0.2"
+  },
+  "dependencies": {
+    "@neondatabase/serverless": "^1.1.0",
+    "axios": "^1.20.0",
+    "cors": "^2.8.6",
+    "dotenv": "^17.4.2",
+    "drizzle-orm": "^0.45.2",
+    "express": "^5.2.1",
+    "helmet": "^8.3.0",
+    "jsonwebtoken": "^9.0.3",
+    "nanoid": "^6.0.1",
+    "pd": "^0.8.1",
+    "pg": "^8.23.0",
+    "redis": "^6.2.1",
+    "zod": "^4.6.2"
+  }
+}
+
+
+
+================================================
+FILE: backend/tsconfig.json
+================================================
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "module": "CommonJS",
+    "rootDir": "./src",
+    "outDir": "./dist",
+    "paths": {
+      "@schema": ["./src/db/schema/index"],
+      "@schema/*": ["./src/db/schema/*"],
+      "@db": ["./src/db/index"],
+      "@/*": ["./src/*"]
+    },
+    "strict": true,
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true,
+    "resolveJsonModule": true
+  },
+  "include": ["src/**/*"],
+  "exclude": ["node_modules", "dist"]
+}
+
+
+
+================================================
+FILE: backend/drizzle/0000_white_sentry.sql
+================================================
+CREATE TYPE "public"."asset_status" AS ENUM('ACTIVE', 'DEGRADED', 'FAILED', 'UNDER_MAINTENANCE', 'RETIRED');--> statement-breakpoint
+CREATE TYPE "public"."block_status" AS ENUM('DRAFT', 'PROPOSED', 'APPROVED', 'REJECTED', 'EXECUTED', 'CANCELLED');--> statement-breakpoint
+CREATE TYPE "public"."block_window_source" AS ENUM('COA', 'MANUAL', 'FORECAST');--> statement-breakpoint
+CREATE TYPE "public"."congestion_level" AS ENUM('LOW', 'MEDIUM', 'HIGH');--> statement-breakpoint
+CREATE TYPE "public"."defect_severity" AS ENUM('LOW', 'MEDIUM', 'HIGH', 'CRITICAL');--> statement-breakpoint
+CREATE TYPE "public"."defect_status" AS ENUM('OPEN', 'UNDER_REPAIR', 'RESOLVED', 'CLOSED');--> statement-breakpoint
+CREATE TYPE "public"."department_code" AS ENUM('ENG', 'TRD', 'SNT');--> statement-breakpoint
+CREATE TYPE "public"."planning_horizon" AS ENUM('WEEKLY', 'MONTHLY');--> statement-breakpoint
+CREATE TYPE "public"."task_status" AS ENUM('PENDING', 'SCHEDULED', 'IN_PROGRESS', 'COMPLETED', 'CANCELLED');--> statement-breakpoint
+CREATE TYPE "public"."task_type" AS ENUM('PREVENTIVE', 'CORRECTIVE', 'INSPECTION', 'DEFECT_REPAIR', 'EMERGENCY');--> statement-breakpoint
+CREATE TYPE "public"."train_type" AS ENUM('PASSENGER', 'EXPRESS', 'GOODS', 'SPECIAL');--> statement-breakpoint
+CREATE TABLE "departments" (
+	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
+	"code" "department_code" NOT NULL,
+	"name" varchar(100) NOT NULL,
+	"created_at" timestamp with time zone DEFAULT now() NOT NULL,
+	CONSTRAINT "departments_code_unique" UNIQUE("code")
+);
+--> statement-breakpoint
+CREATE TABLE "corridors" (
+	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
+	"code" varchar(50) NOT NULL,
+	"name" varchar(255) NOT NULL,
+	"zone" varchar(100),
+	"division" varchar(100),
+	"start_km" numeric(10, 3) NOT NULL,
+	"end_km" numeric(10, 3) NOT NULL,
+	"status" varchar(30) DEFAULT 'ACTIVE' NOT NULL,
+	"created_at" timestamp with time zone DEFAULT now() NOT NULL,
+	"updated_at" timestamp with time zone DEFAULT now() NOT NULL,
+	CONSTRAINT "corridors_code_unique" UNIQUE("code")
+);
+--> statement-breakpoint
+CREATE TABLE "assets" (
+	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
+	"asset_code" varchar(100) NOT NULL,
+	"asset_type" varchar(100) NOT NULL,
+	"department_id" uuid NOT NULL,
+	"corridor_id" uuid NOT NULL,
+	"location_km" numeric(10, 3) NOT NULL,
+	"criticality_score" integer DEFAULT 50 NOT NULL,
+	"safety_score" integer DEFAULT 50 NOT NULL,
+	"health_score" integer DEFAULT 100 NOT NULL,
+	"installation_date" timestamp with time zone,
+	"last_maintenance_at" timestamp with time zone,
+	"next_maintenance_at" timestamp with time zone,
+	"status" "asset_status" DEFAULT 'ACTIVE' NOT NULL,
+	"created_at" timestamp with time zone DEFAULT now() NOT NULL,
+	"updated_at" timestamp with time zone DEFAULT now() NOT NULL,
+	CONSTRAINT "assets_asset_code_unique" UNIQUE("asset_code")
+);
+--> statement-breakpoint
+CREATE TABLE "defects" (
+	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
+	"defect_code" varchar(100) NOT NULL,
+	"asset_id" uuid NOT NULL,
+	"corridor_id" uuid NOT NULL,
+	"severity" "defect_severity" NOT NULL,
+	"description" text,
+	"detected_at" timestamp with time zone DEFAULT now() NOT NULL,
+	"due_at" timestamp with time zone,
+	"status" "defect_status" DEFAULT 'OPEN' NOT NULL,
+	"safety_impact" integer DEFAULT 0 NOT NULL,
+	"operational_impact" integer DEFAULT 0 NOT NULL,
+	"created_at" timestamp with time zone DEFAULT now() NOT NULL,
+	CONSTRAINT "defects_defect_code_unique" UNIQUE("defect_code")
+);
+--> statement-breakpoint
+CREATE TABLE "maintenance_tasks" (
+	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
+	"task_code" varchar(100) NOT NULL,
+	"asset_id" uuid NOT NULL,
+	"department_id" uuid NOT NULL,
+	"corridor_id" uuid NOT NULL,
+	"defect_id" uuid,
+	"task_type" "task_type" NOT NULL,
+	"description" text,
+	"location_start_km" numeric(10, 3) NOT NULL,
+	"location_end_km" numeric(10, 3) NOT NULL,
+	"criticality_score" integer DEFAULT 50 NOT NULL,
+	"urgency_score" integer DEFAULT 50 NOT NULL,
+	"safety_score" integer DEFAULT 50 NOT NULL,
+	"operational_impact_score" integer DEFAULT 50 NOT NULL,
+	"priority_score" numeric(6, 2) DEFAULT '0' NOT NULL,
+	"estimated_duration_minutes" integer NOT NULL,
+	"overdue_days" integer DEFAULT 0 NOT NULL,
+	"due_at" timestamp with time zone,
+	"status" "task_status" DEFAULT 'PENDING' NOT NULL,
+	"required_block" boolean DEFAULT true NOT NULL,
+	"requires_power_shutdown" boolean DEFAULT false NOT NULL,
+	"created_at" timestamp with time zone DEFAULT now() NOT NULL,
+	"updated_at" timestamp with time zone DEFAULT now() NOT NULL,
+	CONSTRAINT "maintenance_tasks_task_code_unique" UNIQUE("task_code")
+);
+--> statement-breakpoint
+CREATE TABLE "trains" (
+	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
+	"train_number" varchar(50) NOT NULL,
+	"train_name" varchar(255),
+	"train_type" "train_type" NOT NULL,
+	"corridor_id" uuid NOT NULL,
+	"scheduled_arrival" timestamp with time zone NOT NULL,
+	"scheduled_departure" timestamp with time zone NOT NULL,
+	"priority" integer DEFAULT 50 NOT NULL,
+	"is_goods_train" boolean DEFAULT false NOT NULL,
+	"is_critical_service" boolean DEFAULT false NOT NULL,
+	"status" varchar(30) DEFAULT 'SCHEDULED' NOT NULL,
+	"created_at" timestamp with time zone DEFAULT now() NOT NULL
+);
+--> statement-breakpoint
+CREATE TABLE "train_forecasts" (
+	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
+	"corridor_id" uuid NOT NULL,
+	"forecast_date" timestamp with time zone NOT NULL,
+	"time_window_start" timestamp with time zone NOT NULL,
+	"time_window_end" timestamp with time zone NOT NULL,
+	"expected_train_count" integer NOT NULL,
+	"congestion_level" "congestion_level" NOT NULL,
+	"confidence_score" numeric(5, 2),
+	"created_at" timestamp with time zone DEFAULT now() NOT NULL
+);
+--> statement-breakpoint
+CREATE TABLE "block_windows" (
+	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
+	"corridor_id" uuid NOT NULL,
+	"start_at" timestamp with time zone NOT NULL,
+	"end_at" timestamp with time zone NOT NULL,
+	"available_minutes" integer NOT NULL,
+	"source" "block_window_source" DEFAULT 'COA' NOT NULL,
+	"status" varchar(30) DEFAULT 'AVAILABLE' NOT NULL,
+	"created_at" timestamp with time zone DEFAULT now() NOT NULL
+);
+--> statement-breakpoint
+CREATE TABLE "blocks" (
+	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
+	"block_code" varchar(100) NOT NULL,
+	"corridor_id" uuid NOT NULL,
+	"start_at" timestamp with time zone NOT NULL,
+	"end_at" timestamp with time zone NOT NULL,
+	"duration_minutes" integer NOT NULL,
+	"status" "block_status" DEFAULT 'PROPOSED' NOT NULL,
+	"planning_horizon" "planning_horizon" NOT NULL,
+	"optimization_score" numeric(6, 2),
+	"baseline_duration_minutes" integer,
+	"saved_minutes" integer DEFAULT 0 NOT NULL,
+	"approved_by" varchar(255),
+	"approved_at" timestamp with time zone,
+	"created_at" timestamp with time zone DEFAULT now() NOT NULL,
+	"updated_at" timestamp with time zone DEFAULT now() NOT NULL,
+	CONSTRAINT "blocks_block_code_unique" UNIQUE("block_code")
+);
+--> statement-breakpoint
+CREATE TABLE "block_tasks" (
+	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
+	"block_id" uuid NOT NULL,
+	"maintenance_task_id" uuid NOT NULL,
+	"department_id" uuid NOT NULL,
+	"start_at" timestamp with time zone,
+	"end_at" timestamp with time zone,
+	"status" varchar(30) DEFAULT 'SCHEDULED' NOT NULL
+);
+--> statement-breakpoint
+CREATE TABLE "optimization_runs" (
+	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
+	"run_code" varchar(100) NOT NULL,
+	"horizon" "planning_horizon" NOT NULL,
+	"start_date" timestamp with time zone NOT NULL,
+	"end_date" timestamp with time zone NOT NULL,
+	"tasks_considered" integer DEFAULT 0 NOT NULL,
+	"tasks_scheduled" integer DEFAULT 0 NOT NULL,
+	"blocks_generated" integer DEFAULT 0 NOT NULL,
+	"total_block_minutes" integer DEFAULT 0 NOT NULL,
+	"baseline_block_minutes" integer DEFAULT 0 NOT NULL,
+	"estimated_savings_minutes" integer DEFAULT 0 NOT NULL,
+	"optimization_score" numeric(6, 2),
+	"status" varchar(30) DEFAULT 'COMPLETED' NOT NULL,
+	"created_at" timestamp with time zone DEFAULT now() NOT NULL,
+	CONSTRAINT "optimization_runs_run_code_unique" UNIQUE("run_code")
+);
+--> statement-breakpoint
+CREATE TABLE "audit_logs" (
+	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
+	"entity_type" varchar(100) NOT NULL,
+	"entity_id" uuid,
+	"action" varchar(100) NOT NULL,
+	"old_value" text,
+	"new_value" text,
+	"performed_by" varchar(255),
+	"created_at" timestamp with time zone DEFAULT now() NOT NULL
+);
+--> statement-breakpoint
+ALTER TABLE "assets" ADD CONSTRAINT "assets_department_id_departments_id_fk" FOREIGN KEY ("department_id") REFERENCES "public"."departments"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "assets" ADD CONSTRAINT "assets_corridor_id_corridors_id_fk" FOREIGN KEY ("corridor_id") REFERENCES "public"."corridors"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "defects" ADD CONSTRAINT "defects_asset_id_assets_id_fk" FOREIGN KEY ("asset_id") REFERENCES "public"."assets"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "defects" ADD CONSTRAINT "defects_corridor_id_corridors_id_fk" FOREIGN KEY ("corridor_id") REFERENCES "public"."corridors"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "maintenance_tasks" ADD CONSTRAINT "maintenance_tasks_asset_id_assets_id_fk" FOREIGN KEY ("asset_id") REFERENCES "public"."assets"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "maintenance_tasks" ADD CONSTRAINT "maintenance_tasks_department_id_departments_id_fk" FOREIGN KEY ("department_id") REFERENCES "public"."departments"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "maintenance_tasks" ADD CONSTRAINT "maintenance_tasks_corridor_id_corridors_id_fk" FOREIGN KEY ("corridor_id") REFERENCES "public"."corridors"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "maintenance_tasks" ADD CONSTRAINT "maintenance_tasks_defect_id_defects_id_fk" FOREIGN KEY ("defect_id") REFERENCES "public"."defects"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "trains" ADD CONSTRAINT "trains_corridor_id_corridors_id_fk" FOREIGN KEY ("corridor_id") REFERENCES "public"."corridors"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "train_forecasts" ADD CONSTRAINT "train_forecasts_corridor_id_corridors_id_fk" FOREIGN KEY ("corridor_id") REFERENCES "public"."corridors"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "block_windows" ADD CONSTRAINT "block_windows_corridor_id_corridors_id_fk" FOREIGN KEY ("corridor_id") REFERENCES "public"."corridors"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "blocks" ADD CONSTRAINT "blocks_corridor_id_corridors_id_fk" FOREIGN KEY ("corridor_id") REFERENCES "public"."corridors"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "block_tasks" ADD CONSTRAINT "block_tasks_block_id_blocks_id_fk" FOREIGN KEY ("block_id") REFERENCES "public"."blocks"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "block_tasks" ADD CONSTRAINT "block_tasks_maintenance_task_id_maintenance_tasks_id_fk" FOREIGN KEY ("maintenance_task_id") REFERENCES "public"."maintenance_tasks"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "block_tasks" ADD CONSTRAINT "block_tasks_department_id_departments_id_fk" FOREIGN KEY ("department_id") REFERENCES "public"."departments"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
+CREATE UNIQUE INDEX "corridors_code_idx" ON "corridors" USING btree ("code");--> statement-breakpoint
+CREATE INDEX "assets_department_idx" ON "assets" USING btree ("department_id");--> statement-breakpoint
+CREATE INDEX "assets_corridor_idx" ON "assets" USING btree ("corridor_id");--> statement-breakpoint
+CREATE INDEX "assets_status_idx" ON "assets" USING btree ("status");--> statement-breakpoint
+CREATE INDEX "defects_asset_idx" ON "defects" USING btree ("asset_id");--> statement-breakpoint
+CREATE INDEX "defects_corridor_idx" ON "defects" USING btree ("corridor_id");--> statement-breakpoint
+CREATE INDEX "defects_severity_idx" ON "defects" USING btree ("severity");--> statement-breakpoint
+CREATE INDEX "defects_status_idx" ON "defects" USING btree ("status");--> statement-breakpoint
+CREATE INDEX "tasks_corridor_idx" ON "maintenance_tasks" USING btree ("corridor_id");--> statement-breakpoint
+CREATE INDEX "tasks_department_idx" ON "maintenance_tasks" USING btree ("department_id");--> statement-breakpoint
+CREATE INDEX "tasks_status_idx" ON "maintenance_tasks" USING btree ("status");--> statement-breakpoint
+CREATE INDEX "tasks_priority_idx" ON "maintenance_tasks" USING btree ("priority_score");--> statement-breakpoint
+CREATE INDEX "tasks_due_idx" ON "maintenance_tasks" USING btree ("due_at");--> statement-breakpoint
+CREATE INDEX "trains_corridor_idx" ON "trains" USING btree ("corridor_id");--> statement-breakpoint
+CREATE INDEX "trains_arrival_idx" ON "trains" USING btree ("scheduled_arrival");--> statement-breakpoint
+CREATE INDEX "forecast_corridor_idx" ON "train_forecasts" USING btree ("corridor_id");--> statement-breakpoint
+CREATE INDEX "forecast_date_idx" ON "train_forecasts" USING btree ("forecast_date");--> statement-breakpoint
+CREATE INDEX "block_windows_corridor_idx" ON "block_windows" USING btree ("corridor_id");--> statement-breakpoint
+CREATE INDEX "block_windows_start_idx" ON "block_windows" USING btree ("start_at");--> statement-breakpoint
+CREATE INDEX "blocks_corridor_idx" ON "blocks" USING btree ("corridor_id");--> statement-breakpoint
+CREATE INDEX "blocks_start_idx" ON "blocks" USING btree ("start_at");--> statement-breakpoint
+CREATE INDEX "blocks_status_idx" ON "blocks" USING btree ("status");--> statement-breakpoint
+CREATE INDEX "block_tasks_block_idx" ON "block_tasks" USING btree ("block_id");--> statement-breakpoint
+CREATE INDEX "block_tasks_task_idx" ON "block_tasks" USING btree ("maintenance_task_id");
+
+
+================================================
+FILE: backend/drizzle/meta/0000_snapshot.json
+================================================
+{
+  "id": "12c70714-ff06-4ae8-9268-976554e9e893",
+  "prevId": "00000000-0000-0000-0000-000000000000",
+  "version": "7",
+  "dialect": "postgresql",
+  "tables": {
+    "public.departments": {
+      "name": "departments",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "code": {
+          "name": "code",
+          "type": "department_code",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "name": {
+          "name": "name",
+          "type": "varchar(100)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "departments_code_unique": {
+          "name": "departments_code_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "code"
+          ]
+        }
+      },
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.corridors": {
+      "name": "corridors",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "code": {
+          "name": "code",
+          "type": "varchar(50)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "name": {
+          "name": "name",
+          "type": "varchar(255)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "zone": {
+          "name": "zone",
+          "type": "varchar(100)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "division": {
+          "name": "division",
+          "type": "varchar(100)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "start_km": {
+          "name": "start_km",
+          "type": "numeric(10, 3)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "end_km": {
+          "name": "end_km",
+          "type": "numeric(10, 3)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "status": {
+          "name": "status",
+          "type": "varchar(30)",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'ACTIVE'"
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "corridors_code_idx": {
+          "name": "corridors_code_idx",
+          "columns": [
+            {
+              "expression": "code",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": true,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "corridors_code_unique": {
+          "name": "corridors_code_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "code"
+          ]
+        }
+      },
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.assets": {
+      "name": "assets",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "asset_code": {
+          "name": "asset_code",
+          "type": "varchar(100)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "asset_type": {
+          "name": "asset_type",
+          "type": "varchar(100)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "department_id": {
+          "name": "department_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "corridor_id": {
+          "name": "corridor_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "location_km": {
+          "name": "location_km",
+          "type": "numeric(10, 3)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "criticality_score": {
+          "name": "criticality_score",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 50
+        },
+        "safety_score": {
+          "name": "safety_score",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 50
+        },
+        "health_score": {
+          "name": "health_score",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 100
+        },
+        "installation_date": {
+          "name": "installation_date",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "last_maintenance_at": {
+          "name": "last_maintenance_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "next_maintenance_at": {
+          "name": "next_maintenance_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "status": {
+          "name": "status",
+          "type": "asset_status",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'ACTIVE'"
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "assets_department_idx": {
+          "name": "assets_department_idx",
+          "columns": [
+            {
+              "expression": "department_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "assets_corridor_idx": {
+          "name": "assets_corridor_idx",
+          "columns": [
+            {
+              "expression": "corridor_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "assets_status_idx": {
+          "name": "assets_status_idx",
+          "columns": [
+            {
+              "expression": "status",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "assets_department_id_departments_id_fk": {
+          "name": "assets_department_id_departments_id_fk",
+          "tableFrom": "assets",
+          "tableTo": "departments",
+          "columnsFrom": [
+            "department_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "assets_corridor_id_corridors_id_fk": {
+          "name": "assets_corridor_id_corridors_id_fk",
+          "tableFrom": "assets",
+          "tableTo": "corridors",
+          "columnsFrom": [
+            "corridor_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "assets_asset_code_unique": {
+          "name": "assets_asset_code_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "asset_code"
+          ]
+        }
+      },
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.defects": {
+      "name": "defects",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "defect_code": {
+          "name": "defect_code",
+          "type": "varchar(100)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "asset_id": {
+          "name": "asset_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "corridor_id": {
+          "name": "corridor_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "severity": {
+          "name": "severity",
+          "type": "defect_severity",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "description": {
+          "name": "description",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "detected_at": {
+          "name": "detected_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "due_at": {
+          "name": "due_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "status": {
+          "name": "status",
+          "type": "defect_status",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'OPEN'"
+        },
+        "safety_impact": {
+          "name": "safety_impact",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
+        },
+        "operational_impact": {
+          "name": "operational_impact",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "defects_asset_idx": {
+          "name": "defects_asset_idx",
+          "columns": [
+            {
+              "expression": "asset_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "defects_corridor_idx": {
+          "name": "defects_corridor_idx",
+          "columns": [
+            {
+              "expression": "corridor_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "defects_severity_idx": {
+          "name": "defects_severity_idx",
+          "columns": [
+            {
+              "expression": "severity",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "defects_status_idx": {
+          "name": "defects_status_idx",
+          "columns": [
+            {
+              "expression": "status",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "defects_asset_id_assets_id_fk": {
+          "name": "defects_asset_id_assets_id_fk",
+          "tableFrom": "defects",
+          "tableTo": "assets",
+          "columnsFrom": [
+            "asset_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "defects_corridor_id_corridors_id_fk": {
+          "name": "defects_corridor_id_corridors_id_fk",
+          "tableFrom": "defects",
+          "tableTo": "corridors",
+          "columnsFrom": [
+            "corridor_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "defects_defect_code_unique": {
+          "name": "defects_defect_code_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "defect_code"
+          ]
+        }
+      },
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.maintenance_tasks": {
+      "name": "maintenance_tasks",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "task_code": {
+          "name": "task_code",
+          "type": "varchar(100)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "asset_id": {
+          "name": "asset_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "department_id": {
+          "name": "department_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "corridor_id": {
+          "name": "corridor_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "defect_id": {
+          "name": "defect_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "task_type": {
+          "name": "task_type",
+          "type": "task_type",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "description": {
+          "name": "description",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "location_start_km": {
+          "name": "location_start_km",
+          "type": "numeric(10, 3)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "location_end_km": {
+          "name": "location_end_km",
+          "type": "numeric(10, 3)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "criticality_score": {
+          "name": "criticality_score",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 50
+        },
+        "urgency_score": {
+          "name": "urgency_score",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 50
+        },
+        "safety_score": {
+          "name": "safety_score",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 50
+        },
+        "operational_impact_score": {
+          "name": "operational_impact_score",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 50
+        },
+        "priority_score": {
+          "name": "priority_score",
+          "type": "numeric(6, 2)",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'0'"
+        },
+        "estimated_duration_minutes": {
+          "name": "estimated_duration_minutes",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "overdue_days": {
+          "name": "overdue_days",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
+        },
+        "due_at": {
+          "name": "due_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "status": {
+          "name": "status",
+          "type": "task_status",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'PENDING'"
+        },
+        "required_block": {
+          "name": "required_block",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": true
+        },
+        "requires_power_shutdown": {
+          "name": "requires_power_shutdown",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "tasks_corridor_idx": {
+          "name": "tasks_corridor_idx",
+          "columns": [
+            {
+              "expression": "corridor_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "tasks_department_idx": {
+          "name": "tasks_department_idx",
+          "columns": [
+            {
+              "expression": "department_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "tasks_status_idx": {
+          "name": "tasks_status_idx",
+          "columns": [
+            {
+              "expression": "status",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "tasks_priority_idx": {
+          "name": "tasks_priority_idx",
+          "columns": [
+            {
+              "expression": "priority_score",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "tasks_due_idx": {
+          "name": "tasks_due_idx",
+          "columns": [
+            {
+              "expression": "due_at",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "maintenance_tasks_asset_id_assets_id_fk": {
+          "name": "maintenance_tasks_asset_id_assets_id_fk",
+          "tableFrom": "maintenance_tasks",
+          "tableTo": "assets",
+          "columnsFrom": [
+            "asset_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "maintenance_tasks_department_id_departments_id_fk": {
+          "name": "maintenance_tasks_department_id_departments_id_fk",
+          "tableFrom": "maintenance_tasks",
+          "tableTo": "departments",
+          "columnsFrom": [
+            "department_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "maintenance_tasks_corridor_id_corridors_id_fk": {
+          "name": "maintenance_tasks_corridor_id_corridors_id_fk",
+          "tableFrom": "maintenance_tasks",
+          "tableTo": "corridors",
+          "columnsFrom": [
+            "corridor_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "maintenance_tasks_defect_id_defects_id_fk": {
+          "name": "maintenance_tasks_defect_id_defects_id_fk",
+          "tableFrom": "maintenance_tasks",
+          "tableTo": "defects",
+          "columnsFrom": [
+            "defect_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "maintenance_tasks_task_code_unique": {
+          "name": "maintenance_tasks_task_code_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "task_code"
+          ]
+        }
+      },
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.trains": {
+      "name": "trains",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "train_number": {
+          "name": "train_number",
+          "type": "varchar(50)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "train_name": {
+          "name": "train_name",
+          "type": "varchar(255)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "train_type": {
+          "name": "train_type",
+          "type": "train_type",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "corridor_id": {
+          "name": "corridor_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "scheduled_arrival": {
+          "name": "scheduled_arrival",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "scheduled_departure": {
+          "name": "scheduled_departure",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "priority": {
+          "name": "priority",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 50
+        },
+        "is_goods_train": {
+          "name": "is_goods_train",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": false
+        },
+        "is_critical_service": {
+          "name": "is_critical_service",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": false
+        },
+        "status": {
+          "name": "status",
+          "type": "varchar(30)",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'SCHEDULED'"
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "trains_corridor_idx": {
+          "name": "trains_corridor_idx",
+          "columns": [
+            {
+              "expression": "corridor_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "trains_arrival_idx": {
+          "name": "trains_arrival_idx",
+          "columns": [
+            {
+              "expression": "scheduled_arrival",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "trains_corridor_id_corridors_id_fk": {
+          "name": "trains_corridor_id_corridors_id_fk",
+          "tableFrom": "trains",
+          "tableTo": "corridors",
+          "columnsFrom": [
+            "corridor_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.train_forecasts": {
+      "name": "train_forecasts",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "corridor_id": {
+          "name": "corridor_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "forecast_date": {
+          "name": "forecast_date",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "time_window_start": {
+          "name": "time_window_start",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "time_window_end": {
+          "name": "time_window_end",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "expected_train_count": {
+          "name": "expected_train_count",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "congestion_level": {
+          "name": "congestion_level",
+          "type": "congestion_level",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "confidence_score": {
+          "name": "confidence_score",
+          "type": "numeric(5, 2)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "forecast_corridor_idx": {
+          "name": "forecast_corridor_idx",
+          "columns": [
+            {
+              "expression": "corridor_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "forecast_date_idx": {
+          "name": "forecast_date_idx",
+          "columns": [
+            {
+              "expression": "forecast_date",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "train_forecasts_corridor_id_corridors_id_fk": {
+          "name": "train_forecasts_corridor_id_corridors_id_fk",
+          "tableFrom": "train_forecasts",
+          "tableTo": "corridors",
+          "columnsFrom": [
+            "corridor_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.block_windows": {
+      "name": "block_windows",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "corridor_id": {
+          "name": "corridor_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "start_at": {
+          "name": "start_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "end_at": {
+          "name": "end_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "available_minutes": {
+          "name": "available_minutes",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "source": {
+          "name": "source",
+          "type": "block_window_source",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'COA'"
+        },
+        "status": {
+          "name": "status",
+          "type": "varchar(30)",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'AVAILABLE'"
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "block_windows_corridor_idx": {
+          "name": "block_windows_corridor_idx",
+          "columns": [
+            {
+              "expression": "corridor_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "block_windows_start_idx": {
+          "name": "block_windows_start_idx",
+          "columns": [
+            {
+              "expression": "start_at",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "block_windows_corridor_id_corridors_id_fk": {
+          "name": "block_windows_corridor_id_corridors_id_fk",
+          "tableFrom": "block_windows",
+          "tableTo": "corridors",
+          "columnsFrom": [
+            "corridor_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.blocks": {
+      "name": "blocks",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "block_code": {
+          "name": "block_code",
+          "type": "varchar(100)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "corridor_id": {
+          "name": "corridor_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "start_at": {
+          "name": "start_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "end_at": {
+          "name": "end_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "duration_minutes": {
+          "name": "duration_minutes",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "status": {
+          "name": "status",
+          "type": "block_status",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'PROPOSED'"
+        },
+        "planning_horizon": {
+          "name": "planning_horizon",
+          "type": "planning_horizon",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "optimization_score": {
+          "name": "optimization_score",
+          "type": "numeric(6, 2)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "baseline_duration_minutes": {
+          "name": "baseline_duration_minutes",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "saved_minutes": {
+          "name": "saved_minutes",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
+        },
+        "approved_by": {
+          "name": "approved_by",
+          "type": "varchar(255)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "approved_at": {
+          "name": "approved_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "blocks_corridor_idx": {
+          "name": "blocks_corridor_idx",
+          "columns": [
+            {
+              "expression": "corridor_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "blocks_start_idx": {
+          "name": "blocks_start_idx",
+          "columns": [
+            {
+              "expression": "start_at",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "blocks_status_idx": {
+          "name": "blocks_status_idx",
+          "columns": [
+            {
+              "expression": "status",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "blocks_corridor_id_corridors_id_fk": {
+          "name": "blocks_corridor_id_corridors_id_fk",
+          "tableFrom": "blocks",
+          "tableTo": "corridors",
+          "columnsFrom": [
+            "corridor_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "blocks_block_code_unique": {
+          "name": "blocks_block_code_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "block_code"
+          ]
+        }
+      },
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.block_tasks": {
+      "name": "block_tasks",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "block_id": {
+          "name": "block_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "maintenance_task_id": {
+          "name": "maintenance_task_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "department_id": {
+          "name": "department_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "start_at": {
+          "name": "start_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "end_at": {
+          "name": "end_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "status": {
+          "name": "status",
+          "type": "varchar(30)",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'SCHEDULED'"
+        }
+      },
+      "indexes": {
+        "block_tasks_block_idx": {
+          "name": "block_tasks_block_idx",
+          "columns": [
+            {
+              "expression": "block_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "block_tasks_task_idx": {
+          "name": "block_tasks_task_idx",
+          "columns": [
+            {
+              "expression": "maintenance_task_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "block_tasks_block_id_blocks_id_fk": {
+          "name": "block_tasks_block_id_blocks_id_fk",
+          "tableFrom": "block_tasks",
+          "tableTo": "blocks",
+          "columnsFrom": [
+            "block_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "block_tasks_maintenance_task_id_maintenance_tasks_id_fk": {
+          "name": "block_tasks_maintenance_task_id_maintenance_tasks_id_fk",
+          "tableFrom": "block_tasks",
+          "tableTo": "maintenance_tasks",
+          "columnsFrom": [
+            "maintenance_task_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "block_tasks_department_id_departments_id_fk": {
+          "name": "block_tasks_department_id_departments_id_fk",
+          "tableFrom": "block_tasks",
+          "tableTo": "departments",
+          "columnsFrom": [
+            "department_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.optimization_runs": {
+      "name": "optimization_runs",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "run_code": {
+          "name": "run_code",
+          "type": "varchar(100)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "horizon": {
+          "name": "horizon",
+          "type": "planning_horizon",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "start_date": {
+          "name": "start_date",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "end_date": {
+          "name": "end_date",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "tasks_considered": {
+          "name": "tasks_considered",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
+        },
+        "tasks_scheduled": {
+          "name": "tasks_scheduled",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
+        },
+        "blocks_generated": {
+          "name": "blocks_generated",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
+        },
+        "total_block_minutes": {
+          "name": "total_block_minutes",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
+        },
+        "baseline_block_minutes": {
+          "name": "baseline_block_minutes",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
+        },
+        "estimated_savings_minutes": {
+          "name": "estimated_savings_minutes",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
+        },
+        "optimization_score": {
+          "name": "optimization_score",
+          "type": "numeric(6, 2)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "status": {
+          "name": "status",
+          "type": "varchar(30)",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'COMPLETED'"
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "optimization_runs_run_code_unique": {
+          "name": "optimization_runs_run_code_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "run_code"
+          ]
+        }
+      },
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.audit_logs": {
+      "name": "audit_logs",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "entity_type": {
+          "name": "entity_type",
+          "type": "varchar(100)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "entity_id": {
+          "name": "entity_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "action": {
+          "name": "action",
+          "type": "varchar(100)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "old_value": {
+          "name": "old_value",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "new_value": {
+          "name": "new_value",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "performed_by": {
+          "name": "performed_by",
+          "type": "varchar(255)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    }
+  },
+  "enums": {
+    "public.asset_status": {
+      "name": "asset_status",
+      "schema": "public",
+      "values": [
+        "ACTIVE",
+        "DEGRADED",
+        "FAILED",
+        "UNDER_MAINTENANCE",
+        "RETIRED"
+      ]
+    },
+    "public.block_status": {
+      "name": "block_status",
+      "schema": "public",
+      "values": [
+        "DRAFT",
+        "PROPOSED",
+        "APPROVED",
+        "REJECTED",
+        "EXECUTED",
+        "CANCELLED"
+      ]
+    },
+    "public.block_window_source": {
+      "name": "block_window_source",
+      "schema": "public",
+      "values": [
+        "COA",
+        "MANUAL",
+        "FORECAST"
+      ]
+    },
+    "public.congestion_level": {
+      "name": "congestion_level",
+      "schema": "public",
+      "values": [
+        "LOW",
+        "MEDIUM",
+        "HIGH"
+      ]
+    },
+    "public.defect_severity": {
+      "name": "defect_severity",
+      "schema": "public",
+      "values": [
+        "LOW",
+        "MEDIUM",
+        "HIGH",
+        "CRITICAL"
+      ]
+    },
+    "public.defect_status": {
+      "name": "defect_status",
+      "schema": "public",
+      "values": [
+        "OPEN",
+        "UNDER_REPAIR",
+        "RESOLVED",
+        "CLOSED"
+      ]
+    },
+    "public.department_code": {
+      "name": "department_code",
+      "schema": "public",
+      "values": [
+        "ENG",
+        "TRD",
+        "SNT"
+      ]
+    },
+    "public.planning_horizon": {
+      "name": "planning_horizon",
+      "schema": "public",
+      "values": [
+        "WEEKLY",
+        "MONTHLY"
+      ]
+    },
+    "public.task_status": {
+      "name": "task_status",
+      "schema": "public",
+      "values": [
+        "PENDING",
+        "SCHEDULED",
+        "IN_PROGRESS",
+        "COMPLETED",
+        "CANCELLED"
+      ]
+    },
+    "public.task_type": {
+      "name": "task_type",
+      "schema": "public",
+      "values": [
+        "PREVENTIVE",
+        "CORRECTIVE",
+        "INSPECTION",
+        "DEFECT_REPAIR",
+        "EMERGENCY"
+      ]
+    },
+    "public.train_type": {
+      "name": "train_type",
+      "schema": "public",
+      "values": [
+        "PASSENGER",
+        "EXPRESS",
+        "GOODS",
+        "SPECIAL"
+      ]
+    }
+  },
+  "schemas": {},
+  "sequences": {},
+  "roles": {},
+  "policies": {},
+  "views": {},
+  "_meta": {
+    "columns": {},
+    "schemas": {},
+    "tables": {}
+  }
+}
+
+
+================================================
+FILE: backend/drizzle/meta/_journal.json
+================================================
+{
+  "version": "7",
+  "dialect": "postgresql",
+  "entries": [
+    {
+      "idx": 0,
+      "version": "7",
+      "when": 1789202452138,
+      "tag": "0000_white_sentry",
+      "breakpoints": true
+    }
+  ]
+}
+
+
+================================================
+FILE: backend/src/app.ts
+================================================
+import express from "express";
+import cors from "cors";
+import helmet from "helmet";
+import { errorHandler } from "./middleware/error";
+import healthRoutes from "./modules/health/routes";
+import assetRoutes from "./modules/assets/routes";
+import corridorRoutes from "./modules/corridors/routes";
+import maintenanceRoutes from "./modules/maintenance/routes";
+import trainRoutes from "./modules/trains/routes";
+import blockRoutes from "./modules/blocks/routes";
+import planningRoutes from "./modules/planning/routes";
+import integrationRoutes from "./modules/integration/routes";
+
+const app = express();
+
+app.use(helmet());
+app.use(cors());
+app.use(express.json());
+
+// Root health & info
+app.get("/", (_req, res) => {
+  res.json({
+    name: "Automatic Railway Block Planning API",
+    version: "1.0.0",
+    status: "running",
+    docs: "/README.md",
+    timestamp: new Date().toISOString(),
+  });
+});
+
+// Register module routes
+app.use("/api/health", healthRoutes);
+app.use("/api/assets", assetRoutes);
+app.use("/api/corridors", corridorRoutes);
+app.use("/api/maintenance", maintenanceRoutes);
+app.use("/api/trains", trainRoutes);
+app.use("/api/blocks", blockRoutes);
+app.use("/api/planning", planningRoutes);
+app.use("/api/integration", integrationRoutes);
+
+// Catch-all 404 handler for unknown routes
+app.use((_req, res) => {
+  res.status(404).json({
+    success: false,
+    error: "Route not found",
+  });
+});
+
+// Centralized error handler
+app.use(errorHandler);
+
+export default app;
+
+
+
+================================================
+FILE: backend/src/server.ts
+================================================
+import "dotenv/config";
+import app from "./app";
+
+const port = Number(process.env.PORT ?? 5000);
+
+app.listen(port, () => {
+  console.log(`ðŸš† Railway Block Planning API running on http://localhost:${port}`);
+});
+
+
+
+================================================
+FILE: backend/src/db/index.ts
+================================================
+import { neon } from "@neondatabase/serverless";
+import { drizzle } from "drizzle-orm/neon-http";
+import * as dotenv from "dotenv";
+import * as schema from "./schema";
+
+dotenv.config();
+
+if (!process.env.DATABASE_URL) {
+  throw new Error("DATABASE_URL environment variable is missing.");
+}
+
+const sql = neon(process.env.DATABASE_URL);
+
+export const db = drizzle({ client: sql, schema });
+
+export * from "./schema";
+
+
+================================================
+FILE: backend/src/db/seed.ts
+================================================
+Error reading file with 'cp1252': 'charmap' codec can't decode byte 0x9d in position 12224: character maps to <undefined>
+
+
+================================================
+FILE: backend/src/db/schema/assets.ts
+================================================
+import {
+  pgTable,
+  uuid,
+  varchar,
+  text,
+  integer,
+  boolean,
+  timestamp,
+  numeric,
+  pgEnum,
+  index,
+  uniqueIndex,
+} from "drizzle-orm/pg-core";
+
+import {departments} from "./departments"
+import {corridors} from "./corridors"
+import {assetStatusEnum} from "./enums"
+
+
+export const assets = pgTable(
+  "assets",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+
+    assetCode: varchar("asset_code", {
+      length: 100,
+    }).notNull().unique(),
+
+    assetType: varchar("asset_type", {
+      length: 100,
+    }).notNull(),
+
+    departmentId: uuid("department_id")
+      .notNull()
+      .references(() => departments.id),
+
+    corridorId: uuid("corridor_id")
+      .notNull()
+      .references(() => corridors.id),
+
+    locationKm: numeric("location_km", {
+      precision: 10,
+      scale: 3,
+    }).notNull(),
+
+    criticalityScore: integer("criticality_score")
+      .default(50)
+      .notNull(),
+
+    safetyScore: integer("safety_score")
+      .default(50)
+      .notNull(),
+
+    healthScore: integer("health_score")
+      .default(100)
+      .notNull(),
+
+    installationDate: timestamp("installation_date", {
+      withTimezone: true,
+    }),
+
+    lastMaintenanceAt: timestamp("last_maintenance_at", {
+      withTimezone: true,
+    }),
+
+    nextMaintenanceAt: timestamp("next_maintenance_at", {
+      withTimezone: true,
+    }),
+
+    status: assetStatusEnum("status")
+      .default("ACTIVE")
+      .notNull(),
+
+    createdAt: timestamp("created_at", {
+      withTimezone: true,
+    })
+      .defaultNow()
+      .notNull(),
+
+    updatedAt: timestamp("updated_at", {
+      withTimezone: true,
+    })
+      .defaultNow()
+      .notNull(),
+  },
+  (table) => ({
+    departmentIdx: index("assets_department_idx").on(table.departmentId),
+    corridorIdx: index("assets_corridor_idx").on(table.corridorId),
+    statusIdx: index("assets_status_idx").on(table.status),
+  }),
+);
+
+
+================================================
+FILE: backend/src/db/schema/auditLogs.ts
+================================================
+import { pgTable, uuid, varchar, text, timestamp } from "drizzle-orm/pg-core";
+
+export const auditLogs = pgTable(
+  "audit_logs",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    entityType: varchar("entity_type", { length: 100 }).notNull(),
+    entityId: uuid("entity_id"),
+    action: varchar("action", { length: 100 }).notNull(),
+    oldValue: text("old_value"),
+    newValue: text("new_value"),
+    performedBy: varchar("performed_by", { length: 255 }),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+  }
+);
+
+
+================================================
+FILE: backend/src/db/schema/blocks.ts
+================================================
+import { pgTable, uuid, varchar, numeric, integer, timestamp, index } from "drizzle-orm/pg-core";
+import { relations } from "drizzle-orm";
+import { blockStatusEnum, planningHorizonEnum } from "./enums";
+import { corridors } from "./corridors";
+import { blockTasks } from "./blockTasks";
+
+export const blocks = pgTable(
+  "blocks",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    blockCode: varchar("block_code", { length: 100 }).notNull().unique(),
+    corridorId: uuid("corridor_id").notNull().references(() => corridors.id),
+    startAt: timestamp("start_at", { withTimezone: true }).notNull(),
+    endAt: timestamp("end_at", { withTimezone: true }).notNull(),
+    durationMinutes: integer("duration_minutes").notNull(),
+    status: blockStatusEnum("status").default("PROPOSED").notNull(),
+    planningHorizon: planningHorizonEnum("planning_horizon").notNull(),
+    optimizationScore: numeric("optimization_score", { precision: 6, scale: 2 }),
+    baselineDurationMinutes: integer("baseline_duration_minutes"),
+    savedMinutes: integer("saved_minutes").default(0).notNull(),
+    approvedBy: varchar("approved_by", { length: 255 }),
+    approvedAt: timestamp("approved_at", { withTimezone: true }),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
+  },
+  (table) => ({
+    corridorIdx: index("blocks_corridor_idx").on(table.corridorId),
+    startIdx: index("blocks_start_idx").on(table.startAt),
+    statusIdx: index("blocks_status_idx").on(table.status),
+  })
+);
+
+export const blockRelations = relations(blocks, ({ one, many }) => ({
+  corridor: one(corridors, { fields: [blocks.corridorId], references: [corridors.id] }),
+  blockTasks: many(blockTasks),
+}));
+
+
+================================================
+FILE: backend/src/db/schema/blockTasks.ts
+================================================
+import { pgTable, uuid, varchar, timestamp, index } from "drizzle-orm/pg-core";
+import { relations } from "drizzle-orm";
+import { blocks } from "./blocks";
+import { maintenanceTasks } from "./maintenanceTasks";
+import { departments } from "./departments";
+
+export const blockTasks = pgTable(
+  "block_tasks",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    blockId: uuid("block_id").notNull().references(() => blocks.id, { onDelete: "cascade" }),
+    maintenanceTaskId: uuid("maintenance_task_id").notNull().references(() => maintenanceTasks.id),
+    departmentId: uuid("department_id").notNull().references(() => departments.id),
+    startAt: timestamp("start_at", { withTimezone: true }),
+    endAt: timestamp("end_at", { withTimezone: true }),
+    status: varchar("status", { length: 30 }).default("SCHEDULED").notNull(),
+  },
+  (table) => ({
+    blockIdx: index("block_tasks_block_idx").on(table.blockId),
+    taskIdx: index("block_tasks_task_idx").on(table.maintenanceTaskId),
+  })
+);
+
+export const blockTaskRelations = relations(blockTasks, ({ one }) => ({
+  block: one(blocks, { fields: [blockTasks.blockId], references: [blocks.id] }),
+  maintenanceTask: one(maintenanceTasks, { fields: [blockTasks.maintenanceTaskId], references: [maintenanceTasks.id] }),
+  department: one(departments, { fields: [blockTasks.departmentId], references: [departments.id] }),
+}));
+
+
+================================================
+FILE: backend/src/db/schema/blockWindows.ts
+================================================
+import { pgTable, uuid, varchar, integer, timestamp, index } from "drizzle-orm/pg-core";
+import { relations } from "drizzle-orm";
+import { blockWindowSourceEnum } from "./enums";
+import { corridors } from "./corridors";
+
+export const blockWindows = pgTable(
+  "block_windows",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    corridorId: uuid("corridor_id").notNull().references(() => corridors.id),
+    startAt: timestamp("start_at", { withTimezone: true }).notNull(),
+    endAt: timestamp("end_at", { withTimezone: true }).notNull(),
+    availableMinutes: integer("available_minutes").notNull(),
+    source: blockWindowSourceEnum("source").default("COA").notNull(),
+    status: varchar("status", { length: 30 }).default("AVAILABLE").notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+  },
+  (table) => ({
+    corridorIdx: index("block_windows_corridor_idx").on(table.corridorId),
+    startIdx: index("block_windows_start_idx").on(table.startAt),
+  })
+);
+
+export const blockWindowRelations = relations(blockWindows, ({ one }) => ({
+  corridor: one(corridors, { fields: [blockWindows.corridorId], references: [corridors.id] }),
+}));
+
+
+================================================
+FILE: backend/src/db/schema/corridors.ts
+================================================
+import { pgTable, uuid, varchar, numeric, timestamp, uniqueIndex } from "drizzle-orm/pg-core";
+import { relations } from "drizzle-orm";
+import { assets } from "./assets";
+import { defects } from "./defects";
+import { maintenanceTasks } from "./maintenanceTasks";
+import { trains } from "./trains";
+import { trainForecasts } from "./trainForecasts";
+import { blockWindows } from "./blockWindows";
+import { blocks } from "./blocks";
+
+export const corridors = pgTable(
+  "corridors",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    code: varchar("code", { length: 50 }).notNull().unique(),
+    name: varchar("name", { length: 255 }).notNull(),
+    zone: varchar("zone", { length: 100 }),
+    division: varchar("division", { length: 100 }),
+    startKm: numeric("start_km", { precision: 10, scale: 3 }).notNull(),
+    endKm: numeric("end_km", { precision: 10, scale: 3 }).notNull(),
+    status: varchar("status", { length: 30 }).default("ACTIVE").notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
+  },
+  (table) => ({
+    codeIdx: uniqueIndex("corridors_code_idx").on(table.code),
+  })
+);
+
+export const corridorRelations = relations(corridors, ({ many }) => ({
+  assets: many(assets),
+  defects: many(defects),
+  maintenanceTasks: many(maintenanceTasks),
+  trains: many(trains),
+  trainForecasts: many(trainForecasts),
+  blockWindows: many(blockWindows),
+  blocks: many(blocks),
+}));
+
+
+================================================
+FILE: backend/src/db/schema/defects.ts
+================================================
+import { pgTable, uuid, varchar, text, integer, timestamp, index } from "drizzle-orm/pg-core";
+import { relations } from "drizzle-orm";
+import { defectSeverityEnum, defectStatusEnum } from "./enums";
+import { assets } from "./assets";
+import { corridors } from "./corridors";
+import { maintenanceTasks } from "./maintenanceTasks";
+
+export const defects = pgTable(
+  "defects",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    defectCode: varchar("defect_code", { length: 100 }).notNull().unique(),
+    assetId: uuid("asset_id").notNull().references(() => assets.id),
+    corridorId: uuid("corridor_id").notNull().references(() => corridors.id),
+    severity: defectSeverityEnum("severity").notNull(),
+    description: text("description"),
+    detectedAt: timestamp("detected_at", { withTimezone: true }).defaultNow().notNull(),
+    dueAt: timestamp("due_at", { withTimezone: true }),
+    status: defectStatusEnum("status").default("OPEN").notNull(),
+    safetyImpact: integer("safety_impact").default(0).notNull(),
+    operationalImpact: integer("operational_impact").default(0).notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+  },
+  (table) => ({
+    assetIdx: index("defects_asset_idx").on(table.assetId),
+    corridorIdx: index("defects_corridor_idx").on(table.corridorId),
+    severityIdx: index("defects_severity_idx").on(table.severity),
+    statusIdx: index("defects_status_idx").on(table.status),
+  })
+);
+
+export const defectRelations = relations(defects, ({ one, many }) => ({
+  asset: one(assets, { 
+    fields: [defects.assetId], 
+    references: [assets.id] 
+  }),
+  corridor: one(corridors, { 
+    fields: [defects.corridorId], 
+    references: [corridors.id] 
+  }),
+  maintenanceTasks: many(maintenanceTasks),
+}));
+
+
+================================================
+FILE: backend/src/db/schema/departments.ts
+================================================
+import {
+  pgTable,
+  uuid,
+  varchar,
+  text,
+  integer,
+  boolean,
+  timestamp,
+  numeric,
+  pgEnum,
+  index,
+  uniqueIndex,
+} from "drizzle-orm/pg-core";
+
+import {departmentCodeEnum} from "./enums";
+
+
+export const departments = pgTable(
+  "departments",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+
+    code: departmentCodeEnum("code").notNull().unique(),
+
+    name: varchar("name", {
+      length: 100,
+    }).notNull(),
+
+    createdAt: timestamp("created_at", {
+      withTimezone: true,
+    })
+      .defaultNow()
+      .notNull(),
+  },
+);
+
+
+================================================
+FILE: backend/src/db/schema/enums.ts
+================================================
+import { pgEnum } from "drizzle-orm/pg-core";
+
+export const departmentCodeEnum = pgEnum("department_code", ["ENG", "TRD", "SNT"]);
+
+export const assetStatusEnum = pgEnum("asset_status", ["ACTIVE", "DEGRADED", "FAILED", "UNDER_MAINTENANCE", "RETIRED"]);
+
+export const taskStatusEnum = pgEnum("task_status", ["PENDING", "SCHEDULED", "IN_PROGRESS", "COMPLETED", "CANCELLED"]);
+
+export const taskTypeEnum = pgEnum("task_type", ["PREVENTIVE", "CORRECTIVE", "INSPECTION", "DEFECT_REPAIR", "EMERGENCY"]);
+
+export const defectSeverityEnum = pgEnum("defect_severity", ["LOW", "MEDIUM", "HIGH", "CRITICAL"]);
+
+export const defectStatusEnum = pgEnum("defect_status", ["OPEN", "UNDER_REPAIR", "RESOLVED", "CLOSED"]);
+
+export const trainTypeEnum = pgEnum("train_type", ["PASSENGER", "EXPRESS", "GOODS", "SPECIAL"]);
+
+export const blockStatusEnum = pgEnum("block_status", ["DRAFT", "PROPOSED", "APPROVED", "REJECTED", "EXECUTED", "CANCELLED"]);
+
+export const planningHorizonEnum = pgEnum("planning_horizon", ["WEEKLY", "MONTHLY"]);
+
+export const blockWindowSourceEnum = pgEnum("block_window_source", ["COA", "MANUAL", "FORECAST"]);
+
+export const congestionLevelEnum = pgEnum("congestion_level", ["LOW", "MEDIUM", "HIGH"]);
+
+
+================================================
+FILE: backend/src/db/schema/index.ts
+================================================
+export * from "./enums";
+export * from "./departments";
+export * from "./corridors";
+export * from "./assets";
+export * from "./defects";
+export * from "./maintenanceTasks";
+export * from "./trains";
+export * from "./trainForecasts";
+export * from "./blockWindows";
+export * from "./blocks";
+export * from "./blockTasks";
+export * from "./optimizationRuns";
+export * from "./auditLogs";
+
+
+================================================
+FILE: backend/src/db/schema/maintenanceTasks.ts
+================================================
+import { pgTable, uuid, varchar, text, numeric, integer, boolean, timestamp, index } from "drizzle-orm/pg-core";
+import { relations } from "drizzle-orm";
+import { taskTypeEnum, taskStatusEnum } from "./enums";
+import { assets } from "./assets";
+import { departments } from "./departments";
+import { corridors } from "./corridors";
+import { defects } from "./defects";
+import { blockTasks } from "./blockTasks";
+
+export const maintenanceTasks = pgTable(
+  "maintenance_tasks",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    taskCode: varchar("task_code", { length: 100 }).notNull().unique(),
+    assetId: uuid("asset_id").notNull().references(() => assets.id),
+    departmentId: uuid("department_id").notNull().references(() => departments.id),
+    corridorId: uuid("corridor_id").notNull().references(() => corridors.id),
+    defectId: uuid("defect_id").references(() => defects.id),
+    taskType: taskTypeEnum("task_type").notNull(),
+    description: text("description"),
+    locationStartKm: numeric("location_start_km", { precision: 10, scale: 3 }).notNull(),
+    locationEndKm: numeric("location_end_km", { precision: 10, scale: 3 }).notNull(),
+    criticalityScore: integer("criticality_score").default(50).notNull(),
+    urgencyScore: integer("urgency_score").default(50).notNull(),
+    safetyScore: integer("safety_score").default(50).notNull(),
+    operationalImpactScore: integer("operational_impact_score").default(50).notNull(),
+    priorityScore: numeric("priority_score", { precision: 6, scale: 2 }).default("0").notNull(),
+    estimatedDurationMinutes: integer("estimated_duration_minutes").notNull(),
+    overdueDays: integer("overdue_days").default(0).notNull(),
+    dueAt: timestamp("due_at", { withTimezone: true }),
+    status: taskStatusEnum("status").default("PENDING").notNull(),
+    requiredBlock: boolean("required_block").default(true).notNull(),
+    requiresPowerShutdown: boolean("requires_power_shutdown").default(false).notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
+  },
+  (table) => ({
+    corridorIdx: index("tasks_corridor_idx").on(table.corridorId),
+    departmentIdx: index("tasks_department_idx").on(table.departmentId),
+    statusIdx: index("tasks_status_idx").on(table.status),
+    priorityIdx: index("tasks_priority_idx").on(table.priorityScore),
+    dueIdx: index("tasks_due_idx").on(table.dueAt),
+  })
+);
+
+export const maintenanceTaskRelations = relations(maintenanceTasks, ({ one, many }) => ({
+  asset: one(assets, { fields: [maintenanceTasks.assetId], references: [assets.id] }),
+  department: one(departments, { fields: [maintenanceTasks.departmentId], references: [departments.id] }),
+  corridor: one(corridors, { fields: [maintenanceTasks.corridorId], references: [corridors.id] }),
+  defect: one(defects, { fields: [maintenanceTasks.defectId], references: [defects.id] }),
+  blockTasks: many(blockTasks),
+}));
+
+
+================================================
+FILE: backend/src/db/schema/optimizationRuns.ts
+================================================
+import { pgTable, uuid, varchar, numeric, integer, timestamp } from "drizzle-orm/pg-core";
+import { planningHorizonEnum } from "./enums";
+
+export const optimizationRuns = pgTable(
+  "optimization_runs",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    runCode: varchar("run_code", { length: 100 }).notNull().unique(),
+    horizon: planningHorizonEnum("horizon").notNull(),
+    startDate: timestamp("start_date", { withTimezone: true }).notNull(),
+    endDate: timestamp("end_date", { withTimezone: true }).notNull(),
+    tasksConsidered: integer("tasks_considered").default(0).notNull(),
+    tasksScheduled: integer("tasks_scheduled").default(0).notNull(),
+    blocksGenerated: integer("blocks_generated").default(0).notNull(),
+    totalBlockMinutes: integer("total_block_minutes").default(0).notNull(),
+    baselineBlockMinutes: integer("baseline_block_minutes").default(0).notNull(),
+    estimatedSavingsMinutes: integer("estimated_savings_minutes").default(0).notNull(),
+    optimizationScore: numeric("optimization_score", { precision: 6, scale: 2 }),
+    status: varchar("status", { length: 30 }).default("COMPLETED").notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+  }
+);
+
+
+================================================
+FILE: backend/src/db/schema/trainForecasts.ts
+================================================
+import { pgTable, uuid, numeric, integer, timestamp, index } from "drizzle-orm/pg-core";
+import { relations } from "drizzle-orm";
+import { congestionLevelEnum } from "./enums";
+import { corridors } from "./corridors";
+
+export const trainForecasts = pgTable(
+  "train_forecasts",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    corridorId: uuid("corridor_id").notNull().references(() => corridors.id),
+    forecastDate: timestamp("forecast_date", { withTimezone: true }).notNull(),
+    timeWindowStart: timestamp("time_window_start", { withTimezone: true }).notNull(),
+    timeWindowEnd: timestamp("time_window_end", { withTimezone: true }).notNull(),
+    expectedTrainCount: integer("expected_train_count").notNull(),
+    congestionLevel: congestionLevelEnum("congestion_level").notNull(),
+    confidenceScore: numeric("confidence_score", { precision: 5, scale: 2 }),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+  },
+  (table) => ({
+    corridorIdx: index("forecast_corridor_idx").on(table.corridorId),
+    dateIdx: index("forecast_date_idx").on(table.forecastDate),
+  })
+);
+
+export const trainForecastRelations = relations(trainForecasts, ({ one }) => ({
+  corridor: one(corridors, { fields: [trainForecasts.corridorId], references: [corridors.id] }),
+}));
+
+
+================================================
+FILE: backend/src/db/schema/trains.ts
+================================================
+import { pgTable, uuid, varchar, boolean, integer, timestamp, index } from "drizzle-orm/pg-core";
+import { relations } from "drizzle-orm";
+import { trainTypeEnum } from "./enums";
+import { corridors } from "./corridors";
+
+export const trains = pgTable(
+  "trains",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    trainNumber: varchar("train_number", { length: 50 }).notNull(),
+    trainName: varchar("train_name", { length: 255 }),
+    trainType: trainTypeEnum("train_type").notNull(),
+    corridorId: uuid("corridor_id").notNull().references(() => corridors.id),
+    scheduledArrival: timestamp("scheduled_arrival", { withTimezone: true }).notNull(),
+    scheduledDeparture: timestamp("scheduled_departure", { withTimezone: true }).notNull(),
+    priority: integer("priority").default(50).notNull(),
+    isGoodsTrain: boolean("is_goods_train").default(false).notNull(),
+    isCriticalService: boolean("is_critical_service").default(false).notNull(),
+    status: varchar("status", { length: 30 }).default("SCHEDULED").notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+  },
+  (table) => ({
+    corridorIdx: index("trains_corridor_idx").on(table.corridorId),
+    arrivalIdx: index("trains_arrival_idx").on(table.scheduledArrival),
+  })
+);
+
+export const trainRelations = relations(trains, ({ one }) => ({
+  corridor: one(corridors, { fields: [trains.corridorId], references: [corridors.id] }),
+}));
+
+
+================================================
+FILE: backend/src/lib/redis.ts
+================================================
+import { createClient, RedisClientType } from "redis";
+
+let redisClient: RedisClientType | null = null;
+let connected = false;
+
+export async function getRedis(): Promise<RedisClientType | null> {
+  if (!process.env.REDIS_URL) return null;
+
+  if (!redisClient) {
+    redisClient = createClient({
+      url: process.env.REDIS_URL,
+    });
+
+    redisClient.on("error", (err) => {
+      console.warn("Redis connection warning:", err.message);
+    });
+  }
+
+  if (!connected) {
+    try {
+      await redisClient.connect();
+      connected = true;
+    } catch (err) {
+      console.warn("Redis unavailable, continuing without cache:", (err as Error).message);
+      return null;
+    }
+  }
+
+  return redisClient;
+}
+
+export async function cacheGet<T>(key: string): Promise<T | null> {
+  try {
+    const client = await getRedis();
+    if (!client) return null;
+
+    const value = await client.get(key);
+    return value ? (JSON.parse(value) as T) : null;
+  } catch {
+    return null;
+  }
+}
+
+export async function cacheSet(key: string, value: unknown, ttlSeconds = 60): Promise<void> {
+  try {
+    const client = await getRedis();
+    if (!client) return;
+
+    await client.set(key, JSON.stringify(value), { EX: ttlSeconds });
+  } catch {
+    // Gracefully ignore cache write failures
+  }
+}
+
+export async function cacheDelete(key: string): Promise<void> {
+  try {
+    const client = await getRedis();
+    if (!client) return;
+
+    await client.del(key);
+  } catch {
+    // Gracefully ignore cache deletion failures
+  }
+}
+
+
+
+================================================
+FILE: backend/src/middleware/error.ts
+================================================
+import { NextFunction, Request, Response } from "express";
+
+export function errorHandler(
+  err: unknown,
+  _req: Request,
+  res: Response,
+  _next: NextFunction
+) {
+  console.error(err);
+
+  const message = err instanceof Error ? err.message : "Internal server error";
+
+  res.status(500).json({
+    success: false,
+    error: message,
+  });
+}
+
+
+
+================================================
+FILE: backend/src/modules/assets/assets.controller.ts
+================================================
+import { Request, Response, NextFunction } from "express";
+import { db } from "../../db";
+import { assets } from "../../db/schema";
+import { eq } from "drizzle-orm";
+
+export const getAssets = async (_req: Request, res: Response, next: NextFunction) => {
+  try {
+    const allAssets = await db.select().from(assets);
+    res.json({ success: true, count: allAssets.length, data: allAssets });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const getAssetById = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const asset = await db.select().from(assets).where(eq(assets.id, req.params.id as any));
+    if (!asset.length) {
+      return res.status(404).json({ success: false, error: "Asset not found" });
+    }
+    res.json({ success: true, data: asset[0] });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const createAsset = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const [created] = await db.insert(assets).values(req.body).returning();
+    res.status(201).json({ success: true, data: created });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const updateAsset = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const [updated] = await db
+      .update(assets)
+      .set({ ...req.body, updatedAt: new Date() })
+      .where(eq(assets.id, req.params.id as any))
+      .returning();
+
+    if (!updated) {
+      return res.status(404).json({ success: false, error: "Asset not found" });
+    }
+
+    res.json({ success: true, data: updated });
+  } catch (error) {
+    next(error);
+  }
+};
+
+
+================================================
+FILE: backend/src/modules/assets/assets.routes.ts
+================================================
+export { default } from "./routes";
+
+
+================================================
+FILE: backend/src/modules/assets/routes.ts
+================================================
+import { Router } from "express";
+import { getAssets, getAssetById, createAsset, updateAsset } from "./assets.controller";
+
+const router = Router();
+
+router.get("/", getAssets);
+router.post("/", createAsset);
+router.get("/:id", getAssetById);
+router.patch("/:id", updateAsset);
+
+export default router;
+
+
+
+================================================
+FILE: backend/src/modules/blocks/blocks.controller.ts
+================================================
+import { Request, Response, NextFunction } from "express";
+import { db } from "../../db";
+import { blocks, blockTasks, corridors } from "../../db/schema";
+import { eq, desc } from "drizzle-orm";
+
+export const getBlocks = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const status = req.query.status as string;
+    let query = db.select().from(blocks).$dynamic();
+
+    if (status) {
+      query = query.where(eq(blocks.status, status as any));
+    }
+
+    const allBlocks = await query.orderBy(desc(blocks.createdAt));
+    res.json({ success: true, count: allBlocks.length, data: allBlocks });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const getBlockById = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const block = await db.select().from(blocks).where(eq(blocks.id, req.params.id as any));
+    if (!block.length) {
+      return res.status(404).json({ success: false, error: "Block not found" });
+    }
+
+    // Fetch tasks linked to this block
+    const tasks = await db
+      .select()
+      .from(blockTasks)
+      .where(eq(blockTasks.blockId, req.params.id as any));
+
+    res.json({ success: true, data: { ...block[0], tasks } });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const updateBlockStatus = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const { id } = req.params;
+    const { status, approvedBy } = req.body;
+
+    if (!status) {
+      return res.status(400).json({ success: false, error: "Missing status field" });
+    }
+
+    const updatePayload: Record<string, any> = {
+      status,
+      updatedAt: new Date(),
+    };
+
+    if (status === "APPROVED") {
+      updatePayload.approvedBy = approvedBy || "Section Controller";
+      updatePayload.approvedAt = new Date();
+    }
+
+    const [updated] = await db
+      .update(blocks)
+      .set(updatePayload)
+      .where(eq(blocks.id, id as any))
+      .returning();
+
+    if (!updated) {
+      return res.status(404).json({ success: false, error: "Block not found" });
+    }
+
+    res.json({ success: true, data: updated });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const approveBlock = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const { id } = req.params;
+    const { approvedBy } = req.body;
+
+    const [updated] = await db
+      .update(blocks)
+      .set({
+        status: "APPROVED",
+        approvedBy: approvedBy || "Chief Controller",
+        approvedAt: new Date(),
+        updatedAt: new Date(),
+      })
+      .where(eq(blocks.id, id as any))
+      .returning();
+
+    if (!updated) {
+      return res.status(404).json({ success: false, error: "Block not found" });
+    }
+
+    res.json({ success: true, message: "Block approved successfully", data: updated });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const rejectBlock = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const { id } = req.params;
+
+    const [updated] = await db
+      .update(blocks)
+      .set({
+        status: "REJECTED",
+        updatedAt: new Date(),
+      })
+      .where(eq(blocks.id, id as any))
+      .returning();
+
+    if (!updated) {
+      return res.status(404).json({ success: false, error: "Block not found" });
+    }
+
+    res.json({ success: true, message: "Block rejected", data: updated });
+  } catch (error) {
+    next(error);
+  }
+};
+
+
+================================================
+FILE: backend/src/modules/blocks/blocks.routes.ts
+================================================
+export { default } from "./routes";
+
+
+================================================
+FILE: backend/src/modules/blocks/routes.ts
+================================================
+import { Router } from "express";
+import {
+  getBlocks,
+  getBlockById,
+  updateBlockStatus,
+  approveBlock,
+  rejectBlock,
+} from "./blocks.controller";
+
+const router = Router();
+
+router.get("/", getBlocks);
+router.get("/:id", getBlockById);
+router.patch("/:id/status", updateBlockStatus);
+router.post("/:id/approve", approveBlock);
+router.post("/:id/reject", rejectBlock);
+
+export default router;
+
+
+
+================================================
+FILE: backend/src/modules/corridors/corridors.controller.ts
+================================================
+import { Request, Response, NextFunction } from "express";
+import { db } from "../../db";
+import { corridors, blockWindows } from "../../db/schema";
+import { eq } from "drizzle-orm";
+
+export const getCorridors = async (_req: Request, res: Response, next: NextFunction) => {
+  try {
+    const allCorridors = await db.select().from(corridors);
+    res.json({ success: true, count: allCorridors.length, data: allCorridors });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const getCorridorById = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const corridorId = req.params.id as string;
+    const corridor = await db.select().from(corridors).where(eq(corridors.id, corridorId as any));
+    if (!corridor.length) {
+      return res.status(404).json({ success: false, error: "Corridor not found" });
+    }
+    res.json({ success: true, data: corridor[0] });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const getCorridorWindows = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const corridorId = req.params.id as string;
+    const windows = await db
+      .select()
+      .from(blockWindows)
+      .where(eq(blockWindows.corridorId, corridorId as any));
+
+    res.json({ success: true, count: windows.length, data: windows });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const createCorridor = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const [created] = await db.insert(corridors).values(req.body).returning();
+    res.status(201).json({ success: true, data: created });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const updateCorridor = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const corridorId = req.params.id as string;
+    const [updated] = await db
+      .update(corridors)
+      .set({ ...req.body, updatedAt: new Date() })
+      .where(eq(corridors.id, corridorId as any))
+      .returning();
+
+    if (!updated) {
+      return res.status(404).json({ success: false, error: "Corridor not found" });
+    }
+
+    res.json({ success: true, data: updated });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const deleteCorridor = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const corridorId = req.params.id as string;
+    const [deleted] = await db
+      .delete(corridors)
+      .where(eq(corridors.id, corridorId as any))
+      .returning();
+
+    if (!deleted) {
+      return res.status(404).json({ success: false, error: "Corridor not found" });
+    }
+
+    res.json({ success: true, message: "Corridor deleted successfully", data: deleted });
+  } catch (error) {
+    next(error);
+  }
+};
+
+
+================================================
+FILE: backend/src/modules/corridors/corridors.routes.ts
+================================================
+export { default } from "./routes";
+
+
+================================================
+FILE: backend/src/modules/corridors/routes.ts
+================================================
+import { Router } from "express";
+import {
+  getCorridors,
+  getCorridorById,
+  getCorridorWindows,
+  createCorridor,
+  updateCorridor,
+  deleteCorridor,
+} from "./corridors.controller";
+
+const router = Router();
+
+router.get("/", getCorridors);
+router.post("/", createCorridor);
+router.get("/:id", getCorridorById);
+router.patch("/:id", updateCorridor);
+router.delete("/:id", deleteCorridor);
+router.get("/:id/windows", getCorridorWindows);
+
+export default router;
+
+
+
+================================================
+FILE: backend/src/modules/health/routes.ts
+================================================
+import { Router } from "express";
+
+const router = Router();
+
+router.get("/", (_req, res) => {
+  res.json({
+    success: true,
+    service: "railway-block-planning-backend",
+    database: "configured",
+    timestamp: new Date().toISOString(),
+  });
+});
+
+export default router;
+
+
+
+================================================
+FILE: backend/src/modules/integration/routes.ts
+================================================
+import { Router } from "express";
+import { db } from "../../db";
+import { maintenanceTasks, trains, trainForecasts, blockWindows } from "../../db/schema";
+
+const router = Router();
+
+/*
+  Demo integration endpoints.
+  In production these would receive data from TMS / SMMS / TDMS / COA.
+*/
+
+router.post("/tms/maintenance", async (req, res, next) => {
+  try {
+    const [data] = await db.insert(maintenanceTasks).values({
+      ...req.body,
+      departmentId: req.body.departmentId,
+      taskType: req.body.taskType ?? "PREVENTIVE",
+      status: "PENDING",
+      requiredBlock: req.body.requiredBlock ?? true,
+    }).returning();
+
+    res.status(201).json({
+      success: true,
+      source: "TMS",
+      data,
+    });
+  } catch (e) { next(e); }
+});
+
+router.post("/smms/maintenance", async (req, res, next) => {
+  try {
+    const [data] = await db.insert(maintenanceTasks).values({
+      ...req.body,
+      taskType: req.body.taskType ?? "DEFECT_REPAIR",
+      status: "PENDING",
+      requiredBlock: req.body.requiredBlock ?? true,
+    }).returning();
+
+    res.status(201).json({
+      success: true,
+      source: "SMMS",
+      data,
+    });
+  } catch (e) { next(e); }
+});
+
+router.post("/tdms/maintenance", async (req, res, next) => {
+  try {
+    const [data] = await db.insert(maintenanceTasks).values({
+      ...req.body,
+      taskType: req.body.taskType ?? "PREVENTIVE",
+      status: "PENDING",
+      requiredBlock: req.body.requiredBlock ?? true,
+    }).returning();
+
+    res.status(201).json({
+      success: true,
+      source: "TDMS",
+      data,
+    });
+  } catch (e) { next(e); }
+});
+
+router.post("/coa/train", async (req, res, next) => {
+  try {
+    const [data] = await db.insert(trains).values(req.body).returning();
+
+    res.status(201).json({
+      success: true,
+      source: "COA",
+      data,
+    });
+  } catch (e) { next(e); }
+});
+
+router.post("/coa/forecast", async (req, res, next) => {
+  try {
+    const [data] = await db.insert(trainForecasts).values(req.body).returning();
+
+    res.status(201).json({
+      success: true,
+      source: "COA",
+      data,
+    });
+  } catch (e) { next(e); }
+});
+
+router.post("/coa/block-window", async (req, res, next) => {
+  try {
+    const [data] = await db.insert(blockWindows).values(req.body).returning();
+
+    res.status(201).json({
+      success: true,
+      source: "COA",
+      data,
+    });
+  } catch (e) { next(e); }
+});
+
+export default router;
+
+
+
+================================================
+FILE: backend/src/modules/maintenance/maintenance.controller.ts
+================================================
+import { Request, Response, NextFunction } from "express";
+import { db } from "../../db";
+import { maintenanceTasks, defects } from "../../db/schema";
+import { eq, desc } from "drizzle-orm";
+import { calculatePriorityScore } from "../planning/priority.engine";
+
+export const getTasks = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const statusQuery = req.query.status as string;
+    let query = db.select().from(maintenanceTasks).$dynamic();
+
+    if (statusQuery) {
+      query = query.where(eq(maintenanceTasks.status, statusQuery as any));
+    }
+
+    const tasks = await query.orderBy(desc(maintenanceTasks.priorityScore));
+    res.json({ success: true, count: tasks.length, data: tasks });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const getAllTasks = async (_req: Request, res: Response, next: NextFunction) => {
+  try {
+    const allTasks = await db.select().from(maintenanceTasks).orderBy(desc(maintenanceTasks.createdAt));
+    res.json({ success: true, count: allTasks.length, data: allTasks });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const getTaskById = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const task = await db.select().from(maintenanceTasks).where(eq(maintenanceTasks.id, req.params.id as any));
+    if (!task.length) {
+      return res.status(404).json({ success: false, error: "Task not found" });
+    }
+    res.json({ success: true, data: task[0] });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const createTask = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const body = { ...req.body };
+
+    // Calculate initial priority score
+    let defectSeverity: "LOW" | "MEDIUM" | "HIGH" | "CRITICAL" | null = null;
+    if (body.defectId) {
+      const defectRecord = await db.select().from(defects).where(eq(defects.id, body.defectId as any));
+      if (defectRecord.length) {
+        defectSeverity = defectRecord[0].severity as any;
+      }
+    }
+
+    const score = calculatePriorityScore({
+      criticalityScore: body.criticalityScore,
+      urgencyScore: body.urgencyScore,
+      safetyScore: body.safetyScore,
+      operationalImpactScore: body.operationalImpactScore,
+      overdueDays: body.overdueDays,
+      taskType: body.taskType,
+      defectSeverity,
+      requiresPowerShutdown: body.requiresPowerShutdown,
+    });
+
+    body.priorityScore = String(score);
+
+    const [newTask] = await db.insert(maintenanceTasks).values(body).returning();
+    res.status(201).json({ success: true, data: newTask });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const updateTask = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const [updatedTask] = await db
+      .update(maintenanceTasks)
+      .set({ ...req.body, updatedAt: new Date() })
+      .where(eq(maintenanceTasks.id, req.params.id as any))
+      .returning();
+
+    if (!updatedTask) {
+      return res.status(404).json({ success: false, error: "Task not found" });
+    }
+
+    res.json({ success: true, data: updatedTask });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const recalculatePriority = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const taskId = req.params.id as string;
+    const taskRecord = await db.select().from(maintenanceTasks).where(eq(maintenanceTasks.id, taskId as any));
+    if (!taskRecord.length) {
+      return res.status(404).json({ success: false, error: "Task not found" });
+    }
+
+    const task = taskRecord[0];
+    let defectSeverity: "LOW" | "MEDIUM" | "HIGH" | "CRITICAL" | null = null;
+    if (task.defectId) {
+      const defect = await db.select().from(defects).where(eq(defects.id, task.defectId as any));
+      if (defect.length) defectSeverity = defect[0].severity as any;
+    }
+
+    const score = calculatePriorityScore({
+      criticalityScore: task.criticalityScore,
+      urgencyScore: task.urgencyScore,
+      safetyScore: task.safetyScore,
+      operationalImpactScore: task.operationalImpactScore,
+      overdueDays: task.overdueDays,
+      taskType: task.taskType,
+      defectSeverity,
+      requiresPowerShutdown: task.requiresPowerShutdown,
+    });
+
+    const [updated] = await db
+      .update(maintenanceTasks)
+      .set({ priorityScore: String(score), updatedAt: new Date() })
+      .where(eq(maintenanceTasks.id, taskId as any))
+      .returning();
+
+    res.json({ success: true, data: updated });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const completeTask = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const taskId = req.params.id as string;
+    const [completed] = await db
+      .update(maintenanceTasks)
+      .set({ status: "COMPLETED", updatedAt: new Date() })
+      .where(eq(maintenanceTasks.id, taskId as any))
+      .returning();
+
+    if (!completed) {
+      return res.status(404).json({ success: false, error: "Task not found" });
+    }
+
+    res.json({ success: true, message: "Task marked as COMPLETED", data: completed });
+  } catch (error) {
+    next(error);
+  }
+};
+
+
+================================================
+FILE: backend/src/modules/maintenance/maintenance.routes.ts
+================================================
+export { default } from "./routes";
+
+
+================================================
+FILE: backend/src/modules/maintenance/routes.ts
+================================================
+import { Router } from "express";
+import {
+  getTasks,
+  getAllTasks,
+  getTaskById,
+  createTask,
+  updateTask,
+  recalculatePriority,
+  completeTask,
+} from "./maintenance.controller";
+
+const router = Router();
+
+router.get("/tasks/all", getAllTasks);
+router.get("/tasks", getTasks);
+router.post("/tasks", createTask);
+router.get("/tasks/:id", getTaskById);
+router.patch("/tasks/:id", updateTask);
+router.post("/tasks/:id/recalculate-priority", recalculatePriority);
+router.post("/tasks/:id/complete", completeTask);
+
+export default router;
+
+
+
+================================================
+FILE: backend/src/modules/planning/optimizer.ts
+================================================
+import { db } from "../../db";
+import {
+  maintenanceTasks,
+  corridors,
+  blockWindows,
+  trains,
+  blocks,
+  blockTasks,
+  optimizationRuns,
+  departments,
+} from "../../db/schema";
+import { eq, and, gte, lte } from "drizzle-orm";
+import { calculatePriorityScore } from "./priority.engine";
+
+export interface OptimizationOptions {
+  horizon?: "WEEKLY" | "MONTHLY";
+  startDate?: string;
+  endDate?: string;
+  corridorId?: string;
+}
+
+export interface OptimizationResult {
+  runId: string;
+  runCode: string;
+  summary: {
+    tasksConsidered: number;
+    tasksScheduled: number;
+    blocksGenerated: number;
+    baselineBlockMinutes: number;
+    optimizedBlockMinutes: number;
+    savingMinutes: number;
+    savingPercentage: number;
+    optimizationScore: number;
+  };
+  blocks: Array<{
+    id?: string;
+    blockCode: string;
+    corridorId: string;
+    corridorCode: string;
+    startAt: string;
+    endAt: string;
+    durationMinutes: number;
+    baselineDurationMinutes: number;
+    savedMinutes: number;
+    tasks: Array<{
+      id: string;
+      taskCode: string;
+      department: string;
+      taskType: string;
+      durationMinutes: number;
+      locationKm: string;
+    }>;
+    departments: string[];
+    explanation: {
+      reasons: string[];
+      impact: {
+        baselineMinutes: number;
+        optimizedMinutes: number;
+        savedMinutes: number;
+      };
+    };
+  }>;
+}
+
+export async function runOptimization(options: OptimizationOptions = {}): Promise<OptimizationResult> {
+  const horizon = options.horizon || "WEEKLY";
+  const now = new Date();
+  const startDate = options.startDate ? new Date(options.startDate) : new Date(now.getTime() + 12 * 60 * 60 * 1000); // 12h ahead
+  const endDate = options.endDate
+    ? new Date(options.endDate)
+    : new Date(now.getTime() + (horizon === "WEEKLY" ? 7 : 30) * 24 * 60 * 60 * 1000);
+
+  // 1. Fetch departments map
+  const allDepartments = await db.select().from(departments);
+  const deptMap = new Map(allDepartments.map((d) => [d.id, d.name || d.code]));
+
+  // 2. Fetch corridors map
+  const allCorridors = await db.select().from(corridors);
+  const corridorMap = new Map(allCorridors.map((c) => [c.id, c]));
+
+  // 3. Fetch all PENDING tasks requiring blocks
+  let taskQuery = db
+    .select()
+    .from(maintenanceTasks)
+    .where(and(eq(maintenanceTasks.status, "PENDING"), eq(maintenanceTasks.requiredBlock, true)))
+    .$dynamic();
+
+  if (options.corridorId) {
+    taskQuery = taskQuery.where(eq(maintenanceTasks.corridorId, options.corridorId as any));
+  }
+
+  const pendingTasks = await taskQuery;
+
+  // Recalculate priority scores dynamically and sort by priority desc
+  const scoredTasks = pendingTasks
+    .map((task) => {
+      const score = calculatePriorityScore({
+        criticalityScore: task.criticalityScore,
+        urgencyScore: task.urgencyScore,
+        safetyScore: task.safetyScore,
+        operationalImpactScore: task.operationalImpactScore,
+        overdueDays: task.overdueDays,
+        taskType: task.taskType,
+        requiresPowerShutdown: task.requiresPowerShutdown,
+      });
+      return { ...task, computedPriority: score };
+    })
+    .sort((a, b) => b.computedPriority - a.computedPriority);
+
+  // 4. Fetch available block windows and scheduled trains
+  const availableWindows = await db
+    .select()
+    .from(blockWindows)
+    .where(gte(blockWindows.startAt, startDate));
+
+  const allTrains = await db.select().from(trains);
+
+  // 5. Group candidate tasks by corridor
+  const tasksByCorridor = new Map<string, typeof scoredTasks>();
+  for (const task of scoredTasks) {
+    const list = tasksByCorridor.get(task.corridorId) || [];
+    list.push(task);
+    tasksByCorridor.set(task.corridorId, list);
+  }
+
+  const generatedBlocks: OptimizationResult["blocks"] = [];
+  const scheduledTaskIds: string[] = [];
+
+  let totalBaselineMinutes = 0;
+  let totalOptimizedMinutes = 0;
+
+  // Process each corridor
+  for (const [corridorId, corrTasks] of tasksByCorridor.entries()) {
+    const corridor = corridorMap.get(corridorId);
+    const corrCode = corridor ? corridor.code : "CORRIDOR";
+
+    // Find block windows for this corridor
+    const corrWindows = availableWindows.filter((w) => w.corridorId === corridorId);
+
+    // If no windows pre-seeded, dynamically create safe maintenance slots (e.g. night window 01:00 - 04:30)
+    let windowSlots = corrWindows.map((w) => ({
+      startAt: new Date(w.startAt),
+      endAt: new Date(w.endAt),
+      availableMinutes: w.availableMinutes || Math.floor((new Date(w.endAt).getTime() - new Date(w.startAt).getTime()) / 60000),
+    }));
+
+    if (windowSlots.length === 0) {
+      // Create synthetic candidate maintenance slots for planning simulation
+      const slotStart = new Date(startDate);
+      slotStart.setHours(1, 30, 0, 0); // 01:30 AM
+      const slotEnd = new Date(slotStart.getTime() + 180 * 60 * 1000); // 3 hours window (04:30 AM)
+      windowSlots.push({
+        startAt: slotStart,
+        endAt: slotEnd,
+        availableMinutes: 180,
+      });
+    }
+
+    // Cluster tasks into block windows
+    let taskIndex = 0;
+    for (const slot of windowSlots) {
+      if (taskIndex >= corrTasks.length) break;
+
+      // Check for train conflicts in this slot
+      const conflictingTrains = allTrains.filter((t) => {
+        if (t.corridorId !== corridorId) return false;
+        const arr = new Date(t.scheduledArrival).getTime();
+        const dep = new Date(t.scheduledDeparture).getTime();
+        const winStart = slot.startAt.getTime();
+        const winEnd = slot.endAt.getTime();
+        // Train overlaps window and is high-priority passenger or critical service
+        const overlaps = (arr >= winStart && arr <= winEnd) || (dep >= winStart && dep <= winEnd);
+        return overlaps && (t.isCriticalService || t.trainType === "PASSENGER" || t.trainType === "EXPRESS");
+      });
+
+      if (conflictingTrains.length > 0) {
+        // Window rejected due to train conflict
+        continue;
+      }
+
+      // Group nearby tasks up to slot duration
+      const cluster: typeof corrTasks = [];
+      let maxTaskDuration = 0;
+      let clusterBaselineMinutes = 0;
+
+      while (taskIndex < corrTasks.length) {
+        const candidate = corrTasks[taskIndex];
+        const newMaxDuration = Math.max(maxTaskDuration, candidate.estimatedDurationMinutes);
+
+        // Check window fit
+        if (newMaxDuration > slot.availableMinutes && cluster.length > 0) {
+          break;
+        }
+
+        // Geographical compatibility check: tasks within 25 km of cluster anchor
+        if (cluster.length > 0) {
+          const anchorKm = parseFloat(cluster[0].locationStartKm);
+          const candidateKm = parseFloat(candidate.locationStartKm);
+          if (Math.abs(candidateKm - anchorKm) > 25.0) {
+            // Far apart, keep for next block
+            taskIndex++;
+            continue;
+          }
+        }
+
+        cluster.push(candidate);
+        maxTaskDuration = newMaxDuration;
+        clusterBaselineMinutes += candidate.estimatedDurationMinutes;
+        scheduledTaskIds.push(candidate.id);
+        taskIndex++;
+
+        // Bundle 2 to 4 compatible tasks per block
+        if (cluster.length >= 4) break;
+      }
+
+      if (cluster.length === 0) continue;
+
+      const blockDuration = maxTaskDuration; // Parallel multi-department execution
+      const savedMinutes = Math.max(clusterBaselineMinutes - blockDuration, 0);
+
+      totalBaselineMinutes += clusterBaselineMinutes;
+      totalOptimizedMinutes += blockDuration;
+
+      const blockCode = `BLK-${corrCode}-${Math.floor(1000 + Math.random() * 9000)}`;
+      const deptNames = Array.from(new Set(cluster.map((t) => deptMap.get(t.departmentId) || "Maintenance")));
+
+      const reasons: string[] = [
+        `${cluster.length} maintenance tasks bundled on corridor ${corrCode}`,
+        `Geographical proximity within section km ${cluster[0].locationStartKm} - ${cluster[cluster.length - 1].locationEndKm}`,
+        `Zero conflict with scheduled passenger or express trains`,
+      ];
+
+      if (deptNames.length > 1) {
+        reasons.push(`Cross-department coordination: ${deptNames.join(", ")} simultaneous execution`);
+      }
+
+      const overdueCount = cluster.filter((t) => t.overdueDays > 0).length;
+      if (overdueCount > 0) {
+        reasons.push(`${overdueCount} overdue tasks prioritized to avoid safety hazards`);
+      }
+
+      // Persist block to database
+      const [insertedBlock] = await db
+        .insert(blocks)
+        .values({
+          blockCode,
+          corridorId: corridorId as any,
+          startAt: slot.startAt,
+          endAt: new Date(slot.startAt.getTime() + blockDuration * 60 * 1000),
+          durationMinutes: blockDuration,
+          status: "PROPOSED",
+          planningHorizon: horizon,
+          baselineDurationMinutes: clusterBaselineMinutes,
+          savedMinutes,
+          optimizationScore: clusterBaselineMinutes > 0
+            ? String(Number(((savedMinutes / clusterBaselineMinutes) * 100).toFixed(2)))
+            : "0.00",
+        })
+        .returning();
+
+      // Persist block tasks & update task statuses
+      for (const t of cluster) {
+        await db.insert(blockTasks).values({
+          blockId: insertedBlock.id,
+          maintenanceTaskId: t.id as any,
+          departmentId: t.departmentId as any,
+          startAt: slot.startAt,
+          endAt: new Date(slot.startAt.getTime() + t.estimatedDurationMinutes * 60 * 1000),
+          status: "SCHEDULED",
+        });
+
+        await db
+          .update(maintenanceTasks)
+          .set({ status: "SCHEDULED", updatedAt: new Date() })
+          .where(eq(maintenanceTasks.id, t.id as any));
+      }
+
+      generatedBlocks.push({
+        id: insertedBlock.id,
+        blockCode,
+        corridorId,
+        corridorCode: corrCode,
+        startAt: slot.startAt.toISOString(),
+        endAt: new Date(slot.startAt.getTime() + blockDuration * 60 * 1000).toISOString(),
+        durationMinutes: blockDuration,
+        baselineDurationMinutes: clusterBaselineMinutes,
+        savedMinutes,
+        tasks: cluster.map((t) => ({
+          id: t.id,
+          taskCode: t.taskCode,
+          department: deptMap.get(t.departmentId) || "General",
+          taskType: t.taskType,
+          durationMinutes: t.estimatedDurationMinutes,
+          locationKm: `${t.locationStartKm} - ${t.locationEndKm}`,
+        })),
+        departments: deptNames,
+        explanation: {
+          reasons,
+          impact: {
+            baselineMinutes: clusterBaselineMinutes,
+            optimizedMinutes: blockDuration,
+            savedMinutes,
+          },
+        },
+      });
+    }
+  }
+
+  const savedTotalMinutes = Math.max(totalBaselineMinutes - totalOptimizedMinutes, 0);
+  const savingPercentage =
+    totalBaselineMinutes > 0
+      ? Number(((savedTotalMinutes / totalBaselineMinutes) * 100).toFixed(1))
+      : 0;
+  const optimizationScore = savingPercentage;
+
+  const runCode = `RUN-${Math.floor(100000 + Math.random() * 900000)}`;
+
+  // Record optimization run in database
+  const [runRecord] = await db
+    .insert(optimizationRuns)
+    .values({
+      runCode,
+      horizon,
+      startDate,
+      endDate,
+      tasksConsidered: pendingTasks.length,
+      tasksScheduled: scheduledTaskIds.length,
+      blocksGenerated: generatedBlocks.length,
+      totalBlockMinutes: totalOptimizedMinutes,
+      baselineBlockMinutes: totalBaselineMinutes,
+      estimatedSavingsMinutes: savedTotalMinutes,
+      optimizationScore: String(optimizationScore.toFixed(2)),
+      status: "COMPLETED",
+    })
+    .returning();
+
+  return {
+    runId: runRecord.id,
+    runCode,
+    summary: {
+      tasksConsidered: pendingTasks.length,
+      tasksScheduled: scheduledTaskIds.length,
+      blocksGenerated: generatedBlocks.length,
+      baselineBlockMinutes: totalBaselineMinutes,
+      optimizedBlockMinutes: totalOptimizedMinutes,
+      savingMinutes: savedTotalMinutes,
+      savingPercentage,
+      optimizationScore,
+    },
+    blocks: generatedBlocks,
+  };
+}
+
+
+
+================================================
+FILE: backend/src/modules/planning/planning.controller.ts
+================================================
+import { Request, Response, NextFunction } from "express";
+import { db } from "../../db";
+import { optimizationRuns, maintenanceTasks, blocks, corridors, departments } from "../../db/schema";
+import { desc, eq, sql } from "drizzle-orm";
+import { runOptimization } from "./optimizer";
+
+export const generatePlan = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const { horizon, startDate, endDate, corridorId } = req.body;
+    const result = await runOptimization({ horizon, startDate, endDate, corridorId });
+    res.status(200).json({ success: true, ...result });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const getRuns = async (_req: Request, res: Response, next: NextFunction) => {
+  try {
+    const runs = await db.select().from(optimizationRuns).orderBy(desc(optimizationRuns.createdAt));
+    res.json({ success: true, count: runs.length, data: runs });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const getDashboard = async (_req: Request, res: Response, next: NextFunction) => {
+  try {
+    // 1. Task counts
+    const allTasks = await db.select().from(maintenanceTasks);
+    const pendingTasks = allTasks.filter((t) => t.status === "PENDING").length;
+    const scheduledTasks = allTasks.filter((t) => t.status === "SCHEDULED").length;
+    const completedTasks = allTasks.filter((t) => t.status === "COMPLETED").length;
+    const overdueTasks = allTasks.filter((t) => t.overdueDays > 0).length;
+
+    // 2. Block counts
+    const allBlocks = await db.select().from(blocks);
+    const proposedBlocks = allBlocks.filter((b) => b.status === "PROPOSED").length;
+    const approvedBlocks = allBlocks.filter((b) => b.status === "APPROVED").length;
+    const executedBlocks = allBlocks.filter((b) => b.status === "EXECUTED").length;
+
+    // 3. Total savings
+    const totalMinutesSaved = allBlocks.reduce((acc, b) => acc + (b.savedMinutes || 0), 0);
+    const totalHoursSaved = Number((totalMinutesSaved / 60).toFixed(1));
+
+    // 4. Corridors and Departments
+    const allCorridors = await db.select().from(corridors);
+    const allDepts = await db.select().from(departments);
+
+    // 5. Recent runs
+    const recentRuns = await db
+      .select()
+      .from(optimizationRuns)
+      .orderBy(desc(optimizationRuns.createdAt))
+      .limit(5);
+
+    // 6. Recent blocks
+    const recentBlocks = await db
+      .select()
+      .from(blocks)
+      .orderBy(desc(blocks.createdAt))
+      .limit(5);
+
+    res.json({
+      success: true,
+      data: {
+        summary: {
+          totalTasks: allTasks.length,
+          pendingTasks,
+          scheduledTasks,
+          completedTasks,
+          overdueTasks,
+          totalBlocks: allBlocks.length,
+          proposedBlocks,
+          approvedBlocks,
+          executedBlocks,
+          totalHoursSaved,
+          activeCorridors: allCorridors.length,
+          departmentsCount: allDepts.length,
+        },
+        recentRuns,
+        recentBlocks,
+      },
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+
+================================================
+FILE: backend/src/modules/planning/planning.routes.ts
+================================================
+export { default } from "./routes";
+
+
+================================================
+FILE: backend/src/modules/planning/priority.engine.ts
+================================================
+export interface PriorityFactors {
+  criticalityScore?: number | null;
+  urgencyScore?: number | null;
+  safetyScore?: number | null;
+  operationalImpactScore?: number | null;
+  overdueDays?: number | null;
+  taskType?: string | null;
+  defectSeverity?: "LOW" | "MEDIUM" | "HIGH" | "CRITICAL" | null;
+  requiresPowerShutdown?: boolean | null;
+}
+
+export function calculatePriorityScore(factors: PriorityFactors): number {
+  const criticality = Number(factors.criticalityScore ?? 50);
+  const safety = Number(factors.safetyScore ?? 50);
+  const operational = Number(factors.operationalImpactScore ?? 50);
+  const urgency = Number(factors.urgencyScore ?? 50);
+  const overdueDays = Number(factors.overdueDays ?? 0);
+
+  // 1. Weighted base calculation (0 to 100)
+  // Safety and Criticality are paramount in railway operations
+  const baseScore =
+    criticality * 0.30 +
+    safety * 0.30 +
+    operational * 0.20 +
+    urgency * 0.20;
+
+  // 2. Overdue penalty (+2 per overdue day, capped at +25)
+  const overdueBonus = Math.min(Math.max(overdueDays, 0) * 2, 25);
+
+  // 3. Defect severity weighting
+  let defectBonus = 0;
+  if (factors.defectSeverity) {
+    switch (factors.defectSeverity) {
+      case "CRITICAL":
+        defectBonus = 20;
+        break;
+      case "HIGH":
+        defectBonus = 12;
+        break;
+      case "MEDIUM":
+        defectBonus = 6;
+        break;
+      case "LOW":
+        defectBonus = 2;
+        break;
+    }
+  }
+
+  // 4. Task type weighting
+  let taskTypeBonus = 0;
+  if (factors.taskType) {
+    switch (factors.taskType) {
+      case "EMERGENCY":
+        taskTypeBonus = 25;
+        break;
+      case "DEFECT_REPAIR":
+        taskTypeBonus = 12;
+        break;
+      case "CORRECTIVE":
+        taskTypeBonus = 8;
+        break;
+      case "PREVENTIVE":
+        taskTypeBonus = 4;
+        break;
+      default:
+        taskTypeBonus = 0;
+    }
+  }
+
+  const rawTotal = baseScore + overdueBonus + defectBonus + taskTypeBonus;
+  // Format to 2 decimal points, minimum 1.0, maximum 100.0 (or up to 120.0 for critical emergency)
+  const finalScore = Math.min(Math.max(rawTotal, 1), 100);
+
+  return Number(finalScore.toFixed(2));
+}
+
+
+
+================================================
+FILE: backend/src/modules/planning/routes.ts
+================================================
+import { Router } from "express";
+import { generatePlan, getRuns, getDashboard } from "./planning.controller";
+
+const router = Router();
+
+router.post("/generate", generatePlan);
+router.get("/runs", getRuns);
+router.get("/dashboard", getDashboard);
+
+export default router;
+
+
+
+================================================
+FILE: backend/src/modules/trains/routes.ts
+================================================
+import { Router } from "express";
+import {
+  getTrains,
+  createTrain,
+  getTrainForecasts,
+  createTrainForecast,
+  getBlockWindows,
+  createBlockWindow,
+} from "./trains.controller";
+
+const router = Router();
+
+router.get("/forecasts", getTrainForecasts);
+router.post("/forecasts", createTrainForecast);
+
+router.get("/block-windows", getBlockWindows);
+router.post("/block-windows", createBlockWindow);
+
+router.get("/", getTrains);
+router.post("/", createTrain);
+
+export default router;
+
+
+
+================================================
+FILE: backend/src/modules/trains/trains.controller.ts
+================================================
+import { Request, Response, NextFunction } from "express";
+import { db } from "../../db";
+import { trains, trainForecasts, blockWindows } from "../../db/schema";
+import { desc, eq } from "drizzle-orm";
+
+export const getTrains = async (_req: Request, res: Response, next: NextFunction) => {
+  try {
+    const allTrains = await db.select().from(trains).orderBy(desc(trains.scheduledArrival));
+    res.json({ success: true, count: allTrains.length, data: allTrains });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const createTrain = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const [newTrain] = await db.insert(trains).values(req.body).returning();
+    res.status(201).json({ success: true, data: newTrain });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const getTrainForecasts = async (_req: Request, res: Response, next: NextFunction) => {
+  try {
+    const forecasts = await db.select().from(trainForecasts).orderBy(desc(trainForecasts.forecastDate));
+    res.json({ success: true, count: forecasts.length, data: forecasts });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const createTrainForecast = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const [newForecast] = await db.insert(trainForecasts).values(req.body).returning();
+    res.status(201).json({ success: true, data: newForecast });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const getBlockWindows = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const corridorId = req.query.corridorId as string;
+    let query = db.select().from(blockWindows).$dynamic();
+
+    if (corridorId) {
+      query = query.where(eq(blockWindows.corridorId, corridorId as any));
+    }
+
+    const windows = await query.orderBy(desc(blockWindows.startAt));
+    res.json({ success: true, count: windows.length, data: windows });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const createBlockWindow = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const [newWindow] = await db.insert(blockWindows).values(req.body).returning();
+    res.status(201).json({ success: true, data: newWindow });
+  } catch (error) {
+    next(error);
+  }
+};
+
+
+================================================
+FILE: backend/src/modules/trains/trains.routes.ts
+================================================
+export { default } from "./routes";
 

@@ -1,61 +1,22 @@
 import React from 'react';
 import { Card } from '../../components/common/Card';
 import { CheckCircle, AlertTriangle, Zap, RefreshCw, Layers } from 'lucide-react';
+import type { WhatIfResult } from '../../api/client';
 
 interface Props {
-  result: {
-    original_schedule_id?: string;
-    new_schedule?: {
-      schedule_id: string;
-      task_ids: string[];
-      blocks: Array<{
-        block_id: string;
-        section_id: string;
-        start: string;
-        end: string;
-        durationMinutes: number;
-      }>;
-      start_time: string;
-      end_time: string;
-      estimated_disruption_minutes: number;
-      resource_assignments?: Record<string, string[]>;
-      status: string;
-    };
-    changed_blocks?: string[];
-    affected_tasks?: string[];
-    affected_trains?: string[];
-    metric_differences?: {
-      objective_score: number;
-      train_disruption_minutes: number;
-      resource_utilization_delta: number;
-    };
-    explanation?: string;
-    errors?: string[];
-    optimization_result?: {
-      status: string;
-      selected_task_ids: string[];
-      unscheduled_task_ids: string[];
-      objective_score: number;
-      resource_utilization?: Record<string, number>;
-      solver_statistics?: {
-        runtime_ms: number;
-        iterations: number;
-      };
-    };
-  };
+  result: WhatIfResult;
   onReset?: () => void;
 }
 
 export const ScheduleDiffViewer: React.FC<Props> = ({ result, onReset }) => {
   const isFeasible =
+    result.new_schedule?.status === 'VALID' ||
     result.new_schedule?.status === 'FEASIBLE' ||
-    result.optimization_result?.status === 'FEASIBLE';
+    result.optimization_result?.status === 'FEASIBLE' ||
+    result.optimization_result?.status === 'OPTIMAL' ||
+    result.optimization_result?.status === 'PARTIAL';
 
-  const metrics = result.metric_differences ?? {
-    objective_score: -0.04,
-    train_disruption_minutes: 15,
-    resource_utilization_delta: 0.02,
-  };
+  const metrics = result.metric_differences;
 
   const solverStats = result.optimization_result?.solver_statistics;
   const changedBlocks = result.changed_blocks ?? [];
@@ -92,7 +53,7 @@ export const ScheduleDiffViewer: React.FC<Props> = ({ result, onReset }) => {
             </span>
           </div>
           <p className="text-xs font-mono text-text-muted mt-1">
-            BASE SCHEDULE: {result.original_schedule_id ?? 'sched_base_001'} // SECTION: sec_12_ndls_agc
+            BASE SCHEDULE: {result.original_schedule_id}
           </p>
         </div>
 
@@ -123,7 +84,7 @@ export const ScheduleDiffViewer: React.FC<Props> = ({ result, onReset }) => {
             {metrics.objective_score >= 0 ? `+${metrics.objective_score.toFixed(3)}` : metrics.objective_score.toFixed(3)}
           </span>
           <span className="text-[10px] font-mono text-text-muted mt-1">
-            Score: {result.optimization_result?.objective_score ?? 0.77}
+            Score: {result.optimization_result?.objective_score ?? 0}
           </span>
         </div>
 
@@ -160,10 +121,10 @@ export const ScheduleDiffViewer: React.FC<Props> = ({ result, onReset }) => {
             Solver Statistics
           </span>
           <span className="font-bold text-xl text-text-primary font-mono">
-            {solverStats ? `${solverStats.runtime_ms}ms` : '1.2s'}
+            {solverStats ? `${solverStats.runtime_ms}ms` : '0ms'}
           </span>
           <span className="text-[10px] font-mono text-text-muted mt-1">
-            {solverStats ? `${solverStats.iterations} iterations` : 'Fast OR-Tools solve'}
+            {solverStats ? `${solverStats.iterations ?? 0} iterations` : 'No solver stats returned'}
           </span>
         </div>
       </div>
@@ -173,47 +134,27 @@ export const ScheduleDiffViewer: React.FC<Props> = ({ result, onReset }) => {
         <div className="p-3 border-b-2 border-surface-border font-mono text-xs font-bold text-text-muted bg-surface-card flex items-center justify-between">
           <span className="flex items-center gap-1.5">
             <Layers size={13} className="text-status-shadow" />
-            POSSESSION WINDOW SHIFT TIMELINE (NDLS-AGC TRACK 1)
+            POSSESSION WINDOW SHIFT TIMELINE
           </span>
-          <span className="text-[11px] text-status-warning">CLEARANCE: PASSENGER SLOT PRESERVED</span>
+          <span className="text-[11px] text-status-warning">BACKEND AI RESULT</span>
         </div>
         <div className="p-4 space-y-4">
-          {/* Baseline */}
-          <div className="space-y-1">
-            <div className="flex justify-between text-[11px] font-mono text-text-muted">
-              <span>BASELINE PROPOSAL: BLK-55A1</span>
-              <span>23:00 - 01:30 (150 min)</span>
-            </div>
-            <div className="h-9 bg-surface-card border-2 border-surface-border/80 relative flex items-center px-3">
-              <div className="w-1/2 h-5 bg-text-muted/20 border border-text-muted/40 flex items-center px-2 font-mono text-[10px] text-text-muted line-through">
-                ORIGINAL WINDOW: 23:00 - 01:30
+          {(result.new_schedule?.blocks ?? []).map((block) => (
+            <div key={block.block_id} className="space-y-1">
+              <div className="flex justify-between text-[11px] font-mono text-text-muted">
+                <span>RE-OPTIMIZED BLOCK: {block.block_id}</span>
+                <span className="text-status-optimal font-bold">
+                  {new Date(block.start).toLocaleTimeString()} - {new Date(block.end).toLocaleTimeString()}
+                </span>
               </div>
-              <span className="ml-3 text-[10px] font-mono text-status-critical flex items-center gap-1">
-                <AlertTriangle size={11} /> Blocked by late running Express
-              </span>
-            </div>
-          </div>
-
-          {/* Re-optimized Shift */}
-          <div className="space-y-1">
-            <div className="flex justify-between text-[11px] font-mono text-text-muted">
-              <span>SIMULATED SHIFT: BLK_SHIFTED_01</span>
-              <span className="text-status-optimal font-bold">00:30 - 03:00 (150 min)</span>
-            </div>
-            <div className="h-9 bg-surface-card border-2 border-surface-border/80 relative flex items-center px-3">
-              <div className="w-2/5 ml-auto h-6 bg-status-shadow/20 border-2 border-status-shadow flex items-center justify-between px-2 font-mono text-[10px] text-white shadow-[2px_2px_0px_0px_rgba(139,92,246,0.6)]">
-                <span className="font-bold">RE-OPTIMIZED WINDOW: 00:30 - 03:00</span>
-                <span className="text-[9px] bg-status-shadow px-1 py-0.2">FEASIBLE</span>
+              <div className="h-9 bg-surface-card border-2 border-surface-border/80 relative flex items-center px-3">
+                <div className="h-6 bg-status-shadow/20 border-2 border-status-shadow flex items-center justify-between px-2 font-mono text-[10px] text-white shadow-[2px_2px_0px_0px_rgba(139,92,246,0.6)]">
+                  <span className="font-bold">{block.section_id}</span>
+                  <span className="text-[9px] bg-status-shadow px-1 py-0.2">{result.new_schedule?.status}</span>
+                </div>
               </div>
             </div>
-          </div>
-
-          <div className="flex justify-between items-center text-[10px] font-mono text-text-muted pt-1 border-t border-surface-border">
-            <span>22:00</span>
-            <span>00:00 (Midnight)</span>
-            <span>02:00</span>
-            <span>04:00</span>
-          </div>
+          ))}
         </div>
       </div>
 
@@ -277,8 +218,7 @@ export const ScheduleDiffViewer: React.FC<Props> = ({ result, onReset }) => {
           <span className="text-[10px] text-text-muted">// OR-Tools Constraint Engine</span>
         </div>
         <p className="text-text-primary/90 font-mono">
-          {result.explanation ??
-            'Schedule successfully re-evaluated. Work orders preserved while resolving train path conflicts.'}
+          {result.explanation}
         </p>
       </div>
     </Card>

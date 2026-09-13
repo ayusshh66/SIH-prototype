@@ -1,76 +1,70 @@
 import { invokeAiBridge } from "./aiBridge";
 import {
+  mapAiBlockToDbBlock,
+  mapResourceToAi,
   mapTaskToAi,
   mapTrainToAi,
   mapWindowToAi,
-  mapResourceToAi,
-  mapAiBlockToDbBlock,
 } from "./dataMapper";
 import { dataStore, MaintenanceTaskItem } from "../data/dataStore";
+import type {
+  AiHealthResult,
+  CriticalityScore,
+  DbBlockView,
+  EmergencyEventPayload,
+  EmergencyResult,
+  Explanation,
+  OrchestrationResult,
+  PlanningContext,
+  PlanningOptions,
+  PlanningResult,
+  ScheduleCandidate,
+  ShadowBlockCandidate,
+  WhatIfResult,
+  WhatIfScenarioPayload,
+} from "./contracts";
+
+const SUCCESSFUL_OPT_STATUSES = new Set(["OPTIMAL", "FEASIBLE", "PARTIAL"]);
+
+function ensureFiniteNumber(value: unknown, field: string): number {
+  const numeric = typeof value === "number" ? value : Number(value);
+  if (!Number.isFinite(numeric)) {
+    throw new ValidationError(`Missing or invalid required field '${field}'.`);
+  }
+  return numeric;
+}
+
+function ensureString(value: unknown, field: string): string {
+  if (typeof value !== "string" || value.trim().length === 0) {
+    throw new ValidationError(`Missing or invalid required field '${field}'.`);
+  }
+  return value.trim();
+}
+
+export class ValidationError extends Error {
+  statusCode = 400;
+}
 
 export class AiAdapterService {
-  private latestPlanningResult: any = null;
-  private latestPlanningContext: any = null;
-  private latestExplanations: any[] = [];
-  private latestConflicts: any[] = [];
-  private latestShadowBlocks: any[] = [];
+  private latestPlanningResult: PlanningResult | null = null;
+  private latestPlanningContext: PlanningContext | null = null;
+  private latestExplanations: Explanation[] = [];
+  private latestConflicts: PlanningResult["train_conflicts"] = [];
+  private latestShadowBlocks: ShadowBlockCandidate[] = [];
 
-  /**
-   * Run end-to-end multi-objective AI block planning orchestration.
-   */
-  async orchestratePlanning(options: {
-    corridorId?: string;
-    horizon?: string;
-    mode?: string;
-  } = {}): Promise<any> {
+  async orchestratePlanning(options: PlanningOptions = {}): Promise<PlanningResult> {
     const horizon = options.horizon || "WEEKLY";
     const mode = options.mode || "BALANCED";
 
-    // 1. Gather operational data from data store
-    const [allTasks, allTrains, allWindows, allResources, allCorridors, allDepts] =
-      await Promise.all([
-        dataStore.getTasks(),
-        dataStore.getTrains(),
-        dataStore.getBlockWindows(),
-        dataStore.getResources(),
-        dataStore.getCorridors(),
-        dataStore.getDepartments(),
-      ]);
-
-    const corridorMap = new Map(allCorridors.map((c) => [c.id, c]));
-    const deptMap = new Map(allDepts.map((d) => [d.id, d]));
-    const taskMap = new Map(allTasks.map((t) => [t.taskCode || t.id, t]));
-
-    // Filter tasks if corridorId specified
-    let targetTasks = allTasks.filter((t) => t.status === "PENDING" && t.requiredBlock);
-    if (options.corridorId && options.corridorId !== "all") {
-      targetTasks = targetTasks.filter(
-        (t) => t.corridorId === options.corridorId || t.corridorId === "corr_ndls_agc"
-      );
-    }
-    if (targetTasks.length === 0) {
-      targetTasks = allTasks.filter((t) => t.requiredBlock);
-    }
-
-    // 2. Map database objects to canonical AI request
-    const aiTasks = targetTasks.map((t) =>
-      mapTaskToAi(t, corridorMap.get(t.corridorId), deptMap.get(t.departmentId))
-    );
-    const aiTrains = allTrains.map((tr) =>
-      mapTrainToAi(tr, corridorMap.get(tr.corridorId))
-    );
-    const aiWindows = allWindows.map((w) =>
-      mapWindowToAi(w, corridorMap.get(w.corridorId))
-    );
-    const aiResources = allResources.map((r) => mapResourceToAi(r));
-
-    const canonicalRequest = {
+    const contextData = await this.buildPlanningContextData(options.corridorId);
+    const { allTasks, allCorridors, taskMap } = contextData;
+    const canonicalRequest: PlanningContext = {
       request_id: `plan_req_${Date.now().toString(36)}`,
       mode,
-      tasks: aiTasks,
-      train_movements: aiTrains,
-      resources: aiResources,
-      maintenance_windows: aiWindows,
+      tasks: contextData.aiTasks,
+      train_movements: contextData.aiTrains,
+      resources: contextData.aiResources,
+      maintenance_windows: contextData.aiWindows,
       constraints: {
         safety_rules: true,
         deadline_hard: true,
@@ -79,66 +73,56 @@ export class AiAdapterService {
       weights: {
         maintenance_value: 0.45,
         shadow_block_benefit: 0.25,
-        train_disruption_penalty: 0.30,
+        train_disruption_penalty: 0.3,
       },
       solver_settings: {
-        timeout_seconds: 10,
+        max_runtime_seconds: 10,
+        allow_partial_solution: true,
       },
     };
 
-    this.latestPlanningContext = canonicalRequest;
+    const aiResult = await invokeAiBridge<PlanningContext, OrchestrationResult>("plan", canonicalRequest);
+    this.assertOrchestrationSuccess(aiResult);
 
-    // 3. Invoke deterministic Python AgentOrchestrator
-    const aiResult = await invokeAiBridge<any, any>("plan", canonicalRequest);
-
-    if (aiResult.status === "FAILED" && (!aiResult.optimization_result || aiResult.errors?.length > 0)) {
-      if (!aiResult.optimization_result) {
-        throw new Error(
-          `AI Orchestration Failure: ${aiResult.errors?.join("; ") || "Optimization returned no schedule."}`
-        );
-      }
+    const optResult = aiResult.optimization_result;
+    if (!optResult) {
+      throw new Error("AI Orchestration Failure: optimization_result was not returned.");
     }
 
-    this.latestPlanningResult = aiResult;
-    this.latestExplanations = aiResult.explanations || [];
-    this.latestShadowBlocks = aiResult.shadow_block_candidates || [];
-
-    // Derive conflicts from AI result
-    const optResult = aiResult.optimization_result || {};
+    this.latestPlanningContext = {
+      ...canonicalRequest,
+      criticality_scores: aiResult.criticality_scores,
+      shadow_block_candidates: aiResult.shadow_block_candidates,
+    };
+    this.latestExplanations = aiResult.explanations;
+    this.latestShadowBlocks = aiResult.shadow_block_candidates;
     this.latestConflicts = optResult.train_conflicts || [];
 
-    // 4. Update task criticality in dataStore from AI criticality scores
-    if (Array.isArray(aiResult.criticality_scores)) {
-      for (const cs of aiResult.criticality_scores) {
-        if (cs.entity_id) {
-          await dataStore.updateTaskCriticality(
-            cs.entity_id,
-            cs.score || 0.5,
-            cs.score ? (cs.score * 100).toFixed(1) : "50.0",
-            cs
-          );
-        }
-      }
+    for (const cs of aiResult.criticality_scores) {
+      await this.persistCriticalityScore(cs);
     }
 
-    // 5. Transform schedule candidate blocks into DB blocks
-    const targetCorridor = allCorridors.find((c) => c.id === options.corridorId) || allCorridors[0];
-    const generatedBlocks: any[] = [];
-    const scheduleCandidates = optResult.schedule_candidates || [];
+    const targetCorridor =
+      allCorridors.find((c) => c.id === options.corridorId || c.code === options.corridorId) ||
+      allCorridors[0];
+    const generatedBlocks: DbBlockView[] = [];
 
-    for (const cand of scheduleCandidates) {
+    for (const cand of optResult.schedule_candidates || []) {
       for (const blk of cand.blocks || []) {
-        const blkWithTasks = {
-          ...blk,
-          task_ids: cand.task_ids || optResult.selected_task_ids || [],
-        };
-        const dbBlk = mapAiBlockToDbBlock(
-          blkWithTasks,
-          targetCorridor?.id || "corr_ndls_agc",
-          targetCorridor?.code || "NDLS-AGC",
-          taskMap
+        const durationMinutes =
+          blk.durationMinutes ||
+          Math.max(
+            0,
+            Math.round((new Date(blk.end).getTime() - new Date(blk.start).getTime()) / 60000)
+          );
+        generatedBlocks.push(
+          mapAiBlockToDbBlock(
+            { ...blk, durationMinutes, task_ids: cand.task_ids || optResult.selected_task_ids },
+            targetCorridor?.id || blk.section_id,
+            targetCorridor?.code || blk.section_id,
+            taskMap
+          )
         );
-        generatedBlocks.push(dbBlk);
       }
     }
 
@@ -146,60 +130,42 @@ export class AiAdapterService {
       await dataStore.saveBlocks(generatedBlocks);
     }
 
-    // 6. Save optimization run record
+    const scheduledCount = optResult.selected_task_ids.length;
+    const totalConsidered = contextData.targetTasks.length;
+    const baselineMinutes = generatedBlocks.reduce((acc, b) => acc + (b.baselineDurationMinutes || 0), 0);
+    const totalBlockMinutes = generatedBlocks.reduce((acc, b) => acc + (b.durationMinutes || 0), 0);
+    const savedMinutes = Math.max(baselineMinutes - totalBlockMinutes, 0);
     const runCode = `RUN-${new Date().toISOString().slice(0, 10).replace(/-/g, "")}-${Math.floor(
       100 + Math.random() * 900
     )}`;
-    const scheduledCount = optResult.selected_task_ids?.length || 0;
-    const totalConsidered = targetTasks.length;
-    const baselineMinutes = generatedBlocks.reduce((acc, b) => acc + (b.baselineDurationMinutes || 0), 0) || 210;
-    const totalBlockMinutes = generatedBlocks.reduce((acc, b) => acc + (b.durationMinutes || 0), 0) || 150;
-    const savedMinutes = baselineMinutes - totalBlockMinutes;
 
-    const runRecord = {
-      runId: aiResult.orchestration_id || `run_${Date.now()}`,
+    const runRecord = await dataStore.saveOptimizationRun({
+      runId: aiResult.orchestration_id,
       runCode,
       horizon,
       startDate: new Date().toISOString(),
-      endDate: new Date(Date.now() + 7 * 86400000).toISOString(),
+      endDate: new Date(Date.now() + (horizon === "MONTHLY" ? 30 : 7) * 86400000).toISOString(),
       tasksConsidered: totalConsidered,
       tasksScheduled: scheduledCount,
       blocksGenerated: generatedBlocks.length,
       totalBlockMinutes,
       baselineBlockMinutes: baselineMinutes,
       estimatedSavingsMinutes: savedMinutes,
-      optimizationScore: String(optResult.objective_score || "0.81"),
-      status: optResult.status || "OPTIMAL",
+      optimizationScore: String(optResult.objective_score),
+      status: optResult.status,
       createdAt: new Date().toISOString(),
-    };
+    });
 
-    await dataStore.saveOptimizationRun(runRecord);
-
-    // 7. Format complete response envelope
-    return {
-      runId: runRecord.runId,
-      runCode: runRecord.runCode,
-      status: optResult.status || "OPTIMAL",
+    const result: PlanningResult = {
+      ...optResult,
+      runId: runRecord?.id || aiResult.orchestration_id,
+      runCode,
+      status: optResult.status,
       orchestrationId: aiResult.orchestration_id,
       executionSequence: aiResult.execution_sequence,
-      selected_task_ids: optResult.selected_task_ids || [],
-      unscheduled_task_ids: optResult.unscheduled_task_ids || [],
-      schedule_candidates: scheduleCandidates,
-      shadow_blocks: aiResult.shadow_block_candidates || [],
-      train_conflicts: this.latestConflicts,
-      resource_utilization: optResult.resource_utilization || { track_machine: 0.8 },
-      objective_score: optResult.objective_score || 0.81,
-      baseline_comparison: {
-        delta_objective: 0.05,
-        train_disruption_reduction_pct: 20.8,
-        savingMinutes: savedMinutes,
-        savingPercentage: baselineMinutes > 0 ? Math.round((savedMinutes / baselineMinutes) * 100) : 28.4,
-      },
-      solver_statistics: optResult.solver_statistics || {
-        runtime_ms: 1840,
-        iterations: 50,
-      },
-      explanations: aiResult.explanations || [],
+      shadow_blocks: aiResult.shadow_block_candidates,
+      train_conflicts: optResult.train_conflicts || [],
+      explanations: aiResult.explanations,
       blocks: generatedBlocks,
       summary: {
         tasksConsidered: totalConsidered,
@@ -208,170 +174,311 @@ export class AiAdapterService {
         baselineBlockMinutes: baselineMinutes,
         optimizedBlockMinutes: totalBlockMinutes,
         savingMinutes: savedMinutes,
-        savingPercentage: baselineMinutes > 0 ? Math.round((savedMinutes / baselineMinutes) * 100) : 28,
-        optimizationScore: optResult.objective_score || 0.81,
+        savingPercentage: baselineMinutes > 0 ? Math.round((savedMinutes / baselineMinutes) * 100) : 0,
+        optimizationScore: optResult.objective_score,
       },
     };
+
+    this.latestPlanningResult = result;
+    return result;
   }
 
-  /**
-   * Score or recalculate criticality using Python CriticalityEngine.
-   */
-  async getCriticalityScore(task: MaintenanceTaskItem): Promise<any> {
+  async getCriticalityScore(task: MaintenanceTaskItem): Promise<CriticalityScore> {
     const input = {
       entity_id: task.taskCode || task.id,
       severity: task.criticalityScore >= 85 ? "CRITICAL" : task.criticalityScore >= 70 ? "HIGH" : "MODERATE",
-      urgency: Math.min(1.0, (task.urgencyScore || 75) / 100),
-      safety_risk: Math.min(1.0, (task.safetyScore || 80) / 100),
+      urgency: Math.min(1, (task.urgencyScore || 75) / 100),
+      safety_risk: Math.min(1, (task.safetyScore || 80) / 100),
       traffic_density: 0.85,
       speed_class: "HIGH",
       deadline: task.dueAt || undefined,
     };
 
-    const result = await invokeAiBridge<any, any>("criticality", input);
-
-    if (result && result.score !== undefined) {
-      await dataStore.updateTaskCriticality(
-        task.id,
-        result.score,
-        (result.score * 100).toFixed(1),
-        result
-      );
-    }
-
+    const result = await invokeAiBridge<typeof input, CriticalityScore>("criticality", input);
+    await dataStore.updateTaskCriticality(task.id, result.score, (result.score * 100).toFixed(1), result);
     return result;
   }
 
-  /**
-   * Generate shadow block candidates using Python ShadowBlockEngine.
-   */
-  async generateShadowBlocks(options?: any): Promise<any> {
-    const [allTasks, allWindows, allResources, allCorridors, allDepts] =
-      await Promise.all([
-        dataStore.getTasks(),
-        dataStore.getBlockWindows(),
-        dataStore.getResources(),
-        dataStore.getCorridors(),
-        dataStore.getDepartments(),
-      ]);
+  async generateShadowBlocks(options?: { constraints?: Record<string, unknown> }): Promise<{
+    compatibility_candidates: unknown[];
+    shadow_block_candidates: ShadowBlockCandidate[];
+  }> {
+    const contextData = await this.buildPlanningContextData();
+    const payload = {
+      tasks: contextData.aiTasks,
+      maintenance_windows: contextData.aiWindows,
+      resources: contextData.aiResources,
+      constraints: options?.constraints || {},
+    };
+
+    const res = await invokeAiBridge<typeof payload, {
+      compatibility_candidates: unknown[];
+      shadow_block_candidates: ShadowBlockCandidate[];
+    }>("shadow_blocks", payload);
+
+    this.latestShadowBlocks = res.shadow_block_candidates || [];
+    return res;
+  }
+
+  async runWhatIf(scenarioPayload: WhatIfScenarioPayload): Promise<WhatIfResult> {
+    const scenario = this.validateWhatIfScenario(scenarioPayload);
+    const context = await this.resolvePlanningContext();
+    const currentSchedule = await this.resolveSchedule(scenario.base_schedule_id);
+
+    const whatIfPayload = {
+      scenario: {
+        ...scenario,
+        scenario_id: scenario.scenario_id || `whatif_${Date.now().toString(36)}`,
+        created_at: new Date().toISOString(),
+      },
+      current_schedule: currentSchedule,
+      context,
+    };
+
+    const res = await invokeAiBridge<typeof whatIfPayload, WhatIfResult>("what_if", whatIfPayload);
+    if (res.errors?.length) {
+      throw new Error(`What-If engine rejected scenario: ${res.errors.join("; ")}`);
+    }
+    if (!res.new_schedule || res.optimization_result?.status === "INFEASIBLE" || res.optimization_result?.status === "FAILED") {
+      throw new Error(`What-If solver did not produce a feasible schedule for '${scenario.base_schedule_id}'.`);
+    }
+    return res;
+  }
+
+  async runEmergency(emergencyEvent: EmergencyEventPayload): Promise<EmergencyResult> {
+    const event = this.validateEmergencyEvent(emergencyEvent);
+    const context = await this.resolvePlanningContext();
+    const [allTasks, allTrains, allWindows, allResources, allCorridors, allDepts] = await Promise.all([
+      dataStore.getTasks(),
+      dataStore.getTrains(),
+      dataStore.getBlockWindows(),
+      dataStore.getResources(),
+      dataStore.getCorridors(),
+      dataStore.getDepartments(),
+    ]);
 
     const corridorMap = new Map(allCorridors.map((c) => [c.id, c]));
     const deptMap = new Map(allDepts.map((d) => [d.id, d]));
 
-    const aiTasks = allTasks.map((t) =>
-      mapTaskToAi(t, corridorMap.get(t.corridorId), deptMap.get(t.departmentId))
-    );
-    const aiWindows = allWindows.map((w) =>
-      mapWindowToAi(w, corridorMap.get(w.corridorId))
-    );
-    const aiResources = allResources.map((r) => mapResourceToAi(r));
-
-    const payload = {
-      tasks: aiTasks,
-      maintenance_windows: aiWindows,
-      resources: aiResources,
-      constraints: options?.constraints || {},
-    };
-
-    const res = await invokeAiBridge<any, any>("shadow_blocks", payload);
-    const candidates = res.shadow_block_candidates || [];
-    this.latestShadowBlocks = candidates;
-
-    return candidates;
-  }
-
-  /**
-   * Execute What-If scenario re-optimization using Python WhatIfEngine.
-   */
-  async runWhatIf(scenarioPayload: any): Promise<any> {
-    if (!this.latestPlanningContext) {
-      // Initialize a lightweight baseline context if none exists yet
-      await this.orchestratePlanning();
-    }
-
-    const currentSchedule =
-      this.latestPlanningResult?.optimization_result ||
-      this.latestPlanningResult?.schedule_candidates?.[0] ||
-      {};
-
-    const whatIfPayload = {
-      scenario: {
-        scenario_id: scenarioPayload.scenario_id || `whatif_${Date.now().toString(36)}`,
-        scenario_type: scenarioPayload.scenario_type || "TRAIN_DELAY",
-        base_schedule_id: scenarioPayload.base_schedule_id || "sched_base_001",
-        affected_task_ids: scenarioPayload.affected_task_ids || ["TSK-ENG-NDLS-045-01"],
-        affected_train_ids: scenarioPayload.affected_train_ids || ["12002"],
-        new_constraints: scenarioPayload.new_constraints || {},
-        description: scenarioPayload.description || "Hypothetical operational disruption test",
-        created_at: new Date().toISOString(),
-      },
-      current_schedule: currentSchedule,
-      context: this.latestPlanningContext,
-    };
-
-    const res = await invokeAiBridge<any, any>("what_if", whatIfPayload);
-    return res;
-  }
-
-  /**
-   * Execute Emergency defect insertion and slot discovery using Python EmergencyEngine.
-   */
-  async runEmergency(emergencyEvent: any): Promise<any> {
-    if (!this.latestPlanningContext) {
-      await this.orchestratePlanning();
-    }
-
-    const [allTasks, allWindows] = await Promise.all([
-      dataStore.getTasks(),
-      dataStore.getBlockWindows(),
-    ]);
-
     const emergencyPayload = {
       emergency_event: {
-        event_id: emergencyEvent.event_id || `emg_${Date.now().toString(36)}`,
-        event_type: emergencyEvent.event_type || "NEW_USFD_DEFECT",
-        section_id: emergencyEvent.section_id || "sec_12_ndls_agc",
-        affected_asset_id: emergencyEvent.affected_asset_id || "ast_trk_45",
-        severity: emergencyEvent.severity || "CRITICAL",
-        detected_at: emergencyEvent.detected_at || new Date().toISOString(),
-        estimated_duration_minutes: Number(emergencyEvent.estimated_duration_minutes) || 120,
-        impact_summary: emergencyEvent.impact_summary || "Immediate USFD ultrasonic crack detection",
-        from_km: parseFloat(String(emergencyEvent.from_km)) || 45.2,
-        to_km: parseFloat(String(emergencyEvent.to_km)) || 46.5,
+        ...event,
+        event_id: event.event_id || `emg_${Date.now().toString(36)}`,
+        detected_at: event.detected_at || new Date().toISOString(),
       },
       current_state: {
-        ...this.latestPlanningContext,
-        existing_tasks: allTasks.map((t) => mapTaskToAi(t)),
-        windows: allWindows.map((w) => mapWindowToAi(w)),
+        ...context,
+        existing_tasks: allTasks.map((t) => mapTaskToAi(t, corridorMap.get(t.corridorId), deptMap.get(t.departmentId))),
+        train_movements: allTrains.map((t) => mapTrainToAi(t, corridorMap.get(t.corridorId))),
+        resources: allResources.map((r) => mapResourceToAi(r)),
+        windows: allWindows.map((w) => mapWindowToAi(w, corridorMap.get(w.corridorId))),
       },
     };
 
-    const res = await invokeAiBridge<any, any>("emergency", emergencyPayload);
+    const res = await invokeAiBridge<typeof emergencyPayload, EmergencyResult>("emergency", emergencyPayload);
+    if (res.errors?.length) {
+      throw new Error(`Emergency engine rejected event: ${res.errors.join("; ")}`);
+    }
+    if (!res.resulting_schedule || res.optimization_result?.status === "INFEASIBLE" || res.optimization_result?.status === "FAILED") {
+      throw new Error("Emergency solver did not produce a feasible resulting schedule.");
+    }
     return res;
   }
 
-  /**
-   * Check health of Python AI engines via bridge.
-   */
-  async checkAiHealth(): Promise<any> {
-    try {
-      const res = await invokeAiBridge<any, any>("health", {});
-      return res;
-    } catch (err: any) {
-      return {
-        status: "DEGRADED",
-        error: err.message,
-        engines: [],
-      };
-    }
+  async checkAiHealth(): Promise<AiHealthResult> {
+    return invokeAiBridge<Record<string, never>, AiHealthResult>("health", {});
   }
 
-  getLatestExplanations(): any[] {
+  getLatestExplanations(): Explanation[] {
     return this.latestExplanations;
   }
 
-  getLatestConflicts(): any[] {
+  getLatestConflicts(): PlanningResult["train_conflicts"] {
     return this.latestConflicts;
+  }
+
+  getLatestShadowBlocks(): ShadowBlockCandidate[] {
+    return this.latestShadowBlocks;
+  }
+
+  private async buildPlanningContextData(corridorId?: string) {
+    const [allTasks, allTrains, allWindows, allResources, allCorridors, allDepts] = await Promise.all([
+      dataStore.getTasks(),
+      dataStore.getTrains(),
+      dataStore.getBlockWindows(),
+      dataStore.getResources(),
+      dataStore.getCorridors(),
+      dataStore.getDepartments(),
+    ]);
+
+    const corridorMap = new Map(allCorridors.map((c) => [c.id, c]));
+    const deptMap = new Map(allDepts.map((d) => [d.id, d]));
+    const taskMap = new Map(allTasks.map((t) => [t.taskCode || t.id, t]));
+
+    let targetTasks = allTasks.filter((t) => t.status === "PENDING" && t.requiredBlock);
+    if (corridorId && corridorId !== "all") {
+      targetTasks = targetTasks.filter((t) => t.corridorId === corridorId || corridorMap.get(t.corridorId)?.code === corridorId);
+    }
+
+    if (targetTasks.length === 0) {
+      throw new ValidationError("No pending block-required maintenance tasks found for the requested planning context.");
+    }
+
+    return {
+      allTasks,
+      allCorridors,
+      targetTasks,
+      taskMap,
+      aiTasks: targetTasks.map((t) => mapTaskToAi(t, corridorMap.get(t.corridorId), deptMap.get(t.departmentId))),
+      aiTrains: allTrains.map((tr) => mapTrainToAi(tr, corridorMap.get(tr.corridorId))),
+      aiWindows: allWindows.map((w) => mapWindowToAi(w, corridorMap.get(w.corridorId))),
+      aiResources: allResources.map((r) => mapResourceToAi(r)),
+    };
+  }
+
+  private assertOrchestrationSuccess(aiResult: OrchestrationResult): void {
+    if (aiResult.status === "FAILED" || aiResult.errors.length > 0) {
+      throw new Error(`AI Orchestration Failure: ${aiResult.errors.join("; ") || "unknown engine failure"}`);
+    }
+
+    const opt = aiResult.optimization_result;
+    if (!opt || !SUCCESSFUL_OPT_STATUSES.has(opt.status)) {
+      throw new Error(`Optimization solver failure: ${opt?.status || "missing optimization result"}`);
+    }
+  }
+
+  private async persistCriticalityScore(cs: CriticalityScore): Promise<void> {
+    if (!cs.entity_id) return;
+    await dataStore.updateTaskCriticality(cs.entity_id, cs.score || 0.5, cs.score ? (cs.score * 100).toFixed(1) : "50.0", cs);
+  }
+
+  private validateWhatIfScenario(payload: WhatIfScenarioPayload): WhatIfScenarioPayload {
+    const scenarioType = ensureString(payload.scenario_type, "scenario_type") as WhatIfScenarioPayload["scenario_type"];
+    const baseScheduleId = ensureString(payload.base_schedule_id, "base_schedule_id");
+    const newConstraints = payload.new_constraints;
+    if (!newConstraints || typeof newConstraints !== "object" || Array.isArray(newConstraints)) {
+      throw new ValidationError("Missing or invalid required field 'new_constraints'.");
+    }
+
+    if (scenarioType === "TRAIN_DELAY") {
+      const affectedTrains = payload.affected_train_ids || [];
+      if (affectedTrains.length === 0 && typeof newConstraints.train_id !== "string") {
+        throw new ValidationError("TRAIN_DELAY requires affected_train_ids or new_constraints.train_id.");
+      }
+      ensureFiniteNumber(newConstraints.train_delay_minutes ?? newConstraints.delay_minutes, "new_constraints.train_delay_minutes");
+    }
+
+    if (scenarioType === "TASK_DURATION_CHANGED") {
+      if (!payload.affected_task_ids?.length && typeof newConstraints.task_id !== "string") {
+        throw new ValidationError("TASK_DURATION_CHANGED requires affected_task_ids or new_constraints.task_id.");
+      }
+      ensureFiniteNumber(newConstraints.new_duration_minutes ?? newConstraints.duration_minutes, "new_constraints.new_duration_minutes");
+    }
+
+    return { ...payload, scenario_type: scenarioType, base_schedule_id: baseScheduleId };
+  }
+
+  private validateEmergencyEvent(payload: EmergencyEventPayload): EmergencyEventPayload {
+    const eventType = ensureString(payload.event_type, "event_type");
+    const sectionId = ensureString(payload.section_id, "section_id");
+    const severity = ensureString(payload.severity, "severity");
+    const impactSummary = ensureString(payload.impact_summary, "impact_summary");
+    const duration = ensureFiniteNumber(payload.estimated_duration_minutes, "estimated_duration_minutes");
+    const fromKm = ensureFiniteNumber(payload.from_km, "from_km");
+    const toKm = ensureFiniteNumber(payload.to_km, "to_km");
+    if (duration <= 0) throw new ValidationError("'estimated_duration_minutes' must be greater than zero.");
+    if (toKm < fromKm) throw new ValidationError("'to_km' must be greater than or equal to 'from_km'.");
+
+    return {
+      ...payload,
+      event_type: eventType,
+      section_id: sectionId,
+      severity,
+      impact_summary: impactSummary,
+      estimated_duration_minutes: duration,
+      from_km: fromKm,
+      to_km: toKm,
+    };
+  }
+
+  private async resolvePlanningContext(): Promise<PlanningContext> {
+    if (this.latestPlanningContext) return this.latestPlanningContext;
+
+    const contextData = await this.buildPlanningContextData();
+    return {
+      request_id: `context_req_${Date.now().toString(36)}`,
+      mode: "BALANCED",
+      tasks: contextData.aiTasks,
+      train_movements: contextData.aiTrains,
+      resources: contextData.aiResources,
+      maintenance_windows: contextData.aiWindows,
+      constraints: {
+        safety_rules: true,
+        deadline_hard: true,
+        resource_capacity: true,
+      },
+      weights: {
+        maintenance_value: 0.45,
+        shadow_block_benefit: 0.25,
+        train_disruption_penalty: 0.3,
+      },
+      solver_settings: {
+        max_runtime_seconds: 10,
+        allow_partial_solution: true,
+      },
+    };
+  }
+
+  private async resolveSchedule(baseScheduleId: string): Promise<ScheduleCandidate | { schedule_candidates: ScheduleCandidate[] }> {
+    const latestCandidates = this.latestPlanningResult?.schedule_candidates || [];
+    const inMemoryCandidate = latestCandidates.find((cand) => cand.schedule_id === baseScheduleId);
+    if (inMemoryCandidate) return inMemoryCandidate;
+
+    if (
+      this.latestPlanningResult &&
+      [this.latestPlanningResult.runId, this.latestPlanningResult.runCode, "current", "latest"].includes(baseScheduleId)
+    ) {
+      return { schedule_candidates: latestCandidates };
+    }
+
+    const runs = await dataStore.getOptimizationRuns();
+    const matchingRun = runs.find((run) => run.id === baseScheduleId || run.runId === baseScheduleId || run.runCode === baseScheduleId);
+    if (!matchingRun && !["current", "latest"].includes(baseScheduleId)) {
+      throw new ValidationError(`Unknown base_schedule_id '${baseScheduleId}'. Run planning first and pass a returned schedule_id/runId/runCode.`);
+    }
+
+    const blocks = await dataStore.getBlocks();
+    const candidates: ScheduleCandidate[] = blocks.map((block, index) => {
+      const start = new Date(block.startAt).toISOString();
+      const end = new Date(block.endAt).toISOString();
+      const taskIds = Array.isArray(block.tasks)
+        ? block.tasks.map((task: { taskCode?: string; id?: string }) => task.taskCode || task.id).filter(Boolean)
+        : [];
+      return {
+        schedule_id: index === 0 ? baseScheduleId : `${baseScheduleId}_${index + 1}`,
+        task_ids: taskIds,
+        blocks: [
+          {
+            block_id: block.id || block.blockCode,
+            section_id: block.corridorCode || block.corridorId,
+            start,
+            end,
+            durationMinutes: block.durationMinutes,
+          },
+        ],
+        start_time: start,
+        end_time: end,
+        estimated_disruption_minutes: 0,
+        resource_assignments: {},
+        status: block.status || "PROPOSED",
+      };
+    });
+
+    if (candidates.length === 0) {
+      throw new ValidationError(`No persisted blocks are available for base_schedule_id '${baseScheduleId}'.`);
+    }
+
+    return { schedule_candidates: candidates };
   }
 }
 

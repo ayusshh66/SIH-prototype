@@ -14,11 +14,12 @@ export const PlanningSchedulePage: React.FC = () => {
   const [optimizationResult, setOptimizationResult] = useState<OptimizationResult | null>(null);
   const [selectedCorridor, setSelectedCorridor] = useState<string>('all');
   const [showFilters, setShowFilters] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const fetchBlocks = (corridorId?: string) => {
-    getBlocks(corridorId === 'all' ? undefined : corridorId).then((res) => {
-      if (res.success) setBlocks(res.data);
-    });
+    getBlocks(corridorId === 'all' ? undefined : corridorId)
+      .then((res) => setBlocks(res.data as any[]))
+      .catch((err: unknown) => setError(err instanceof Error ? err.message : String(err)));
   };
 
   useEffect(() => {
@@ -27,17 +28,16 @@ export const PlanningSchedulePage: React.FC = () => {
 
   const handleRunOptimizer = async () => {
     setIsOptimizing(true);
+    setError(null);
     try {
       const res = await runOptimization({
-        corridorId: selectedCorridor === 'all' ? 'NDLS-AGC' : selectedCorridor,
-        horizon: '48H',
+        corridorId: selectedCorridor === 'all' ? undefined : selectedCorridor,
+        horizon: 'WEEKLY',
       });
-      if (res.success) {
-        setOptimizationResult(res.data);
-        fetchBlocks(selectedCorridor);
-      }
+      setOptimizationResult(res.data);
+      fetchBlocks(selectedCorridor);
     } catch (err) {
-      console.error('Optimization run failed', err);
+      setError(err instanceof Error ? err.message : 'Optimization run failed');
     } finally {
       setIsOptimizing(false);
     }
@@ -107,6 +107,12 @@ export const PlanningSchedulePage: React.FC = () => {
         </div>
       )}
 
+      {error && (
+        <div className="p-3 bg-status-critical/10 border-2 border-status-critical text-status-critical font-mono text-xs">
+          {error}
+        </div>
+      )}
+
       {/* ── Optimization Feedback Banner ─────────────────────────── */}
       {optimizationResult && (
         <div className="bg-surface-card border-2 border-status-optimal shadow-[4px_4px_0px_0px_rgba(34,197,94,0.3)] p-4 relative">
@@ -147,16 +153,16 @@ export const PlanningSchedulePage: React.FC = () => {
               <div className="bg-background-main border border-surface-border px-3 py-1.5">
                 <span className="text-[10px] text-text-muted block uppercase">Disruption Savings</span>
                 <span className="font-bold text-status-warning">
-                  {optimizationResult.baseline_comparison?.savingPercentage ?? 28.4}% (
-                  {optimizationResult.baseline_comparison?.savingMinutes ?? 270}m)
+                  {optimizationResult.baseline_comparison?.savingPercentage ?? optimizationResult.summary?.savingPercentage ?? 0}% (
+                  {optimizationResult.baseline_comparison?.savingMinutes ?? optimizationResult.summary?.savingMinutes ?? 0}m)
                 </span>
               </div>
               <div className="bg-background-main border border-surface-border px-3 py-1.5">
                 <span className="text-[10px] text-text-muted block uppercase">Runtime / Iterations</span>
                 <span className="font-bold text-text-primary flex items-center gap-1">
                   <Clock size={11} />
-                  {optimizationResult.solver_statistics?.runtime_ms ?? 1840}ms (
-                  {optimizationResult.solver_statistics?.iterations ?? 50} iter)
+                  {optimizationResult.solver_statistics?.runtime_ms ?? 0}ms (
+                  {optimizationResult.solver_statistics?.iterations ?? 0} iter)
                 </span>
               </div>
             </div>

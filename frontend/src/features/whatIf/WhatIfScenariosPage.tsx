@@ -1,12 +1,12 @@
 import React, { useState } from 'react';
 import { ScenarioConfigForm } from './ScenarioConfigForm';
 import { ScheduleDiffViewer } from './ScheduleDiffViewer';
-import { runWhatIfScenario, type WhatIfScenarioPayload } from '../../api/client';
+import { runWhatIfScenario, type WhatIfResult, type WhatIfScenarioPayload } from '../../api/client';
 import { AlertTriangle, Sparkles } from 'lucide-react';
 
 export const WhatIfScenariosPage: React.FC = () => {
   const [isSimulating, setIsSimulating] = useState(false);
-  const [result, setResult] = useState<any>(null);
+  const [result, setResult] = useState<WhatIfResult | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   const handleSimulate = async (payload: WhatIfScenarioPayload) => {
@@ -14,13 +14,9 @@ export const WhatIfScenariosPage: React.FC = () => {
     setError(null);
     try {
       const response = await runWhatIfScenario(payload);
-      if (response.success) {
-        setResult(response.data);
-      } else {
-        setError('Solver failed to return a feasible schedule modification.');
-      }
-    } catch (err: any) {
-      setError(err?.message || 'Failed to communicate with re-optimization engine.');
+      setResult(response.data);
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : 'Failed to communicate with re-optimization engine.');
     } finally {
       setIsSimulating(false);
     }
@@ -32,7 +28,7 @@ export const WhatIfScenariosPage: React.FC = () => {
       preset = {
         scenario_id: `whatif_td_${Date.now().toString(36)}`,
         scenario_type: 'TRAIN_DELAY',
-        base_schedule_id: 'sched_base_001',
+        base_schedule_id: 'current',
         affected_train_ids: ['12002'],
         affected_task_ids: ['TSK-ENG-NDLS-045-01'],
         new_constraints: {
@@ -45,7 +41,7 @@ export const WhatIfScenariosPage: React.FC = () => {
       preset = {
         scenario_id: `whatif_ru_${Date.now().toString(36)}`,
         scenario_type: 'RESOURCE_UNAVAILABLE',
-        base_schedule_id: 'sched_base_001',
+        base_schedule_id: 'current',
         affected_task_ids: ['TSK-TRD-NDLS-046-02'],
         new_constraints: {
           unavailable_resource_type: 'tower_wagon',
@@ -56,7 +52,7 @@ export const WhatIfScenariosPage: React.FC = () => {
       preset = {
         scenario_id: `whatif_bu_${Date.now().toString(36)}`,
         scenario_type: 'BLOCK_UNAVAILABLE',
-        base_schedule_id: 'sched_base_001',
+        base_schedule_id: 'current',
         affected_task_ids: ['TSK-ENG-NDLS-045-01', 'TSK-TRD-NDLS-046-02'],
         new_constraints: {
           unavailable_block_id: 'blk_55a1',

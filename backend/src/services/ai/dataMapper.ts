@@ -68,8 +68,8 @@ export function mapTaskToAi(
   corridor?: CorridorItem | null,
   dept?: DepartmentItem | null
 ): AiTaskPayload {
-  const sectionId = corridor?.code || "sec_12_ndls_agc";
-  const deptCode = dept?.code || task.departmentId || "ENGINEERING";
+  const sectionId = corridor?.code || task.corridorId;
+  const deptCode = dept?.code || task.departmentId;
 
   // Derive priority hint from criticality score (0-100)
   let priorityHint: "LOW" | "MEDIUM" | "HIGH" | "CRITICAL" = "MEDIUM";
@@ -130,7 +130,7 @@ export function mapTrainToAi(
   train: TrainItem,
   corridor?: CorridorItem | null
 ): AiMovementPayload {
-  const sectionId = corridor?.code || "sec_12_ndls_agc";
+  const sectionId = corridor?.code || train.corridorId;
   const isExpress = train.trainType === "EXPRESS" || train.isCriticalService;
   const isFreight = train.isGoodsTrain || train.trainType === "GOODS";
 
@@ -155,7 +155,7 @@ export function mapWindowToAi(
   window: BlockWindowItem,
   corridor?: CorridorItem | null
 ): AiWindowPayload {
-  const sectionId = corridor?.code || "sec_12_ndls_agc";
+  const sectionId = corridor?.code || window.corridorId;
 
   return {
     window_id: window.id,

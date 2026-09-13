@@ -2,9 +2,14 @@ import { Request, Response, NextFunction } from "express";
 import { db } from "../../db";
 import { blocks, blockTasks, corridors } from "../../db/schema";
 import { eq, desc } from "drizzle-orm";
+import { dataStore } from "../../services/data/dataStore";
 
 export const getBlocks = async (req: Request, res: Response, next: NextFunction) => {
   try {
+    if (!db) {
+      const allBlocks = await dataStore.getBlocks(req.query.corridorId as string | undefined);
+      return res.json({ success: true, count: allBlocks.length, data: allBlocks });
+    }
     const status = req.query.status as string;
     let query = db.select().from(blocks).$dynamic();
 

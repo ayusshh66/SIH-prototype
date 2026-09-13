@@ -2,14 +2,16 @@ import React, { useEffect, useState } from 'react';
 import { getShadowBlocks } from '../../api/client';
 import { ShadowBlockCard } from './ShadowBlockCard';
 import { ShadowBlockCandidate } from '../../types/api';
+import { ErrorState } from '../../components/common/ErrorState';
 
 export const ShadowBlocksPage: React.FC = () => {
   const [candidates, setCandidates] = useState<ShadowBlockCandidate[]>([]);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    getShadowBlocks().then(res => {
-      if (res.success) setCandidates(res.data);
-    });
+    getShadowBlocks()
+      .then(res => setCandidates(res.data))
+      .catch((err: unknown) => setError(err instanceof Error ? err.message : String(err)));
   }, []);
 
   return (
@@ -20,28 +22,18 @@ export const ShadowBlocksPage: React.FC = () => {
           <p className="text-text-muted font-mono text-sm mt-1">INTEGRATED MULTI-DEPARTMENT POSSESSIONS</p>
         </div>
       </div>
+
+      {error && <ErrorState title="Shadow Block Engine Failed" message={error} />}
       
       <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
         {candidates.map(candidate => (
            <ShadowBlockCard key={candidate.shadow_block_id} candidate={candidate} />
         ))}
-        {/* Mocking a rejected one for visual parity if only one exists in mock data */}
-        <ShadowBlockCard candidate={{
-          shadow_block_id: "SB-NDLS-302",
-          primary_task_id: "TSK-ENG-NDLS-088",
-          participating_task_ids: ["TSK-SNT-NDLS-089"],
-          sections: ["sec_14_agc"],
-          departments: ["ENG", "SNT"],
-          proposed_window_start: "2026-11-04T02:00:00Z",
-          proposed_window_end: "2026-11-04T04:30:00Z",
-          estimated_duration_minutes: 150,
-          estimated_corridor_occupancy: 0.55,
-          potential_time_saving_minutes: 60,
-          resource_usage: { track_machine: 1 },
-          conflict_status: "REJECTED",
-          shadow_benefit_score: 0.20,
-          reasons: ["SAFETY_CONFLICT: Concurrent point motor overhaul and track tamping violates IR-SIG-402 interlocking safety rules."]
-        }} />
+        {!error && candidates.length === 0 && (
+          <div className="col-span-full p-8 border-2 border-surface-border text-center font-mono text-text-muted bg-surface-card">
+            NO SHADOW BLOCK CANDIDATES RETURNED BY AI ENGINE.
+          </div>
+        )}
       </div>
     </div>
   );

@@ -120,6 +120,7 @@ Directory structure:
     │           ├── ai/
     │           │   ├── aiAdapter.service.ts
     │           │   ├── aiBridge.ts
+    │           │   ├── contracts.ts
     │           │   └── dataMapper.ts
     │           └── data/
     │               └── dataStore.ts
@@ -12087,7 +12088,7 @@ FILE: backend/tsconfig.json
     "resolveJsonModule": true
   },
   "include": ["src/**/*"],
-  "exclude": ["node_modules", "dist"]
+  "exclude": ["node_modules", "dist", "src/db/seed.ts", "src/modules/planning/optimizer.ts"]
 }
 
 
@@ -14898,8 +14899,12 @@ export function errorHandler(
   console.error(err);
 
   const message = err instanceof Error ? err.message : "Internal server error";
+  const statusCode =
+    err instanceof Error && "statusCode" in err && typeof err.statusCode === "number"
+      ? err.statusCode
+      : 500;
 
-  res.status(500).json({
+  res.status(statusCode).json({
     success: false,
     error: message,
   });
@@ -14994,9 +14999,14 @@ import { Request, Response, NextFunction } from "express";
 import { db } from "../../db";
 import { blocks, blockTasks, corridors } from "../../db/schema";
 import { eq, desc } from "drizzle-orm";
+import { dataStore } from "../../services/data/dataStore";
 
 export const getBlocks = async (req: Request, res: Response, next: NextFunction) => {
   try {
+    if (!db) {
+      const allBlocks = await dataStore.getBlocks(req.query.corridorId as string | undefined);
+      return res.json({ success: true, count: allBlocks.length, data: allBlocks });
+    }
     const status = req.query.status as string;
     let query = db.select().from(blocks).$dynamic();
 
@@ -15113,6 +15123,7 @@ export const rejectBlock = async (req: Request, res: Response, next: NextFunctio
     next(error);
   }
 };
+
 
 
 ================================================
@@ -15272,15 +15283,72 @@ export default router;
 FILE: backend/src/modules/health/routes.ts
 ================================================
 import { Router } from "express";
+import { sql } from "drizzle-orm";
+import { db, isDatabaseConfigured } from "../../db";
+import { aiAdapter } from "../../services/ai/aiAdapter.service";
 
 const router = Router();
 
-router.get("/", (_req, res) => {
-  res.json({
-    success: true,
-    service: "railway-block-planning-backend",
-    database: "configured",
-    timestamp: new Date().toISOString(),
+router.get("/", async (_req, res) => {
+  const checks = {
+    backend: {
+      status: "HEALTHY",
+      timestamp: new Date().toISOString(),
+    },
+    database: {
+      status: "NOT_CONFIGURED",
+      configured: isDatabaseConfigured,
+      error: undefined as string | undefined,
+    },
+    python_bridge: {
+      status: "UNKNOWN",
+      error: undefined as string | undefined,
+    },
+    ai_engines: {
+      status: "UNKNOWN",
+      engines: [] as string[],
+      error: undefined as string | undefined,
+    },
+    mode: {
+      mock: process.env.VITE_USE_MOCK === "true" || process.env.USE_MOCK === "true",
+      source: process.env.VITE_USE_MOCK === "true" || process.env.USE_MOCK === "true" ? "mock" : "live",
+    },
+  };
+
+  if (isDatabaseConfigured && db) {
+    try {
+      await db.execute(sql`select 1`);
+      checks.database.status = "HEALTHY";
+    } catch (error) {
+      checks.database.status = "FAILED";
+      checks.database.error = error instanceof Error ? error.message : String(error);
+    }
+  }
+
+  try {
+    const aiHealth = await aiAdapter.checkAiHealth();
+    checks.python_bridge.status = aiHealth.status === "HEALTHY" ? "HEALTHY" : "FAILED";
+    checks.ai_engines.status = aiHealth.status;
+    checks.ai_engines.engines = aiHealth.engines || [];
+    checks.ai_engines.error = aiHealth.error;
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    checks.python_bridge.status = "FAILED";
+    checks.python_bridge.error = message;
+    checks.ai_engines.status = "FAILED";
+    checks.ai_engines.error = message;
+  }
+
+  const success =
+    checks.backend.status === "HEALTHY" &&
+    checks.python_bridge.status === "HEALTHY" &&
+    checks.ai_engines.status === "HEALTHY" &&
+    checks.database.status !== "FAILED";
+
+  res.status(success ? 200 : 503).json({
+    success,
+    data: checks,
+    error: success ? undefined : "One or more runtime health checks failed.",
   });
 });
 
@@ -15402,10 +15470,15 @@ import { db } from "../../db";
 import { maintenanceTasks, defects } from "../../db/schema";
 import { eq, desc } from "drizzle-orm";
 import { calculatePriorityScore } from "../planning/priority.engine";
+import { dataStore } from "../../services/data/dataStore";
 
 export const getTasks = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const statusQuery = req.query.status as string;
+    if (!db) {
+      const tasks = await dataStore.getTasks(statusQuery);
+      return res.json({ success: true, count: tasks.length, data: tasks });
+    }
     let query = db.select().from(maintenanceTasks).$dynamic();
 
     if (statusQuery) {
@@ -15547,6 +15620,7 @@ export const completeTask = async (req: Request, res: Response, next: NextFuncti
     next(error);
   }
 };
+
 
 
 ================================================
@@ -15945,16 +16019,58 @@ export async function runOptimization(options: OptimizationOptions = {}): Promis
 FILE: backend/src/modules/planning/planning.controller.ts
 ================================================
 import { Request, Response, NextFunction } from "express";
-import { db } from "../../db";
-import { optimizationRuns, maintenanceTasks, blocks, corridors, departments } from "../../db/schema";
-import { desc, eq, sql } from "drizzle-orm";
-import { runOptimization } from "./optimizer";
+import { aiAdapter } from "../../services/ai/aiAdapter.service";
+import { dataStore } from "../../services/data/dataStore";
+import type { EmergencyEventPayload, WhatIfScenarioPayload } from "../../services/ai/contracts";
 
 export const generatePlan = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const { horizon, startDate, endDate, corridorId } = req.body;
-    const result = await runOptimization({ horizon, startDate, endDate, corridorId });
-    res.status(200).json({ success: true, ...result });
+    const { horizon, corridorId, mode } = req.body;
+    const result = await aiAdapter.orchestratePlanning({ horizon, corridorId, mode });
+    res.status(200).json({ success: true, data: result });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const getShadowBlockCandidates = async (_req: Request, res: Response, next: NextFunction) => {
+  try {
+    const result = await aiAdapter.generateShadowBlocks();
+    res.json({ success: true, data: result.shadow_block_candidates });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const runWhatIfScenario = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const result = await aiAdapter.runWhatIf(req.body as WhatIfScenarioPayload);
+    res.json({ success: true, data: result });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const runEmergencyScenario = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const result = await aiAdapter.runEmergency(req.body as EmergencyEventPayload);
+    res.json({ success: true, data: result });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const getExplanations = async (_req: Request, res: Response, next: NextFunction) => {
+  try {
+    res.json({ success: true, data: aiAdapter.getLatestExplanations() });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const getConflicts = async (_req: Request, res: Response, next: NextFunction) => {
+  try {
+    res.json({ success: true, data: aiAdapter.getLatestConflicts() });
   } catch (error) {
     next(error);
   }
@@ -15962,7 +16078,7 @@ export const generatePlan = async (req: Request, res: Response, next: NextFuncti
 
 export const getRuns = async (_req: Request, res: Response, next: NextFunction) => {
   try {
-    const runs = await db.select().from(optimizationRuns).orderBy(desc(optimizationRuns.createdAt));
+    const runs = await dataStore.getOptimizationRuns();
     res.json({ success: true, count: runs.length, data: runs });
   } catch (error) {
     next(error);
@@ -15971,40 +16087,23 @@ export const getRuns = async (_req: Request, res: Response, next: NextFunction) 
 
 export const getDashboard = async (_req: Request, res: Response, next: NextFunction) => {
   try {
-    // 1. Task counts
-    const allTasks = await db.select().from(maintenanceTasks);
+    const [allTasks, allBlocks, allCorridors, allDepts, recentRuns] = await Promise.all([
+      dataStore.getTasks(),
+      dataStore.getBlocks(),
+      dataStore.getCorridors(),
+      dataStore.getDepartments(),
+      dataStore.getOptimizationRuns(),
+    ]);
+
     const pendingTasks = allTasks.filter((t) => t.status === "PENDING").length;
     const scheduledTasks = allTasks.filter((t) => t.status === "SCHEDULED").length;
     const completedTasks = allTasks.filter((t) => t.status === "COMPLETED").length;
     const overdueTasks = allTasks.filter((t) => t.overdueDays > 0).length;
-
-    // 2. Block counts
-    const allBlocks = await db.select().from(blocks);
     const proposedBlocks = allBlocks.filter((b) => b.status === "PROPOSED").length;
     const approvedBlocks = allBlocks.filter((b) => b.status === "APPROVED").length;
     const executedBlocks = allBlocks.filter((b) => b.status === "EXECUTED").length;
-
-    // 3. Total savings
     const totalMinutesSaved = allBlocks.reduce((acc, b) => acc + (b.savedMinutes || 0), 0);
     const totalHoursSaved = Number((totalMinutesSaved / 60).toFixed(1));
-
-    // 4. Corridors and Departments
-    const allCorridors = await db.select().from(corridors);
-    const allDepts = await db.select().from(departments);
-
-    // 5. Recent runs
-    const recentRuns = await db
-      .select()
-      .from(optimizationRuns)
-      .orderBy(desc(optimizationRuns.createdAt))
-      .limit(5);
-
-    // 6. Recent blocks
-    const recentBlocks = await db
-      .select()
-      .from(blocks)
-      .orderBy(desc(blocks.createdAt))
-      .limit(5);
 
     res.json({
       success: true,
@@ -16023,14 +16122,15 @@ export const getDashboard = async (_req: Request, res: Response, next: NextFunct
           activeCorridors: allCorridors.length,
           departmentsCount: allDepts.length,
         },
-        recentRuns,
-        recentBlocks,
+        recentRuns: recentRuns.slice(0, 5),
+        recentBlocks: allBlocks.slice(0, 5),
       },
     });
   } catch (error) {
     next(error);
   }
 };
+
 
 
 ================================================
@@ -16124,13 +16224,27 @@ export function calculatePriorityScore(factors: PriorityFactors): number {
 FILE: backend/src/modules/planning/routes.ts
 ================================================
 import { Router } from "express";
-import { generatePlan, getRuns, getDashboard } from "./planning.controller";
+import {
+  generatePlan,
+  getConflicts,
+  getDashboard,
+  getExplanations,
+  getRuns,
+  getShadowBlockCandidates,
+  runEmergencyScenario,
+  runWhatIfScenario,
+} from "./planning.controller";
 
 const router = Router();
 
 router.post("/generate", generatePlan);
 router.get("/runs", getRuns);
 router.get("/dashboard", getDashboard);
+router.get("/shadow-blocks/candidates", getShadowBlockCandidates);
+router.post("/what-if", runWhatIfScenario);
+router.post("/emergency", runEmergencyScenario);
+router.get("/explanations", getExplanations);
+router.get("/conflicts", getConflicts);
 
 export default router;
 
@@ -16245,77 +16359,71 @@ FILE: backend/src/services/ai/aiAdapter.service.ts
 ================================================
 import { invokeAiBridge } from "./aiBridge";
 import {
+  mapAiBlockToDbBlock,
+  mapResourceToAi,
   mapTaskToAi,
   mapTrainToAi,
   mapWindowToAi,
-  mapResourceToAi,
-  mapAiBlockToDbBlock,
 } from "./dataMapper";
 import { dataStore, MaintenanceTaskItem } from "../data/dataStore";
+import type {
+  AiHealthResult,
+  CriticalityScore,
+  DbBlockView,
+  EmergencyEventPayload,
+  EmergencyResult,
+  Explanation,
+  OrchestrationResult,
+  PlanningContext,
+  PlanningOptions,
+  PlanningResult,
+  ScheduleCandidate,
+  ShadowBlockCandidate,
+  WhatIfResult,
+  WhatIfScenarioPayload,
+} from "./contracts";
+
+const SUCCESSFUL_OPT_STATUSES = new Set(["OPTIMAL", "FEASIBLE", "PARTIAL"]);
+
+function ensureFiniteNumber(value: unknown, field: string): number {
+  const numeric = typeof value === "number" ? value : Number(value);
+  if (!Number.isFinite(numeric)) {
+    throw new ValidationError(`Missing or invalid required field '${field}'.`);
+  }
+  return numeric;
+}
+
+function ensureString(value: unknown, field: string): string {
+  if (typeof value !== "string" || value.trim().length === 0) {
+    throw new ValidationError(`Missing or invalid required field '${field}'.`);
+  }
+  return value.trim();
+}
+
+export class ValidationError extends Error {
+  statusCode = 400;
+}
 
 export class AiAdapterService {
-  private latestPlanningResult: any = null;
-  private latestPlanningContext: any = null;
-  private latestExplanations: any[] = [];
-  private latestConflicts: any[] = [];
-  private latestShadowBlocks: any[] = [];
+  private latestPlanningResult: PlanningResult | null = null;
+  private latestPlanningContext: PlanningContext | null = null;
+  private latestExplanations: Explanation[] = [];
+  private latestConflicts: PlanningResult["train_conflicts"] = [];
+  private latestShadowBlocks: ShadowBlockCandidate[] = [];
 
-  /**
-   * Run end-to-end multi-objective AI block planning orchestration.
-   */
-  async orchestratePlanning(options: {
-    corridorId?: string;
-    horizon?: string;
-    mode?: string;
-  } = {}): Promise<any> {
+  async orchestratePlanning(options: PlanningOptions = {}): Promise<PlanningResult> {
     const horizon = options.horizon || "WEEKLY";
     const mode = options.mode || "BALANCED";
 
-    // 1. Gather operational data from data store
-    const [allTasks, allTrains, allWindows, allResources, allCorridors, allDepts] =
-      await Promise.all([
-        dataStore.getTasks(),
-        dataStore.getTrains(),
-        dataStore.getBlockWindows(),
-        dataStore.getResources(),
-        dataStore.getCorridors(),
-        dataStore.getDepartments(),
-      ]);
-
-    const corridorMap = new Map(allCorridors.map((c) => [c.id, c]));
-    const deptMap = new Map(allDepts.map((d) => [d.id, d]));
-    const taskMap = new Map(allTasks.map((t) => [t.taskCode || t.id, t]));
-
-    // Filter tasks if corridorId specified
-    let targetTasks = allTasks.filter((t) => t.status === "PENDING" && t.requiredBlock);
-    if (options.corridorId && options.corridorId !== "all") {
-      targetTasks = targetTasks.filter(
-        (t) => t.corridorId === options.corridorId || t.corridorId === "corr_ndls_agc"
-      );
-    }
-    if (targetTasks.length === 0) {
-      targetTasks = allTasks.filter((t) => t.requiredBlock);
-    }
-
-    // 2. Map database objects to canonical AI request
-    const aiTasks = targetTasks.map((t) =>
-      mapTaskToAi(t, corridorMap.get(t.corridorId), deptMap.get(t.departmentId))
-    );
-    const aiTrains = allTrains.map((tr) =>
-      mapTrainToAi(tr, corridorMap.get(tr.corridorId))
-    );
-    const aiWindows = allWindows.map((w) =>
-      mapWindowToAi(w, corridorMap.get(w.corridorId))
-    );
-    const aiResources = allResources.map((r) => mapResourceToAi(r));
-
-    const canonicalRequest = {
+    const contextData = await this.buildPlanningContextData(options.corridorId);
+    const { allTasks, allCorridors, taskMap } = contextData;
+    const canonicalRequest: PlanningContext = {
       request_id: `plan_req_${Date.now().toString(36)}`,
       mode,
-      tasks: aiTasks,
-      train_movements: aiTrains,
-      resources: aiResources,
-      maintenance_windows: aiWindows,
+      tasks: contextData.aiTasks,
+      train_movements: contextData.aiTrains,
+      resources: contextData.aiResources,
+      maintenance_windows: contextData.aiWindows,
       constraints: {
         safety_rules: true,
         deadline_hard: true,
@@ -16324,66 +16432,56 @@ export class AiAdapterService {
       weights: {
         maintenance_value: 0.45,
         shadow_block_benefit: 0.25,
-        train_disruption_penalty: 0.30,
+        train_disruption_penalty: 0.3,
       },
       solver_settings: {
-        timeout_seconds: 10,
+        max_runtime_seconds: 10,
+        allow_partial_solution: true,
       },
     };
 
-    this.latestPlanningContext = canonicalRequest;
+    const aiResult = await invokeAiBridge<PlanningContext, OrchestrationResult>("plan", canonicalRequest);
+    this.assertOrchestrationSuccess(aiResult);
 
-    // 3. Invoke deterministic Python AgentOrchestrator
-    const aiResult = await invokeAiBridge<any, any>("plan", canonicalRequest);
-
-    if (aiResult.status === "FAILED" && (!aiResult.optimization_result || aiResult.errors?.length > 0)) {
-      if (!aiResult.optimization_result) {
-        throw new Error(
-          `AI Orchestration Failure: ${aiResult.errors?.join("; ") || "Optimization returned no schedule."}`
-        );
-      }
+    const optResult = aiResult.optimization_result;
+    if (!optResult) {
+      throw new Error("AI Orchestration Failure: optimization_result was not returned.");
     }
 
-    this.latestPlanningResult = aiResult;
-    this.latestExplanations = aiResult.explanations || [];
-    this.latestShadowBlocks = aiResult.shadow_block_candidates || [];
-
-    // Derive conflicts from AI result
-    const optResult = aiResult.optimization_result || {};
+    this.latestPlanningContext = {
+      ...canonicalRequest,
+      criticality_scores: aiResult.criticality_scores,
+      shadow_block_candidates: aiResult.shadow_block_candidates,
+    };
+    this.latestExplanations = aiResult.explanations;
+    this.latestShadowBlocks = aiResult.shadow_block_candidates;
     this.latestConflicts = optResult.train_conflicts || [];
 
-    // 4. Update task criticality in dataStore from AI criticality scores
-    if (Array.isArray(aiResult.criticality_scores)) {
-      for (const cs of aiResult.criticality_scores) {
-        if (cs.entity_id) {
-          await dataStore.updateTaskCriticality(
-            cs.entity_id,
-            cs.score || 0.5,
-            cs.score ? (cs.score * 100).toFixed(1) : "50.0",
-            cs
-          );
-        }
-      }
+    for (const cs of aiResult.criticality_scores) {
+      await this.persistCriticalityScore(cs);
     }
 
-    // 5. Transform schedule candidate blocks into DB blocks
-    const targetCorridor = allCorridors.find((c) => c.id === options.corridorId) || allCorridors[0];
-    const generatedBlocks: any[] = [];
-    const scheduleCandidates = optResult.schedule_candidates || [];
+    const targetCorridor =
+      allCorridors.find((c) => c.id === options.corridorId || c.code === options.corridorId) ||
+      allCorridors[0];
+    const generatedBlocks: DbBlockView[] = [];
 
-    for (const cand of scheduleCandidates) {
+    for (const cand of optResult.schedule_candidates || []) {
       for (const blk of cand.blocks || []) {
-        const blkWithTasks = {
-          ...blk,
-          task_ids: cand.task_ids || optResult.selected_task_ids || [],
-        };
-        const dbBlk = mapAiBlockToDbBlock(
-          blkWithTasks,
-          targetCorridor?.id || "corr_ndls_agc",
-          targetCorridor?.code || "NDLS-AGC",
-          taskMap
+        const durationMinutes =
+          blk.durationMinutes ||
+          Math.max(
+            0,
+            Math.round((new Date(blk.end).getTime() - new Date(blk.start).getTime()) / 60000)
+          );
+        generatedBlocks.push(
+          mapAiBlockToDbBlock(
+            { ...blk, durationMinutes, task_ids: cand.task_ids || optResult.selected_task_ids },
+            targetCorridor?.id || blk.section_id,
+            targetCorridor?.code || blk.section_id,
+            taskMap
+          )
         );
-        generatedBlocks.push(dbBlk);
       }
     }
 
@@ -16391,60 +16489,42 @@ export class AiAdapterService {
       await dataStore.saveBlocks(generatedBlocks);
     }
 
-    // 6. Save optimization run record
+    const scheduledCount = optResult.selected_task_ids.length;
+    const totalConsidered = contextData.targetTasks.length;
+    const baselineMinutes = generatedBlocks.reduce((acc, b) => acc + (b.baselineDurationMinutes || 0), 0);
+    const totalBlockMinutes = generatedBlocks.reduce((acc, b) => acc + (b.durationMinutes || 0), 0);
+    const savedMinutes = Math.max(baselineMinutes - totalBlockMinutes, 0);
     const runCode = `RUN-${new Date().toISOString().slice(0, 10).replace(/-/g, "")}-${Math.floor(
       100 + Math.random() * 900
     )}`;
-    const scheduledCount = optResult.selected_task_ids?.length || 0;
-    const totalConsidered = targetTasks.length;
-    const baselineMinutes = generatedBlocks.reduce((acc, b) => acc + (b.baselineDurationMinutes || 0), 0) || 210;
-    const totalBlockMinutes = generatedBlocks.reduce((acc, b) => acc + (b.durationMinutes || 0), 0) || 150;
-    const savedMinutes = baselineMinutes - totalBlockMinutes;
 
-    const runRecord = {
-      runId: aiResult.orchestration_id || `run_${Date.now()}`,
+    const runRecord = await dataStore.saveOptimizationRun({
+      runId: aiResult.orchestration_id,
       runCode,
       horizon,
       startDate: new Date().toISOString(),
-      endDate: new Date(Date.now() + 7 * 86400000).toISOString(),
+      endDate: new Date(Date.now() + (horizon === "MONTHLY" ? 30 : 7) * 86400000).toISOString(),
       tasksConsidered: totalConsidered,
       tasksScheduled: scheduledCount,
       blocksGenerated: generatedBlocks.length,
       totalBlockMinutes,
       baselineBlockMinutes: baselineMinutes,
       estimatedSavingsMinutes: savedMinutes,
-      optimizationScore: String(optResult.objective_score || "0.81"),
-      status: optResult.status || "OPTIMAL",
+      optimizationScore: String(optResult.objective_score),
+      status: optResult.status,
       createdAt: new Date().toISOString(),
-    };
+    });
 
-    await dataStore.saveOptimizationRun(runRecord);
-
-    // 7. Format complete response envelope
-    return {
-      runId: runRecord.runId,
-      runCode: runRecord.runCode,
-      status: optResult.status || "OPTIMAL",
+    const result: PlanningResult = {
+      ...optResult,
+      runId: runRecord?.id || aiResult.orchestration_id,
+      runCode,
+      status: optResult.status,
       orchestrationId: aiResult.orchestration_id,
       executionSequence: aiResult.execution_sequence,
-      selected_task_ids: optResult.selected_task_ids || [],
-      unscheduled_task_ids: optResult.unscheduled_task_ids || [],
-      schedule_candidates: scheduleCandidates,
-      shadow_blocks: aiResult.shadow_block_candidates || [],
-      train_conflicts: this.latestConflicts,
-      resource_utilization: optResult.resource_utilization || { track_machine: 0.8 },
-      objective_score: optResult.objective_score || 0.81,
-      baseline_comparison: {
-        delta_objective: 0.05,
-        train_disruption_reduction_pct: 20.8,
-        savingMinutes: savedMinutes,
-        savingPercentage: baselineMinutes > 0 ? Math.round((savedMinutes / baselineMinutes) * 100) : 28.4,
-      },
-      solver_statistics: optResult.solver_statistics || {
-        runtime_ms: 1840,
-        iterations: 50,
-      },
-      explanations: aiResult.explanations || [],
+      shadow_blocks: aiResult.shadow_block_candidates,
+      train_conflicts: optResult.train_conflicts || [],
+      explanations: aiResult.explanations,
       blocks: generatedBlocks,
       summary: {
         tasksConsidered: totalConsidered,
@@ -16453,170 +16533,311 @@ export class AiAdapterService {
         baselineBlockMinutes: baselineMinutes,
         optimizedBlockMinutes: totalBlockMinutes,
         savingMinutes: savedMinutes,
-        savingPercentage: baselineMinutes > 0 ? Math.round((savedMinutes / baselineMinutes) * 100) : 28,
-        optimizationScore: optResult.objective_score || 0.81,
+        savingPercentage: baselineMinutes > 0 ? Math.round((savedMinutes / baselineMinutes) * 100) : 0,
+        optimizationScore: optResult.objective_score,
       },
     };
+
+    this.latestPlanningResult = result;
+    return result;
   }
 
-  /**
-   * Score or recalculate criticality using Python CriticalityEngine.
-   */
-  async getCriticalityScore(task: MaintenanceTaskItem): Promise<any> {
+  async getCriticalityScore(task: MaintenanceTaskItem): Promise<CriticalityScore> {
     const input = {
       entity_id: task.taskCode || task.id,
       severity: task.criticalityScore >= 85 ? "CRITICAL" : task.criticalityScore >= 70 ? "HIGH" : "MODERATE",
-      urgency: Math.min(1.0, (task.urgencyScore || 75) / 100),
-      safety_risk: Math.min(1.0, (task.safetyScore || 80) / 100),
+      urgency: Math.min(1, (task.urgencyScore || 75) / 100),
+      safety_risk: Math.min(1, (task.safetyScore || 80) / 100),
       traffic_density: 0.85,
       speed_class: "HIGH",
       deadline: task.dueAt || undefined,
     };
 
-    const result = await invokeAiBridge<any, any>("criticality", input);
-
-    if (result && result.score !== undefined) {
-      await dataStore.updateTaskCriticality(
-        task.id,
-        result.score,
-        (result.score * 100).toFixed(1),
-        result
-      );
-    }
-
+    const result = await invokeAiBridge<typeof input, CriticalityScore>("criticality", input);
+    await dataStore.updateTaskCriticality(task.id, result.score, (result.score * 100).toFixed(1), result);
     return result;
   }
 
-  /**
-   * Generate shadow block candidates using Python ShadowBlockEngine.
-   */
-  async generateShadowBlocks(options?: any): Promise<any> {
-    const [allTasks, allWindows, allResources, allCorridors, allDepts] =
-      await Promise.all([
-        dataStore.getTasks(),
-        dataStore.getBlockWindows(),
-        dataStore.getResources(),
-        dataStore.getCorridors(),
-        dataStore.getDepartments(),
-      ]);
+  async generateShadowBlocks(options?: { constraints?: Record<string, unknown> }): Promise<{
+    compatibility_candidates: unknown[];
+    shadow_block_candidates: ShadowBlockCandidate[];
+  }> {
+    const contextData = await this.buildPlanningContextData();
+    const payload = {
+      tasks: contextData.aiTasks,
+      maintenance_windows: contextData.aiWindows,
+      resources: contextData.aiResources,
+      constraints: options?.constraints || {},
+    };
+
+    const res = await invokeAiBridge<typeof payload, {
+      compatibility_candidates: unknown[];
+      shadow_block_candidates: ShadowBlockCandidate[];
+    }>("shadow_blocks", payload);
+
+    this.latestShadowBlocks = res.shadow_block_candidates || [];
+    return res;
+  }
+
+  async runWhatIf(scenarioPayload: WhatIfScenarioPayload): Promise<WhatIfResult> {
+    const scenario = this.validateWhatIfScenario(scenarioPayload);
+    const context = await this.resolvePlanningContext();
+    const currentSchedule = await this.resolveSchedule(scenario.base_schedule_id);
+
+    const whatIfPayload = {
+      scenario: {
+        ...scenario,
+        scenario_id: scenario.scenario_id || `whatif_${Date.now().toString(36)}`,
+        created_at: new Date().toISOString(),
+      },
+      current_schedule: currentSchedule,
+      context,
+    };
+
+    const res = await invokeAiBridge<typeof whatIfPayload, WhatIfResult>("what_if", whatIfPayload);
+    if (res.errors?.length) {
+      throw new Error(`What-If engine rejected scenario: ${res.errors.join("; ")}`);
+    }
+    if (!res.new_schedule || res.optimization_result?.status === "INFEASIBLE" || res.optimization_result?.status === "FAILED") {
+      throw new Error(`What-If solver did not produce a feasible schedule for '${scenario.base_schedule_id}'.`);
+    }
+    return res;
+  }
+
+  async runEmergency(emergencyEvent: EmergencyEventPayload): Promise<EmergencyResult> {
+    const event = this.validateEmergencyEvent(emergencyEvent);
+    const context = await this.resolvePlanningContext();
+    const [allTasks, allTrains, allWindows, allResources, allCorridors, allDepts] = await Promise.all([
+      dataStore.getTasks(),
+      dataStore.getTrains(),
+      dataStore.getBlockWindows(),
+      dataStore.getResources(),
+      dataStore.getCorridors(),
+      dataStore.getDepartments(),
+    ]);
 
     const corridorMap = new Map(allCorridors.map((c) => [c.id, c]));
     const deptMap = new Map(allDepts.map((d) => [d.id, d]));
 
-    const aiTasks = allTasks.map((t) =>
-      mapTaskToAi(t, corridorMap.get(t.corridorId), deptMap.get(t.departmentId))
-    );
-    const aiWindows = allWindows.map((w) =>
-      mapWindowToAi(w, corridorMap.get(w.corridorId))
-    );
-    const aiResources = allResources.map((r) => mapResourceToAi(r));
-
-    const payload = {
-      tasks: aiTasks,
-      maintenance_windows: aiWindows,
-      resources: aiResources,
-      constraints: options?.constraints || {},
-    };
-
-    const res = await invokeAiBridge<any, any>("shadow_blocks", payload);
-    const candidates = res.shadow_block_candidates || [];
-    this.latestShadowBlocks = candidates;
-
-    return candidates;
-  }
-
-  /**
-   * Execute What-If scenario re-optimization using Python WhatIfEngine.
-   */
-  async runWhatIf(scenarioPayload: any): Promise<any> {
-    if (!this.latestPlanningContext) {
-      // Initialize a lightweight baseline context if none exists yet
-      await this.orchestratePlanning();
-    }
-
-    const currentSchedule =
-      this.latestPlanningResult?.optimization_result ||
-      this.latestPlanningResult?.schedule_candidates?.[0] ||
-      {};
-
-    const whatIfPayload = {
-      scenario: {
-        scenario_id: scenarioPayload.scenario_id || `whatif_${Date.now().toString(36)}`,
-        scenario_type: scenarioPayload.scenario_type || "TRAIN_DELAY",
-        base_schedule_id: scenarioPayload.base_schedule_id || "sched_base_001",
-        affected_task_ids: scenarioPayload.affected_task_ids || ["TSK-ENG-NDLS-045-01"],
-        affected_train_ids: scenarioPayload.affected_train_ids || ["12002"],
-        new_constraints: scenarioPayload.new_constraints || {},
-        description: scenarioPayload.description || "Hypothetical operational disruption test",
-        created_at: new Date().toISOString(),
-      },
-      current_schedule: currentSchedule,
-      context: this.latestPlanningContext,
-    };
-
-    const res = await invokeAiBridge<any, any>("what_if", whatIfPayload);
-    return res;
-  }
-
-  /**
-   * Execute Emergency defect insertion and slot discovery using Python EmergencyEngine.
-   */
-  async runEmergency(emergencyEvent: any): Promise<any> {
-    if (!this.latestPlanningContext) {
-      await this.orchestratePlanning();
-    }
-
-    const [allTasks, allWindows] = await Promise.all([
-      dataStore.getTasks(),
-      dataStore.getBlockWindows(),
-    ]);
-
     const emergencyPayload = {
       emergency_event: {
-        event_id: emergencyEvent.event_id || `emg_${Date.now().toString(36)}`,
-        event_type: emergencyEvent.event_type || "NEW_USFD_DEFECT",
-        section_id: emergencyEvent.section_id || "sec_12_ndls_agc",
-        affected_asset_id: emergencyEvent.affected_asset_id || "ast_trk_45",
-        severity: emergencyEvent.severity || "CRITICAL",
-        detected_at: emergencyEvent.detected_at || new Date().toISOString(),
-        estimated_duration_minutes: Number(emergencyEvent.estimated_duration_minutes) || 120,
-        impact_summary: emergencyEvent.impact_summary || "Immediate USFD ultrasonic crack detection",
-        from_km: parseFloat(String(emergencyEvent.from_km)) || 45.2,
-        to_km: parseFloat(String(emergencyEvent.to_km)) || 46.5,
+        ...event,
+        event_id: event.event_id || `emg_${Date.now().toString(36)}`,
+        detected_at: event.detected_at || new Date().toISOString(),
       },
       current_state: {
-        ...this.latestPlanningContext,
-        existing_tasks: allTasks.map((t) => mapTaskToAi(t)),
-        windows: allWindows.map((w) => mapWindowToAi(w)),
+        ...context,
+        existing_tasks: allTasks.map((t) => mapTaskToAi(t, corridorMap.get(t.corridorId), deptMap.get(t.departmentId))),
+        train_movements: allTrains.map((t) => mapTrainToAi(t, corridorMap.get(t.corridorId))),
+        resources: allResources.map((r) => mapResourceToAi(r)),
+        windows: allWindows.map((w) => mapWindowToAi(w, corridorMap.get(w.corridorId))),
       },
     };
 
-    const res = await invokeAiBridge<any, any>("emergency", emergencyPayload);
+    const res = await invokeAiBridge<typeof emergencyPayload, EmergencyResult>("emergency", emergencyPayload);
+    if (res.errors?.length) {
+      throw new Error(`Emergency engine rejected event: ${res.errors.join("; ")}`);
+    }
+    if (!res.resulting_schedule || res.optimization_result?.status === "INFEASIBLE" || res.optimization_result?.status === "FAILED") {
+      throw new Error("Emergency solver did not produce a feasible resulting schedule.");
+    }
     return res;
   }
 
-  /**
-   * Check health of Python AI engines via bridge.
-   */
-  async checkAiHealth(): Promise<any> {
-    try {
-      const res = await invokeAiBridge<any, any>("health", {});
-      return res;
-    } catch (err: any) {
-      return {
-        status: "DEGRADED",
-        error: err.message,
-        engines: [],
-      };
-    }
+  async checkAiHealth(): Promise<AiHealthResult> {
+    return invokeAiBridge<Record<string, never>, AiHealthResult>("health", {});
   }
 
-  getLatestExplanations(): any[] {
+  getLatestExplanations(): Explanation[] {
     return this.latestExplanations;
   }
 
-  getLatestConflicts(): any[] {
+  getLatestConflicts(): PlanningResult["train_conflicts"] {
     return this.latestConflicts;
+  }
+
+  getLatestShadowBlocks(): ShadowBlockCandidate[] {
+    return this.latestShadowBlocks;
+  }
+
+  private async buildPlanningContextData(corridorId?: string) {
+    const [allTasks, allTrains, allWindows, allResources, allCorridors, allDepts] = await Promise.all([
+      dataStore.getTasks(),
+      dataStore.getTrains(),
+      dataStore.getBlockWindows(),
+      dataStore.getResources(),
+      dataStore.getCorridors(),
+      dataStore.getDepartments(),
+    ]);
+
+    const corridorMap = new Map(allCorridors.map((c) => [c.id, c]));
+    const deptMap = new Map(allDepts.map((d) => [d.id, d]));
+    const taskMap = new Map(allTasks.map((t) => [t.taskCode || t.id, t]));
+
+    let targetTasks = allTasks.filter((t) => t.status === "PENDING" && t.requiredBlock);
+    if (corridorId && corridorId !== "all") {
+      targetTasks = targetTasks.filter((t) => t.corridorId === corridorId || corridorMap.get(t.corridorId)?.code === corridorId);
+    }
+
+    if (targetTasks.length === 0) {
+      throw new ValidationError("No pending block-required maintenance tasks found for the requested planning context.");
+    }
+
+    return {
+      allTasks,
+      allCorridors,
+      targetTasks,
+      taskMap,
+      aiTasks: targetTasks.map((t) => mapTaskToAi(t, corridorMap.get(t.corridorId), deptMap.get(t.departmentId))),
+      aiTrains: allTrains.map((tr) => mapTrainToAi(tr, corridorMap.get(tr.corridorId))),
+      aiWindows: allWindows.map((w) => mapWindowToAi(w, corridorMap.get(w.corridorId))),
+      aiResources: allResources.map((r) => mapResourceToAi(r)),
+    };
+  }
+
+  private assertOrchestrationSuccess(aiResult: OrchestrationResult): void {
+    if (aiResult.status === "FAILED" || aiResult.errors.length > 0) {
+      throw new Error(`AI Orchestration Failure: ${aiResult.errors.join("; ") || "unknown engine failure"}`);
+    }
+
+    const opt = aiResult.optimization_result;
+    if (!opt || !SUCCESSFUL_OPT_STATUSES.has(opt.status)) {
+      throw new Error(`Optimization solver failure: ${opt?.status || "missing optimization result"}`);
+    }
+  }
+
+  private async persistCriticalityScore(cs: CriticalityScore): Promise<void> {
+    if (!cs.entity_id) return;
+    await dataStore.updateTaskCriticality(cs.entity_id, cs.score || 0.5, cs.score ? (cs.score * 100).toFixed(1) : "50.0", cs);
+  }
+
+  private validateWhatIfScenario(payload: WhatIfScenarioPayload): WhatIfScenarioPayload {
+    const scenarioType = ensureString(payload.scenario_type, "scenario_type") as WhatIfScenarioPayload["scenario_type"];
+    const baseScheduleId = ensureString(payload.base_schedule_id, "base_schedule_id");
+    const newConstraints = payload.new_constraints;
+    if (!newConstraints || typeof newConstraints !== "object" || Array.isArray(newConstraints)) {
+      throw new ValidationError("Missing or invalid required field 'new_constraints'.");
+    }
+
+    if (scenarioType === "TRAIN_DELAY") {
+      const affectedTrains = payload.affected_train_ids || [];
+      if (affectedTrains.length === 0 && typeof newConstraints.train_id !== "string") {
+        throw new ValidationError("TRAIN_DELAY requires affected_train_ids or new_constraints.train_id.");
+      }
+      ensureFiniteNumber(newConstraints.train_delay_minutes ?? newConstraints.delay_minutes, "new_constraints.train_delay_minutes");
+    }
+
+    if (scenarioType === "TASK_DURATION_CHANGED") {
+      if (!payload.affected_task_ids?.length && typeof newConstraints.task_id !== "string") {
+        throw new ValidationError("TASK_DURATION_CHANGED requires affected_task_ids or new_constraints.task_id.");
+      }
+      ensureFiniteNumber(newConstraints.new_duration_minutes ?? newConstraints.duration_minutes, "new_constraints.new_duration_minutes");
+    }
+
+    return { ...payload, scenario_type: scenarioType, base_schedule_id: baseScheduleId };
+  }
+
+  private validateEmergencyEvent(payload: EmergencyEventPayload): EmergencyEventPayload {
+    const eventType = ensureString(payload.event_type, "event_type");
+    const sectionId = ensureString(payload.section_id, "section_id");
+    const severity = ensureString(payload.severity, "severity");
+    const impactSummary = ensureString(payload.impact_summary, "impact_summary");
+    const duration = ensureFiniteNumber(payload.estimated_duration_minutes, "estimated_duration_minutes");
+    const fromKm = ensureFiniteNumber(payload.from_km, "from_km");
+    const toKm = ensureFiniteNumber(payload.to_km, "to_km");
+    if (duration <= 0) throw new ValidationError("'estimated_duration_minutes' must be greater than zero.");
+    if (toKm < fromKm) throw new ValidationError("'to_km' must be greater than or equal to 'from_km'.");
+
+    return {
+      ...payload,
+      event_type: eventType,
+      section_id: sectionId,
+      severity,
+      impact_summary: impactSummary,
+      estimated_duration_minutes: duration,
+      from_km: fromKm,
+      to_km: toKm,
+    };
+  }
+
+  private async resolvePlanningContext(): Promise<PlanningContext> {
+    if (this.latestPlanningContext) return this.latestPlanningContext;
+
+    const contextData = await this.buildPlanningContextData();
+    return {
+      request_id: `context_req_${Date.now().toString(36)}`,
+      mode: "BALANCED",
+      tasks: contextData.aiTasks,
+      train_movements: contextData.aiTrains,
+      resources: contextData.aiResources,
+      maintenance_windows: contextData.aiWindows,
+      constraints: {
+        safety_rules: true,
+        deadline_hard: true,
+        resource_capacity: true,
+      },
+      weights: {
+        maintenance_value: 0.45,
+        shadow_block_benefit: 0.25,
+        train_disruption_penalty: 0.3,
+      },
+      solver_settings: {
+        max_runtime_seconds: 10,
+        allow_partial_solution: true,
+      },
+    };
+  }
+
+  private async resolveSchedule(baseScheduleId: string): Promise<ScheduleCandidate | { schedule_candidates: ScheduleCandidate[] }> {
+    const latestCandidates = this.latestPlanningResult?.schedule_candidates || [];
+    const inMemoryCandidate = latestCandidates.find((cand) => cand.schedule_id === baseScheduleId);
+    if (inMemoryCandidate) return inMemoryCandidate;
+
+    if (
+      this.latestPlanningResult &&
+      [this.latestPlanningResult.runId, this.latestPlanningResult.runCode, "current", "latest"].includes(baseScheduleId)
+    ) {
+      return { schedule_candidates: latestCandidates };
+    }
+
+    const runs = await dataStore.getOptimizationRuns();
+    const matchingRun = runs.find((run) => run.id === baseScheduleId || run.runId === baseScheduleId || run.runCode === baseScheduleId);
+    if (!matchingRun && !["current", "latest"].includes(baseScheduleId)) {
+      throw new ValidationError(`Unknown base_schedule_id '${baseScheduleId}'. Run planning first and pass a returned schedule_id/runId/runCode.`);
+    }
+
+    const blocks = await dataStore.getBlocks();
+    const candidates: ScheduleCandidate[] = blocks.map((block, index) => {
+      const start = new Date(block.startAt).toISOString();
+      const end = new Date(block.endAt).toISOString();
+      const taskIds = Array.isArray(block.tasks)
+        ? block.tasks.map((task: { taskCode?: string; id?: string }) => task.taskCode || task.id).filter(Boolean)
+        : [];
+      return {
+        schedule_id: index === 0 ? baseScheduleId : `${baseScheduleId}_${index + 1}`,
+        task_ids: taskIds,
+        blocks: [
+          {
+            block_id: block.id || block.blockCode,
+            section_id: block.corridorCode || block.corridorId,
+            start,
+            end,
+            durationMinutes: block.durationMinutes,
+          },
+        ],
+        start_time: start,
+        end_time: end,
+        estimated_disruption_minutes: 0,
+        resource_assignments: {},
+        status: block.status || "PROPOSED",
+      };
+    });
+
+    if (candidates.length === 0) {
+      throw new ValidationError(`No persisted blocks are available for base_schedule_id '${baseScheduleId}'.`);
+    }
+
+    return { schedule_candidates: candidates };
   }
 }
 
@@ -16643,7 +16864,7 @@ export interface AiBridgeError {
  * @param payload JSON-serializable input dictionary or list
  * @param timeoutMs Maximum execution time in milliseconds (default: 20000ms)
  */
-export async function invokeAiBridge<TInput = any, TOutput = any>(
+export async function invokeAiBridge<TInput = unknown, TOutput = unknown>(
   command: string,
   payload: TInput,
   timeoutMs = 20000
@@ -16717,10 +16938,11 @@ export async function invokeAiBridge<TInput = any, TOutput = any>(
       try {
         const parsed = JSON.parse(stdoutData.trim());
         resolve(parsed);
-      } catch (err: any) {
+      } catch (err: unknown) {
+        const message = err instanceof Error ? err.message : String(err);
         reject(
           new Error(
-            `Failed to parse JSON response from AI bridge '${command}': ${err.message}. Raw output: ${stdoutData.slice(
+            `Failed to parse JSON response from AI bridge '${command}': ${message}. Raw output: ${stdoutData.slice(
               0,
               500
             )}`
@@ -16735,15 +16957,256 @@ export async function invokeAiBridge<TInput = any, TOutput = any>(
       proc.stdin.write(inputStr, "utf-8", () => {
         proc.stdin.end();
       });
-    } catch (err: any) {
+    } catch (err: unknown) {
       if (!isSettled) {
         isSettled = true;
         clearTimeout(timer);
         proc.kill();
-        reject(new Error(`Failed to serialize input for AI bridge '${command}': ${err.message}`));
+        const message = err instanceof Error ? err.message : String(err);
+        reject(new Error(`Failed to serialize input for AI bridge '${command}': ${message}`));
       }
     }
   });
+}
+
+
+
+================================================
+FILE: backend/src/services/ai/contracts.ts
+================================================
+import type {
+  AiMovementPayload,
+  AiResourcePayload,
+  AiTaskPayload,
+  AiWindowPayload,
+} from "./dataMapper";
+
+export type ApiEnvelope<T> =
+  | { success: true; data: T; error?: never }
+  | { success: false; data?: never; error: string };
+
+export type PlanningMode = "BALANCED" | "SAFETY_FIRST" | "DISRUPTION_MINIMIZATION" | "EMERGENCY";
+export type PlanningHorizon = "WEEKLY" | "MONTHLY" | "48H";
+export type OptimizationStatus = "OPTIMAL" | "FEASIBLE" | "PARTIAL" | "INFEASIBLE" | "FAILED";
+
+export interface PlanningOptions {
+  corridorId?: string;
+  horizon?: PlanningHorizon;
+  mode?: PlanningMode;
+}
+
+export interface PlanningContext {
+  request_id: string;
+  mode: PlanningMode;
+  tasks: AiTaskPayload[];
+  train_movements: AiMovementPayload[];
+  resources: AiResourcePayload[];
+  maintenance_windows: AiWindowPayload[];
+  criticality_scores?: CriticalityScore[];
+  shadow_block_candidates?: ShadowBlockCandidate[];
+  constraints: Record<string, unknown>;
+  weights: {
+    maintenance_value: number;
+    shadow_block_benefit: number;
+    train_disruption_penalty: number;
+  };
+  solver_settings: Record<string, unknown>;
+}
+
+export interface CriticalityScore {
+  entity_id: string;
+  score: number;
+  display_score?: number;
+  priority_class?: string;
+  risk_level?: string;
+  feature_contributions?: Record<string, number>;
+  model_version?: string;
+  scoring_mode?: string;
+}
+
+export interface ScheduleBlock {
+  block_id: string;
+  section_id: string;
+  start: string;
+  end: string;
+  durationMinutes?: number;
+}
+
+export interface ScheduleCandidate {
+  schedule_id: string;
+  task_ids: string[];
+  blocks: ScheduleBlock[];
+  start_time: string;
+  end_time: string;
+  estimated_disruption_minutes: number;
+  resource_assignments: Record<string, string[]>;
+  status: string;
+}
+
+export interface Conflict {
+  conflict_id: string;
+  conflict_type: string;
+  entity_ids: string[];
+  section_id?: string;
+  start: string;
+  end: string;
+  severity: string;
+  description: string;
+}
+
+export interface ShadowBlockCandidate {
+  shadow_block_id: string;
+  primary_task_id: string;
+  participating_task_ids: string[];
+  sections: string[];
+  departments: string[];
+  proposed_window_start: string;
+  proposed_window_end: string;
+  estimated_duration_minutes: number;
+  estimated_corridor_occupancy: number;
+  potential_time_saving_minutes: number;
+  resource_usage: Record<string, number>;
+  conflict_status: "FEASIBLE" | "CONFLICT" | "REJECTED";
+  shadow_benefit_score?: number;
+  reasons?: string[];
+}
+
+export interface Explanation {
+  explanation_id: string;
+  entity_type: string;
+  entity_id: string;
+  summary: string;
+  reason_codes: string[];
+  evidence: Record<string, unknown>;
+  deterministic_inputs: Record<string, unknown>;
+  generated_by: string;
+}
+
+export interface OptimizationResult {
+  request_id?: string;
+  status: OptimizationStatus;
+  selected_task_ids: string[];
+  unscheduled_task_ids: string[];
+  unscheduled_reasons?: Record<string, string>;
+  schedule_candidates: ScheduleCandidate[];
+  shadow_blocks?: ShadowBlockCandidate[];
+  train_conflicts: Conflict[];
+  resource_utilization: Record<string, number>;
+  objective_score: number;
+  total_disruption_minutes?: number;
+  baseline_comparison: Record<string, number>;
+  solver_statistics: Record<string, number | string>;
+  generated_at: string;
+}
+
+export interface OrchestrationResult {
+  orchestration_id: string;
+  request_id: string;
+  status: "SUCCESS" | "PARTIAL" | "FAILED";
+  execution_sequence: string[];
+  criticality_scores: CriticalityScore[];
+  compatibility_candidates: unknown[];
+  shadow_block_candidates: ShadowBlockCandidate[];
+  optimization_result: OptimizationResult | null;
+  scenario_result: WhatIfResult | null;
+  emergency_result: EmergencyResult | null;
+  explanations: Explanation[];
+  errors: string[];
+  generated_at: string;
+}
+
+export interface PlanningResult extends OptimizationResult {
+  runId: string;
+  runCode: string;
+  orchestrationId: string;
+  executionSequence: string[];
+  shadow_blocks: ShadowBlockCandidate[];
+  explanations: Explanation[];
+  blocks: DbBlockView[];
+  summary: {
+    tasksConsidered: number;
+    tasksScheduled: number;
+    blocksGenerated: number;
+    baselineBlockMinutes: number;
+    optimizedBlockMinutes: number;
+    savingMinutes: number;
+    savingPercentage: number;
+    optimizationScore: number;
+  };
+}
+
+export interface DbBlockView {
+  id: string;
+  blockCode: string;
+  corridorId: string;
+  corridorCode: string;
+  startAt: string;
+  endAt: string;
+  durationMinutes: number;
+  baselineDurationMinutes: number;
+  savedMinutes: number;
+  status: string;
+  taskCount: number;
+  tasks: Array<Record<string, unknown>>;
+  departments: string[];
+  explanation: Record<string, unknown>;
+  createdAt: string;
+}
+
+export interface WhatIfScenarioPayload {
+  scenario_id?: string;
+  scenario_type: "TRAIN_DELAY" | "BLOCK_UNAVAILABLE" | "RESOURCE_UNAVAILABLE" | "EMERGENCY_TASK_INSERTED" | "TASK_DURATION_CHANGED" | "TASK_ADDED";
+  base_schedule_id: string;
+  affected_task_ids?: string[];
+  affected_train_ids?: string[];
+  new_constraints: Record<string, unknown>;
+  description?: string;
+}
+
+export interface WhatIfResult {
+  original_schedule_id: string;
+  new_schedule: ScheduleCandidate | null;
+  all_schedule_candidates?: ScheduleCandidate[];
+  changed_blocks: string[];
+  affected_tasks: string[];
+  affected_trains: string[];
+  metric_differences: Record<string, number>;
+  explanation: string;
+  errors: string[];
+  optimization_result?: OptimizationResult;
+}
+
+export interface EmergencyEventPayload {
+  event_id?: string;
+  event_type: string;
+  section_id: string;
+  affected_asset_id?: string;
+  severity: string;
+  detected_at?: string;
+  estimated_duration_minutes: number;
+  impact_summary: string;
+  from_km: number;
+  to_km: number;
+  related_task_id?: string;
+  required_resources?: Array<{ resource_type: string; count: number }>;
+}
+
+export interface EmergencyResult {
+  emergency_task: Record<string, unknown> | null;
+  urgency: string;
+  affected_section: string;
+  feasible_windows: Array<Record<string, unknown>>;
+  reoptimization_request?: Record<string, unknown> | null;
+  resulting_schedule: ScheduleCandidate | null;
+  optimization_result?: OptimizationResult;
+  errors: string[];
+  explanation: string;
+}
+
+export interface AiHealthResult {
+  status: "HEALTHY" | "DEGRADED" | "FAILED";
+  engines: string[];
+  error?: string;
 }
 
 
@@ -16821,8 +17284,8 @@ export function mapTaskToAi(
   corridor?: CorridorItem | null,
   dept?: DepartmentItem | null
 ): AiTaskPayload {
-  const sectionId = corridor?.code || "sec_12_ndls_agc";
-  const deptCode = dept?.code || task.departmentId || "ENGINEERING";
+  const sectionId = corridor?.code || task.corridorId;
+  const deptCode = dept?.code || task.departmentId;
 
   // Derive priority hint from criticality score (0-100)
   let priorityHint: "LOW" | "MEDIUM" | "HIGH" | "CRITICAL" = "MEDIUM";
@@ -16883,7 +17346,7 @@ export function mapTrainToAi(
   train: TrainItem,
   corridor?: CorridorItem | null
 ): AiMovementPayload {
-  const sectionId = corridor?.code || "sec_12_ndls_agc";
+  const sectionId = corridor?.code || train.corridorId;
   const isExpress = train.trainType === "EXPRESS" || train.isCriticalService;
   const isFreight = train.isGoodsTrain || train.trainType === "GOODS";
 
@@ -16908,7 +17371,7 @@ export function mapWindowToAi(
   window: BlockWindowItem,
   corridor?: CorridorItem | null
 ): AiWindowPayload {
-  const sectionId = corridor?.code || "sec_12_ndls_agc";
+  const sectionId = corridor?.code || window.corridorId;
 
   return {
     window_id: window.id,
@@ -17076,7 +17539,7 @@ export interface MaintenanceTaskItem {
   requiresPowerShutdown: boolean;
   createdAt: string;
   updatedAt: string;
-  criticalityDetail?: any;
+  criticalityDetail?: unknown;
 }
 
 export interface TrainItem {
@@ -17403,7 +17866,7 @@ const SEED_RESOURCES: ResourceItem[] = [
   },
 ];
 
-const SEED_BLOCKS: any[] = [
+const SEED_BLOCKS: Array<Record<string, any>> = [
   {
     id: "blk_55a1",
     blockCode: "BLK-NDLS-01",
@@ -17451,7 +17914,7 @@ const SEED_BLOCKS: any[] = [
   },
 ];
 
-const SEED_RUNS: any[] = [
+const SEED_RUNS: Array<Record<string, any>> = [
   {
     id: "run_0192a",
     runCode: "RUN-20261103-W1",
@@ -17648,6 +18111,8 @@ class DataStore {
             endAt: new Date(b.endAt),
             durationMinutes: b.durationMinutes,
             status: b.status || "PROPOSED",
+            planningHorizon: b.planningHorizon || "WEEKLY",
+            baselineDurationMinutes: b.baselineDurationMinutes || b.durationMinutes || 0,
             savedMinutes: b.savedMinutes || 0,
           }).onConflictDoNothing();
         }
@@ -17669,12 +18134,12 @@ class DataStore {
     return [...this.inMemoryRuns];
   }
 
-  async saveOptimizationRun(run: any): Promise<void> {
+  async saveOptimizationRun(run: any): Promise<any> {
     this.inMemoryRuns.unshift(run);
 
     if (isDatabaseConfigured && db) {
       try {
-        await db.insert(optimizationRuns).values({
+        const [inserted] = await db.insert(optimizationRuns).values({
           runCode: run.runCode,
           horizon: run.horizon || "WEEKLY",
           startDate: new Date(run.startDate || Date.now()),
@@ -17687,11 +18152,13 @@ class DataStore {
           estimatedSavingsMinutes: run.estimatedSavingsMinutes || 0,
           optimizationScore: String(run.optimizationScore || "0.80"),
           status: run.status || "OPTIMAL",
-        });
+        }).returning();
+        return inserted;
       } catch (e) {
         console.warn("DB insert failed for optimization run:", e);
       }
     }
+    return run;
   }
 }
 
@@ -17949,9 +18416,8 @@ export default defineConfig({
 ================================================
 FILE: frontend/.env.example
 ================================================
-# Frontend Environment Configuration
-# Set to 'false' to connect to live backend API instead of local mock data
-VITE_USE_MOCK=true
+VITE_USE_MOCK=false
+VITE_API_BASE_URL=http://localhost:5000
 
 
 
@@ -18060,144 +18526,224 @@ if (rootEl) {
 ================================================
 FILE: frontend/src/api/client.ts
 ================================================
+import type {
+  Conflict,
+  Explanation,
+  MaintenanceTask,
+  OptimizationResult,
+  ShadowBlockCandidate,
+} from '../types/api';
 import {
-  mockDashboardData,
   mockBlocks,
-  mockTasks,
-  mockShadowBlocks,
+  mockDashboardData,
   mockEmergencyResult,
-  mockWhatIfResult,
   mockExplanations,
-  mockTrainMovements,
   mockOptimizationRuns,
+  mockShadowBlocks,
+  mockTasks,
+  mockTrainMovements,
+  mockWhatIfResult,
 } from '../mocks/mockData';
 
-// Vite environment-based mock switch:
-// Defaults to true for development if not explicitly set to 'false' via VITE_USE_MOCK=false
-const USE_MOCK =
-  import.meta.env.VITE_USE_MOCK === undefined
-    ? true
-    : import.meta.env.VITE_USE_MOCK === 'true';
+export const USE_MOCK = import.meta.env.VITE_USE_MOCK === 'true';
+export const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:5000';
 
-export const getDashboardData = async () => {
-  if (USE_MOCK) return { success: true, data: mockDashboardData };
-  const res = await fetch('/api/planning/dashboard');
-  if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
-  return res.json();
-};
-
-export const getBlocks = async (corridorId?: string) => {
-  if (USE_MOCK) return { success: true, data: mockBlocks };
-  const res = await fetch(
-    `/api/blocks${corridorId ? `?corridorId=${encodeURIComponent(corridorId)}` : ''}`
-  );
-  if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
-  return res.json();
-};
-
-export const getTasks = async () => {
-  if (USE_MOCK) return { success: true, data: mockTasks };
-  const res = await fetch('/api/maintenance/tasks');
-  if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
-  return res.json();
-};
-
-export const getShadowBlocks = async () => {
-  if (USE_MOCK) return { success: true, data: mockShadowBlocks };
-  const res = await fetch('/api/planning/shadow-blocks/candidates');
-  if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
-  return res.json();
-};
-
-// â”€â”€ Emergency Planning â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+export interface ApiEnvelope<T> {
+  success: boolean;
+  data: T;
+  error?: string;
+  count?: number;
+}
 
 export interface EmergencyEventPayload {
-  event_id: string;
+  event_id?: string;
   event_type: string;
   section_id: string;
   affected_asset_id?: string;
   severity: string;
-  detected_at: string;
+  detected_at?: string;
   estimated_duration_minutes: number;
   impact_summary: string;
-  from_km?: number;
-  to_km?: number;
+  from_km: number;
+  to_km: number;
 }
 
-export const submitEmergencyEvent = async (event: EmergencyEventPayload) => {
-  if (USE_MOCK) {
-    // Simulate network delay for realistic UX
-    await new Promise((r) => setTimeout(r, 800));
-    return { success: true, data: mockEmergencyResult };
+export interface WhatIfScenarioPayload {
+  scenario_id?: string;
+  scenario_type:
+    | 'TRAIN_DELAY'
+    | 'BLOCK_UNAVAILABLE'
+    | 'RESOURCE_UNAVAILABLE'
+    | 'EMERGENCY_TASK_INSERTED'
+    | 'TASK_DURATION_CHANGED'
+    | 'TASK_ADDED';
+  base_schedule_id: string;
+  affected_task_ids?: string[];
+  affected_train_ids?: string[];
+  new_constraints: Record<string, unknown>;
+  description?: string;
+}
+
+export interface WhatIfResult {
+  original_schedule_id: string;
+  new_schedule: OptimizationResult['schedule_candidates'][number] | null;
+  all_schedule_candidates?: OptimizationResult['schedule_candidates'];
+  changed_blocks: string[];
+  affected_tasks: string[];
+  affected_trains: string[];
+  metric_differences: {
+    objective_score: number;
+    train_disruption_minutes: number;
+    resource_utilization_delta: number;
+  };
+  explanation: string;
+  errors: string[];
+  optimization_result?: OptimizationResult;
+}
+
+export interface EmergencyResult {
+  emergency_task: Record<string, unknown> | null;
+  urgency: string;
+  affected_section: string;
+  feasible_windows: Array<{
+    window_id: string;
+    section_id: string;
+    start: string;
+    end: string;
+    availability: string;
+    impact_summary?: string;
+  }>;
+  resulting_schedule: OptimizationResult['schedule_candidates'][number] | null;
+  optimization_result?: OptimizationResult;
+  errors: string[];
+  explanation: string;
+}
+
+export interface SystemHealth {
+  backend: { status: string; timestamp: string };
+  database: { status: string; configured: boolean; error?: string };
+  python_bridge: { status: string; error?: string };
+  ai_engines: { status: string; engines: string[]; error?: string };
+  mode: { mock: boolean; source: 'mock' | 'live' };
+}
+
+const liveUrl = (path: string): string => `${API_BASE_URL}${path}`;
+
+async function apiRequest<T>(path: string, init?: RequestInit): Promise<ApiEnvelope<T>> {
+  const res = await fetch(liveUrl(path), init);
+  let payload: Partial<ApiEnvelope<T>> | undefined;
+
+  try {
+    payload = (await res.json()) as Partial<ApiEnvelope<T>>;
+  } catch {
+    payload = undefined;
   }
-  const res = await fetch('/api/planning/emergency', {
+
+  if (!res.ok || payload?.success === false) {
+    throw new Error(payload?.error || `HTTP error ${res.status} calling ${path}`);
+  }
+
+  if (!payload || typeof payload.success !== 'boolean') {
+    throw new Error(`Invalid API response contract from ${path}`);
+  }
+
+  return payload as ApiEnvelope<T>;
+}
+
+export const getDashboardData = async (): Promise<ApiEnvelope<typeof mockDashboardData>> => {
+  if (USE_MOCK) return { success: true, data: mockDashboardData };
+  return apiRequest('/api/planning/dashboard');
+};
+
+export const getBlocks = async (corridorId?: string): Promise<ApiEnvelope<unknown[]>> => {
+  if (USE_MOCK) return { success: true, data: mockBlocks };
+  const qs = corridorId ? `?corridorId=${encodeURIComponent(corridorId)}` : '';
+  return apiRequest(`/api/blocks${qs}`);
+};
+
+export const getTasks = async (): Promise<ApiEnvelope<MaintenanceTask[]>> => {
+  if (USE_MOCK) return { success: true, data: mockTasks };
+  return apiRequest('/api/maintenance/tasks');
+};
+
+export const getShadowBlocks = async (): Promise<ApiEnvelope<ShadowBlockCandidate[]>> => {
+  if (USE_MOCK) return { success: true, data: mockShadowBlocks };
+  return apiRequest('/api/planning/shadow-blocks/candidates');
+};
+
+export const submitEmergencyEvent = async (
+  event: EmergencyEventPayload
+): Promise<ApiEnvelope<EmergencyResult>> => {
+  if (USE_MOCK) {
+    await new Promise((resolve) => setTimeout(resolve, 800));
+    return { success: true, data: mockEmergencyResult as unknown as EmergencyResult };
+  }
+  return apiRequest('/api/planning/emergency', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(event),
   });
-  if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
-  return res.json();
 };
 
-// â”€â”€ What-If Scenario â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-
-export interface WhatIfScenarioPayload {
-  scenario_id: string;
-  scenario_type: string;
-  base_schedule_id?: string;
-  affected_task_ids?: string[];
-  affected_train_ids?: string[];
-  new_constraints: Record<string, unknown>;
-}
-
-export const runWhatIfScenario = async (scenario: WhatIfScenarioPayload) => {
+export const runWhatIfScenario = async (
+  scenario: WhatIfScenarioPayload
+): Promise<ApiEnvelope<WhatIfResult>> => {
   if (USE_MOCK) {
-    await new Promise((r) => setTimeout(r, 1200));
-    return { success: true, data: mockWhatIfResult };
+    await new Promise((resolve) => setTimeout(resolve, 1200));
+    return { success: true, data: mockWhatIfResult as unknown as WhatIfResult };
   }
-  const res = await fetch('/api/planning/what-if', {
+  return apiRequest('/api/planning/what-if', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(scenario),
   });
-  if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
-  return res.json();
 };
 
-// â”€â”€ Explanations â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-
-export const getExplanations = async () => {
+export const getExplanations = async (): Promise<ApiEnvelope<Explanation[]>> => {
   if (USE_MOCK) return { success: true, data: mockExplanations };
-  const res = await fetch('/api/planning/explanations');
-  if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
-  return res.json();
+  return apiRequest('/api/planning/explanations');
 };
 
-// â”€â”€ Train Movements â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-
-export const getTrainMovements = async () => {
+export const getTrainMovements = async (): Promise<ApiEnvelope<unknown[]>> => {
   if (USE_MOCK) return { success: true, data: mockTrainMovements };
-  const res = await fetch('/api/trains');
-  if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
-  return res.json();
+  return apiRequest('/api/trains');
 };
 
-// â”€â”€ Optimization Runs â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+export const getConflicts = async (): Promise<ApiEnvelope<Conflict[]>> => {
+  if (USE_MOCK) return { success: true, data: [] };
+  return apiRequest('/api/planning/conflicts');
+};
 
-export const runOptimization = async (params?: { corridorId?: string; horizon?: string }) => {
+export const getSystemHealth = async (): Promise<ApiEnvelope<SystemHealth>> => {
   if (USE_MOCK) {
-    await new Promise((r) => setTimeout(r, 1500));
+    return {
+      success: true,
+      data: {
+        backend: { status: 'MOCK', timestamp: new Date().toISOString() },
+        database: { status: 'MOCK', configured: false },
+        python_bridge: { status: 'MOCK' },
+        ai_engines: { status: 'MOCK', engines: [] },
+        mode: { mock: true, source: 'mock' },
+      },
+    };
+  }
+  return apiRequest('/api/health');
+};
+
+export const runOptimization = async (params?: {
+  corridorId?: string;
+  horizon?: string;
+}): Promise<ApiEnvelope<OptimizationResult>> => {
+  if (USE_MOCK) {
+    await new Promise((resolve) => setTimeout(resolve, 1500));
     return { success: true, data: mockOptimizationRuns[0] };
   }
-  const res = await fetch('/api/planning/generate', {
+  return apiRequest('/api/planning/generate', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(params ?? {}),
   });
-  if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
-  return res.json();
 };
-
 
 
 
@@ -19943,48 +20489,25 @@ export const ConflictCategoryTabs: React.FC<Props> = ({ activeTab, onTabChange }
 ================================================
 FILE: frontend/src/features/conflicts/ConflictsAlertsPage.tsx
 ================================================
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
+import { ErrorState } from '../../components/common/ErrorState';
+import { getConflicts } from '../../api/client';
+import { Conflict } from '../../types/api';
 import { ConflictAlertCard } from './ConflictAlertCard';
 import { ConflictCategoryTabs } from './ConflictCategoryTabs';
-import { Conflict } from '../../types/api';
-
-const mockConflicts: Conflict[] = [
-  {
-    conflict_id: "CONF-20261103-01",
-    conflict_type: "TRAIN_CONFLICT",
-    entity_ids: ["TSK-ENG-NDLS-045-01", "trn_02_12002"],
-    section_id: "NDLS-AGC-SEC12",
-    start: "2026-11-03T23:45:00Z",
-    end: "2026-11-04T00:15:00Z",
-    severity: "HIGH",
-    description: "Proposed block overlaps passage slot for Train 12002 Shatabdi Express at Km 45.2. Recommend shifting start to 00:30."
-  },
-  {
-    conflict_id: "CONF-20261103-02",
-    conflict_type: "RESOURCE_CONFLICT",
-    entity_ids: ["TSK-ENG-NDLS-045-01", "TSK-ENG-NDLS-092"],
-    section_id: "NDLS-AGC-SEC12",
-    start: "2026-11-03T23:00:00Z",
-    end: "2026-11-04T01:30:00Z",
-    severity: "CRITICAL",
-    description: "USFD Testing Vehicle USFD-V-12 allocated simultaneously to two separate rail scans."
-  },
-  {
-    conflict_id: "CONF-20261103-03",
-    conflict_type: "SAFETY_CONFLICT",
-    entity_ids: ["TSK-ENG-NDLS-088", "TSK-SNT-NDLS-089"],
-    section_id: "NDLS-AGC-SEC14",
-    start: "2026-11-04T02:00:00Z",
-    end: "2026-11-04T04:30:00Z",
-    severity: "CRITICAL",
-    description: "Interlocking safety constraint: S&T point sensor calibration cannot co-occur with heavy mechanical ballast tamping."
-  }
-];
 
 export const ConflictsAlertsPage: React.FC = () => {
   const [filter, setFilter] = useState<string>('ALL');
+  const [conflicts, setConflicts] = useState<Conflict[]>([]);
+  const [error, setError] = useState<string | null>(null);
 
-  const filteredConflicts = mockConflicts.filter(c => filter === 'ALL' || c.conflict_type === filter);
+  useEffect(() => {
+    getConflicts()
+      .then((res) => setConflicts(res.data))
+      .catch((err: unknown) => setError(err instanceof Error ? err.message : String(err)));
+  }, []);
+
+  const filteredConflicts = conflicts.filter((c) => filter === 'ALL' || c.conflict_type === filter);
 
   return (
     <div className="space-y-6">
@@ -19994,16 +20517,18 @@ export const ConflictsAlertsPage: React.FC = () => {
           <p className="text-text-muted font-mono text-sm mt-1">UNIFIED OPERATIONAL VIOLATIONS</p>
         </div>
       </div>
-      
+
       <ConflictCategoryTabs activeTab={filter} onTabChange={setFilter} />
-      
+
+      {error && <ErrorState title="Conflict Feed Failed" message={error} />}
+
       <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
-        {filteredConflicts.map(conflict => (
-           <ConflictAlertCard key={conflict.conflict_id} conflict={conflict} />
+        {filteredConflicts.map((conflict) => (
+          <ConflictAlertCard key={conflict.conflict_id} conflict={conflict} />
         ))}
-        {filteredConflicts.length === 0 && (
+        {!error && filteredConflicts.length === 0 && (
           <div className="col-span-full p-8 border-2 border-surface-border text-center font-mono text-status-optimal bg-surface-card">
-             CLEAR SECTION: ZERO ACTIVE CONFLICTS OR SAFETY VIOLATIONS DETECTED.
+            CLEAR SECTION: ZERO ACTIVE CONFLICTS RETURNED BY BACKEND AI DATA.
           </div>
         )}
       </div>
@@ -20940,11 +21465,12 @@ export const PlanningSchedulePage: React.FC = () => {
   const [optimizationResult, setOptimizationResult] = useState<OptimizationResult | null>(null);
   const [selectedCorridor, setSelectedCorridor] = useState<string>('all');
   const [showFilters, setShowFilters] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const fetchBlocks = (corridorId?: string) => {
-    getBlocks(corridorId === 'all' ? undefined : corridorId).then((res) => {
-      if (res.success) setBlocks(res.data);
-    });
+    getBlocks(corridorId === 'all' ? undefined : corridorId)
+      .then((res) => setBlocks(res.data as any[]))
+      .catch((err: unknown) => setError(err instanceof Error ? err.message : String(err)));
   };
 
   useEffect(() => {
@@ -20953,17 +21479,16 @@ export const PlanningSchedulePage: React.FC = () => {
 
   const handleRunOptimizer = async () => {
     setIsOptimizing(true);
+    setError(null);
     try {
       const res = await runOptimization({
-        corridorId: selectedCorridor === 'all' ? 'NDLS-AGC' : selectedCorridor,
-        horizon: '48H',
+        corridorId: selectedCorridor === 'all' ? undefined : selectedCorridor,
+        horizon: 'WEEKLY',
       });
-      if (res.success) {
-        setOptimizationResult(res.data);
-        fetchBlocks(selectedCorridor);
-      }
+      setOptimizationResult(res.data);
+      fetchBlocks(selectedCorridor);
     } catch (err) {
-      console.error('Optimization run failed', err);
+      setError(err instanceof Error ? err.message : 'Optimization run failed');
     } finally {
       setIsOptimizing(false);
     }
@@ -21033,6 +21558,12 @@ export const PlanningSchedulePage: React.FC = () => {
         </div>
       )}
 
+      {error && (
+        <div className="p-3 bg-status-critical/10 border-2 border-status-critical text-status-critical font-mono text-xs">
+          {error}
+        </div>
+      )}
+
       {/* â”€â”€ Optimization Feedback Banner â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
       {optimizationResult && (
         <div className="bg-surface-card border-2 border-status-optimal shadow-[4px_4px_0px_0px_rgba(34,197,94,0.3)] p-4 relative">
@@ -21073,16 +21604,16 @@ export const PlanningSchedulePage: React.FC = () => {
               <div className="bg-background-main border border-surface-border px-3 py-1.5">
                 <span className="text-[10px] text-text-muted block uppercase">Disruption Savings</span>
                 <span className="font-bold text-status-warning">
-                  {optimizationResult.baseline_comparison?.savingPercentage ?? 28.4}% (
-                  {optimizationResult.baseline_comparison?.savingMinutes ?? 270}m)
+                  {optimizationResult.baseline_comparison?.savingPercentage ?? optimizationResult.summary?.savingPercentage ?? 0}% (
+                  {optimizationResult.baseline_comparison?.savingMinutes ?? optimizationResult.summary?.savingMinutes ?? 0}m)
                 </span>
               </div>
               <div className="bg-background-main border border-surface-border px-3 py-1.5">
                 <span className="text-[10px] text-text-muted block uppercase">Runtime / Iterations</span>
                 <span className="font-bold text-text-primary flex items-center gap-1">
                   <Clock size={11} />
-                  {optimizationResult.solver_statistics?.runtime_ms ?? 1840}ms (
-                  {optimizationResult.solver_statistics?.iterations ?? 50} iter)
+                  {optimizationResult.solver_statistics?.runtime_ms ?? 0}ms (
+                  {optimizationResult.solver_statistics?.iterations ?? 0} iter)
                 </span>
               </div>
             </div>
@@ -21292,14 +21823,16 @@ import React, { useEffect, useState } from 'react';
 import { getShadowBlocks } from '../../api/client';
 import { ShadowBlockCard } from './ShadowBlockCard';
 import { ShadowBlockCandidate } from '../../types/api';
+import { ErrorState } from '../../components/common/ErrorState';
 
 export const ShadowBlocksPage: React.FC = () => {
   const [candidates, setCandidates] = useState<ShadowBlockCandidate[]>([]);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    getShadowBlocks().then(res => {
-      if (res.success) setCandidates(res.data);
-    });
+    getShadowBlocks()
+      .then(res => setCandidates(res.data))
+      .catch((err: unknown) => setError(err instanceof Error ? err.message : String(err)));
   }, []);
 
   return (
@@ -21310,28 +21843,18 @@ export const ShadowBlocksPage: React.FC = () => {
           <p className="text-text-muted font-mono text-sm mt-1">INTEGRATED MULTI-DEPARTMENT POSSESSIONS</p>
         </div>
       </div>
+
+      {error && <ErrorState title="Shadow Block Engine Failed" message={error} />}
       
       <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
         {candidates.map(candidate => (
            <ShadowBlockCard key={candidate.shadow_block_id} candidate={candidate} />
         ))}
-        {/* Mocking a rejected one for visual parity if only one exists in mock data */}
-        <ShadowBlockCard candidate={{
-          shadow_block_id: "SB-NDLS-302",
-          primary_task_id: "TSK-ENG-NDLS-088",
-          participating_task_ids: ["TSK-SNT-NDLS-089"],
-          sections: ["sec_14_agc"],
-          departments: ["ENG", "SNT"],
-          proposed_window_start: "2026-11-04T02:00:00Z",
-          proposed_window_end: "2026-11-04T04:30:00Z",
-          estimated_duration_minutes: 150,
-          estimated_corridor_occupancy: 0.55,
-          potential_time_saving_minutes: 60,
-          resource_usage: { track_machine: 1 },
-          conflict_status: "REJECTED",
-          shadow_benefit_score: 0.20,
-          reasons: ["SAFETY_CONFLICT: Concurrent point motor overhaul and track tamping violates IR-SIG-402 interlocking safety rules."]
-        }} />
+        {!error && candidates.length === 0 && (
+          <div className="col-span-full p-8 border-2 border-surface-border text-center font-mono text-text-muted bg-surface-card">
+            NO SHADOW BLOCK CANDIDATES RETURNED BY AI ENGINE.
+          </div>
+        )}
       </div>
     </div>
   );
@@ -21342,7 +21865,7 @@ export const ShadowBlocksPage: React.FC = () => {
 ================================================
 FILE: frontend/src/features/system/SystemPage.tsx
 ================================================
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { SectionHeader } from '../../components/domain/SectionHeader';
 import { PriorityBadge } from '../../components/domain/PriorityBadge';
 import { OptimizationBadge } from '../../components/domain/OptimizationBadge';
@@ -21358,11 +21881,20 @@ import { EmptyState } from '../../components/common/EmptyState';
 import { ErrorState } from '../../components/common/ErrorState';
 import { Modal } from '../../components/common/Modal';
 import { DetailDrawer } from '../../components/domain/DetailDrawer';
+import { getSystemHealth, type SystemHealth } from '../../api/client';
 
 export const SystemPage: React.FC = () => {
   const [activeTab, setActiveTab] = useState('status');
   const [modalOpen, setModalOpen] = useState(false);
   const [drawerOpen, setDrawerOpen] = useState(false);
+  const [health, setHealth] = useState<SystemHealth | null>(null);
+  const [healthError, setHealthError] = useState<string | null>(null);
+
+  useEffect(() => {
+    getSystemHealth()
+      .then((res) => setHealth(res.data))
+      .catch((err: unknown) => setHealthError(err instanceof Error ? err.message : String(err)));
+  }, []);
 
   const tabs = [
     { id: 'status', label: 'Domain Status System' },
@@ -21397,6 +21929,41 @@ export const SystemPage: React.FC = () => {
       {/* Tab 1: Domain Status System */}
       {activeTab === 'status' && (
         <div className="space-y-6 mt-4">
+          <Card title="Runtime Health" subtitle="Live backend integration status">
+            {healthError && <ErrorState title="Health Check Failed" message={healthError} />}
+            {health && (
+              <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-5 gap-3 font-mono text-xs">
+                {[
+                  ['Backend', health.backend.status],
+                  ['Database', health.database.status],
+                  ['Python Bridge', health.python_bridge.status],
+                  ['AI Engines', health.ai_engines.status],
+                  ['Mode', health.mode.source.toUpperCase()],
+                ].map(([label, status]) => (
+                  <div key={label} className="p-3 bg-background-main border-2 border-surface-border">
+                    <span className="block text-text-muted uppercase mb-1">{label}</span>
+                    <span
+                      className={
+                        status === 'HEALTHY' || status === 'LIVE'
+                          ? 'text-status-optimal font-bold'
+                          : status === 'MOCK' || status === 'NOT_CONFIGURED'
+                            ? 'text-status-warning font-bold'
+                            : 'text-status-critical font-bold'
+                      }
+                    >
+                      {status}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            )}
+            {health?.ai_engines.engines.length ? (
+              <div className="mt-4 text-xs font-mono text-text-muted">
+                Engines: {health.ai_engines.engines.join(', ')}
+              </div>
+            ) : null}
+          </Card>
+
           <Card title="1. Task & Defect Priority Scale (P1 - P4)">
             <div className="flex gap-3 flex-wrap items-center">
               <PriorityBadge priority="CRITICAL" />
@@ -22046,6 +22613,7 @@ export const ScenarioConfigForm: React.FC<Props> = ({ onSimulate, isSimulating }
   const [unavailableResource, setUnavailableResource] = useState('track_machine');
   const [affectedTask, setAffectedTask] = useState('TSK-ENG-NDLS-045-01');
   const [extraDuration, setExtraDuration] = useState(30);
+  const [baseScheduleId, setBaseScheduleId] = useState('current');
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -22082,7 +22650,7 @@ export const ScenarioConfigForm: React.FC<Props> = ({ onSimulate, isSimulating }
         affected_task_ids = [affectedTask];
         new_constraints = {
           task_id: affectedTask,
-          additional_duration_minutes: extraDuration,
+          new_duration_minutes: extraDuration,
         };
         break;
     }
@@ -22090,7 +22658,7 @@ export const ScenarioConfigForm: React.FC<Props> = ({ onSimulate, isSimulating }
     const payload: WhatIfScenarioPayload = {
       scenario_id: `whatif_${Date.now().toString(36)}`,
       scenario_type: scenarioType,
-      base_schedule_id: 'sched_base_001',
+      base_schedule_id: baseScheduleId,
       affected_train_ids,
       affected_task_ids,
       new_constraints,
@@ -22262,8 +22830,15 @@ export const ScenarioConfigForm: React.FC<Props> = ({ onSimulate, isSimulating }
 
         <div className="border-t-2 border-surface-border pt-4 mt-auto">
           <div className="text-[11px] font-mono text-text-muted mb-3 flex items-center justify-between">
-            <span>BASE SCHEDULE:</span>
-            <span className="font-bold text-text-primary">sched_base_001</span>
+            <label htmlFor="baseScheduleId" className="font-bold uppercase">
+              Base Schedule
+            </label>
+            <input
+              id="baseScheduleId"
+              value={baseScheduleId}
+              onChange={(e) => setBaseScheduleId(e.target.value)}
+              className="w-40 bg-background-main border border-surface-border px-2 py-1 text-text-primary font-bold"
+            />
           </div>
           <Button
             type="submit"
@@ -22283,293 +22858,7 @@ export const ScenarioConfigForm: React.FC<Props> = ({ onSimulate, isSimulating }
 ================================================
 FILE: frontend/src/features/whatIf/ScheduleDiffViewer.tsx
 ================================================
-import React from 'react';
-import { Card } from '../../components/common/Card';
-import { CheckCircle, AlertTriangle, Zap, RefreshCw, Layers } from 'lucide-react';
-
-interface Props {
-  result: {
-    original_schedule_id?: string;
-    new_schedule?: {
-      schedule_id: string;
-      task_ids: string[];
-      blocks: Array<{
-        block_id: string;
-        section_id: string;
-        start: string;
-        end: string;
-        durationMinutes: number;
-      }>;
-      start_time: string;
-      end_time: string;
-      estimated_disruption_minutes: number;
-      resource_assignments?: Record<string, string[]>;
-      status: string;
-    };
-    changed_blocks?: string[];
-    affected_tasks?: string[];
-    affected_trains?: string[];
-    metric_differences?: {
-      objective_score: number;
-      train_disruption_minutes: number;
-      resource_utilization_delta: number;
-    };
-    explanation?: string;
-    errors?: string[];
-    optimization_result?: {
-      status: string;
-      selected_task_ids: string[];
-      unscheduled_task_ids: string[];
-      objective_score: number;
-      resource_utilization?: Record<string, number>;
-      solver_statistics?: {
-        runtime_ms: number;
-        iterations: number;
-      };
-    };
-  };
-  onReset?: () => void;
-}
-
-export const ScheduleDiffViewer: React.FC<Props> = ({ result, onReset }) => {
-  const isFeasible =
-    result.new_schedule?.status === 'FEASIBLE' ||
-    result.optimization_result?.status === 'FEASIBLE';
-
-  const metrics = result.metric_differences ?? {
-    objective_score: -0.04,
-    train_disruption_minutes: 15,
-    resource_utilization_delta: 0.02,
-  };
-
-  const solverStats = result.optimization_result?.solver_statistics;
-  const changedBlocks = result.changed_blocks ?? [];
-  const affectedTrains = result.affected_trains ?? [];
-  const affectedTasks = result.affected_tasks ?? [];
-
-  return (
-    <Card className="h-full flex flex-col space-y-5">
-      {/* â”€â”€ Header â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
-      <div className="flex flex-wrap justify-between items-center gap-3 pb-4 border-b-2 border-surface-border">
-        <div>
-          <div className="flex items-center gap-2">
-            <h3 className="font-mono font-bold text-lg text-text-primary uppercase tracking-wide">
-              {result.new_schedule?.schedule_id ?? 'SIMULATED_REOPT_OUTPUT'}
-            </h3>
-            <span
-              className={`px-3 py-1 font-mono text-xs font-bold uppercase tracking-wider border-2 flex items-center gap-1.5 ${
-                isFeasible
-                  ? 'bg-status-optimal/10 text-status-optimal border-status-optimal'
-                  : 'bg-status-critical/10 text-status-critical border-status-critical'
-              }`}
-            >
-              {isFeasible ? (
-                <>
-                  <CheckCircle size={13} />
-                  FEASIBLE RE-OPTIMIZATION
-                </>
-              ) : (
-                <>
-                  <AlertTriangle size={13} />
-                  INFEASIBLE CONFLICT
-                </>
-              )}
-            </span>
-          </div>
-          <p className="text-xs font-mono text-text-muted mt-1">
-            BASE SCHEDULE: {result.original_schedule_id ?? 'sched_base_001'} // SECTION: sec_12_ndls_agc
-          </p>
-        </div>
-
-        {onReset && (
-          <button
-            onClick={onReset}
-            className="px-3 py-1.5 border-2 border-surface-border bg-background-main hover:bg-surface-card text-text-muted hover:text-text-primary font-mono text-xs uppercase font-bold flex items-center gap-1.5 transition-colors"
-          >
-            <RefreshCw size={13} />
-            Reset Sandbox
-          </button>
-        )}
-      </div>
-
-      {/* â”€â”€ KPI Delta Cards â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-        {/* Objective Delta */}
-        <div className="bg-background-main border-2 border-surface-border p-3 flex flex-col">
-          <span className="text-[10px] text-text-muted font-mono uppercase tracking-wider mb-1 flex items-center justify-between">
-            <span>Objective Î”</span>
-            <Zap size={12} className="text-status-warning" />
-          </span>
-          <span
-            className={`font-bold text-xl font-mono ${
-              metrics.objective_score >= 0 ? 'text-status-optimal' : 'text-status-critical'
-            }`}
-          >
-            {metrics.objective_score >= 0 ? `+${metrics.objective_score.toFixed(3)}` : metrics.objective_score.toFixed(3)}
-          </span>
-          <span className="text-[10px] font-mono text-text-muted mt-1">
-            Score: {result.optimization_result?.objective_score ?? 0.77}
-          </span>
-        </div>
-
-        {/* Train Disruption Delta */}
-        <div className="bg-background-main border-2 border-surface-border p-3 flex flex-col">
-          <span className="text-[10px] text-text-muted font-mono uppercase tracking-wider mb-1">
-            Train Disruption Î”
-          </span>
-          <span className="font-bold text-xl text-status-warning font-mono">
-            +{metrics.train_disruption_minutes}m
-          </span>
-          <span className="text-[10px] font-mono text-text-muted mt-1">
-            Passage delay absorbed
-          </span>
-        </div>
-
-        {/* Resource Utilization Delta */}
-        <div className="bg-background-main border-2 border-surface-border p-3 flex flex-col">
-          <span className="text-[10px] text-text-muted font-mono uppercase tracking-wider mb-1">
-            Resource Util. Î”
-          </span>
-          <span className="font-bold text-xl text-text-primary font-mono">
-            {metrics.resource_utilization_delta >= 0 ? `+` : ''}
-            {(metrics.resource_utilization_delta * 100).toFixed(0)}%
-          </span>
-          <span className="text-[10px] font-mono text-text-muted mt-1">
-            Efficiency shift
-          </span>
-        </div>
-
-        {/* Solver Statistics */}
-        <div className="bg-background-main border-2 border-surface-border p-3 flex flex-col">
-          <span className="text-[10px] text-text-muted font-mono uppercase tracking-wider mb-1">
-            Solver Statistics
-          </span>
-          <span className="font-bold text-xl text-text-primary font-mono">
-            {solverStats ? `${solverStats.runtime_ms}ms` : '1.2s'}
-          </span>
-          <span className="text-[10px] font-mono text-text-muted mt-1">
-            {solverStats ? `${solverStats.iterations} iterations` : 'Fast OR-Tools solve'}
-          </span>
-        </div>
-      </div>
-
-      {/* â”€â”€ Visual Schedule Shift Comparison â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
-      <div className="border-2 border-surface-border bg-background-main flex flex-col">
-        <div className="p-3 border-b-2 border-surface-border font-mono text-xs font-bold text-text-muted bg-surface-card flex items-center justify-between">
-          <span className="flex items-center gap-1.5">
-            <Layers size={13} className="text-status-shadow" />
-            POSSESSION WINDOW SHIFT TIMELINE (NDLS-AGC TRACK 1)
-          </span>
-          <span className="text-[11px] text-status-warning">CLEARANCE: PASSENGER SLOT PRESERVED</span>
-        </div>
-        <div className="p-4 space-y-4">
-          {/* Baseline */}
-          <div className="space-y-1">
-            <div className="flex justify-between text-[11px] font-mono text-text-muted">
-              <span>BASELINE PROPOSAL: BLK-55A1</span>
-              <span>23:00 - 01:30 (150 min)</span>
-            </div>
-            <div className="h-9 bg-surface-card border-2 border-surface-border/80 relative flex items-center px-3">
-              <div className="w-1/2 h-5 bg-text-muted/20 border border-text-muted/40 flex items-center px-2 font-mono text-[10px] text-text-muted line-through">
-                ORIGINAL WINDOW: 23:00 - 01:30
-              </div>
-              <span className="ml-3 text-[10px] font-mono text-status-critical flex items-center gap-1">
-                <AlertTriangle size={11} /> Blocked by late running Express
-              </span>
-            </div>
-          </div>
-
-          {/* Re-optimized Shift */}
-          <div className="space-y-1">
-            <div className="flex justify-between text-[11px] font-mono text-text-muted">
-              <span>SIMULATED SHIFT: BLK_SHIFTED_01</span>
-              <span className="text-status-optimal font-bold">00:30 - 03:00 (150 min)</span>
-            </div>
-            <div className="h-9 bg-surface-card border-2 border-surface-border/80 relative flex items-center px-3">
-              <div className="w-2/5 ml-auto h-6 bg-status-shadow/20 border-2 border-status-shadow flex items-center justify-between px-2 font-mono text-[10px] text-white shadow-[2px_2px_0px_0px_rgba(139,92,246,0.6)]">
-                <span className="font-bold">RE-OPTIMIZED WINDOW: 00:30 - 03:00</span>
-                <span className="text-[9px] bg-status-shadow px-1 py-0.2">FEASIBLE</span>
-              </div>
-            </div>
-          </div>
-
-          <div className="flex justify-between items-center text-[10px] font-mono text-text-muted pt-1 border-t border-surface-border">
-            <span>22:00</span>
-            <span>00:00 (Midnight)</span>
-            <span>02:00</span>
-            <span>04:00</span>
-          </div>
-        </div>
-      </div>
-
-      {/* â”€â”€ Affected Entities Badges â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-        <div className="bg-background-main border-2 border-surface-border p-3">
-          <span className="text-[10px] font-mono text-text-muted uppercase tracking-widest block mb-2 font-bold">
-            Changed Blocks ({changedBlocks.length})
-          </span>
-          <div className="flex flex-wrap gap-1.5">
-            {changedBlocks.map((b) => (
-              <span
-                key={b}
-                className="px-2 py-0.5 bg-surface-card border border-surface-border font-mono text-xs text-text-primary"
-              >
-                {b}
-              </span>
-            ))}
-          </div>
-        </div>
-
-        <div className="bg-background-main border-2 border-surface-border p-3">
-          <span className="text-[10px] font-mono text-text-muted uppercase tracking-widest block mb-2 font-bold">
-            Affected Trains ({affectedTrains.length})
-          </span>
-          <div className="flex flex-wrap gap-1.5">
-            {affectedTrains.map((t) => (
-              <span
-                key={t}
-                className="px-2 py-0.5 bg-status-warning/10 border border-status-warning/40 font-mono text-xs text-status-warning font-bold"
-              >
-                Train {t}
-              </span>
-            ))}
-          </div>
-        </div>
-
-        <div className="bg-background-main border-2 border-surface-border p-3">
-          <span className="text-[10px] font-mono text-text-muted uppercase tracking-widest block mb-2 font-bold">
-            Protected Tasks ({affectedTasks.length})
-          </span>
-          <div className="flex flex-wrap gap-1.5">
-            {affectedTasks.map((t) => (
-              <span
-                key={t}
-                className="px-2 py-0.5 bg-status-optimal/10 border border-status-optimal/40 font-mono text-xs text-status-optimal"
-              >
-                {t}
-              </span>
-            ))}
-          </div>
-        </div>
-      </div>
-
-      {/* â”€â”€ AI Explanation â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
-      <div className="p-4 bg-surface-card border-l-4 border-status-shadow font-mono text-xs leading-relaxed text-text-primary shadow-[4px_4px_0px_0px_rgba(31,41,55,1)]">
-        <div className="flex items-center gap-2 mb-2">
-          <span className="font-bold block uppercase tracking-widest text-status-shadow text-xs">
-            Multi-Objective Solver Explanation
-          </span>
-          <span className="text-[10px] text-text-muted">// OR-Tools Constraint Engine</span>
-        </div>
-        <p className="text-text-primary/90 font-mono">
-          {result.explanation ??
-            'Schedule successfully re-evaluated. Work orders preserved while resolving train path conflicts.'}
-        </p>
-      </div>
-    </Card>
-  );
-};
-
+[Binary file]
 
 
 ================================================
@@ -22578,12 +22867,12 @@ FILE: frontend/src/features/whatIf/WhatIfScenariosPage.tsx
 import React, { useState } from 'react';
 import { ScenarioConfigForm } from './ScenarioConfigForm';
 import { ScheduleDiffViewer } from './ScheduleDiffViewer';
-import { runWhatIfScenario, type WhatIfScenarioPayload } from '../../api/client';
+import { runWhatIfScenario, type WhatIfResult, type WhatIfScenarioPayload } from '../../api/client';
 import { AlertTriangle, Sparkles } from 'lucide-react';
 
 export const WhatIfScenariosPage: React.FC = () => {
   const [isSimulating, setIsSimulating] = useState(false);
-  const [result, setResult] = useState<any>(null);
+  const [result, setResult] = useState<WhatIfResult | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   const handleSimulate = async (payload: WhatIfScenarioPayload) => {
@@ -22591,13 +22880,9 @@ export const WhatIfScenariosPage: React.FC = () => {
     setError(null);
     try {
       const response = await runWhatIfScenario(payload);
-      if (response.success) {
-        setResult(response.data);
-      } else {
-        setError('Solver failed to return a feasible schedule modification.');
-      }
-    } catch (err: any) {
-      setError(err?.message || 'Failed to communicate with re-optimization engine.');
+      setResult(response.data);
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : 'Failed to communicate with re-optimization engine.');
     } finally {
       setIsSimulating(false);
     }
@@ -22609,7 +22894,7 @@ export const WhatIfScenariosPage: React.FC = () => {
       preset = {
         scenario_id: `whatif_td_${Date.now().toString(36)}`,
         scenario_type: 'TRAIN_DELAY',
-        base_schedule_id: 'sched_base_001',
+        base_schedule_id: 'current',
         affected_train_ids: ['12002'],
         affected_task_ids: ['TSK-ENG-NDLS-045-01'],
         new_constraints: {
@@ -22622,7 +22907,7 @@ export const WhatIfScenariosPage: React.FC = () => {
       preset = {
         scenario_id: `whatif_ru_${Date.now().toString(36)}`,
         scenario_type: 'RESOURCE_UNAVAILABLE',
-        base_schedule_id: 'sched_base_001',
+        base_schedule_id: 'current',
         affected_task_ids: ['TSK-TRD-NDLS-046-02'],
         new_constraints: {
           unavailable_resource_type: 'tower_wagon',
@@ -22633,7 +22918,7 @@ export const WhatIfScenariosPage: React.FC = () => {
       preset = {
         scenario_id: `whatif_bu_${Date.now().toString(36)}`,
         scenario_type: 'BLOCK_UNAVAILABLE',
-        base_schedule_id: 'sched_base_001',
+        base_schedule_id: 'current',
         affected_task_ids: ['TSK-ENG-NDLS-045-01', 'TSK-TRD-NDLS-046-02'],
         new_constraints: {
           unavailable_block_id: 'blk_55a1',
@@ -24402,8 +24687,8 @@ export interface Explanation {
   entity_id: string;
   summary: string;
   reason_codes: string[];
-  evidence: Record<string, any>;
-  deterministic_inputs: Record<string, any>;
+  evidence: Record<string, unknown>;
+  deterministic_inputs: Record<string, unknown>;
   generated_by: string;
 }
 
@@ -24423,7 +24708,7 @@ export interface OptimizationResult {
       start: string;
       end: string;
       durationMinutes?: number;
-      tasks?: any[];
+      tasks?: Array<Record<string, unknown>>;
     }>;
     start_time: string;
     end_time: string;
@@ -24448,6 +24733,16 @@ export interface OptimizationResult {
   };
   generated_at: string;
   explanations?: Explanation[];
+  summary?: {
+    tasksConsidered: number;
+    tasksScheduled: number;
+    blocksGenerated: number;
+    baselineBlockMinutes: number;
+    optimizedBlockMinutes: number;
+    savingMinutes: number;
+    savingPercentage: number;
+    optimizationScore: number;
+  };
 }
 
 

@@ -67,7 +67,7 @@ export interface MaintenanceTaskItem {
   requiresPowerShutdown: boolean;
   createdAt: string;
   updatedAt: string;
-  criticalityDetail?: any;
+  criticalityDetail?: unknown;
 }
 
 export interface TrainItem {
@@ -394,7 +394,7 @@ const SEED_RESOURCES: ResourceItem[] = [
   },
 ];
 
-const SEED_BLOCKS: any[] = [
+const SEED_BLOCKS: Array<Record<string, any>> = [
   {
     id: "blk_55a1",
     blockCode: "BLK-NDLS-01",
@@ -442,7 +442,7 @@ const SEED_BLOCKS: any[] = [
   },
 ];
 
-const SEED_RUNS: any[] = [
+const SEED_RUNS: Array<Record<string, any>> = [
   {
     id: "run_0192a",
     runCode: "RUN-20261103-W1",
@@ -639,6 +639,8 @@ class DataStore {
             endAt: new Date(b.endAt),
             durationMinutes: b.durationMinutes,
             status: b.status || "PROPOSED",
+            planningHorizon: b.planningHorizon || "WEEKLY",
+            baselineDurationMinutes: b.baselineDurationMinutes || b.durationMinutes || 0,
             savedMinutes: b.savedMinutes || 0,
           }).onConflictDoNothing();
         }
@@ -660,12 +662,12 @@ class DataStore {
     return [...this.inMemoryRuns];
   }
 
-  async saveOptimizationRun(run: any): Promise<void> {
+  async saveOptimizationRun(run: any): Promise<any> {
     this.inMemoryRuns.unshift(run);
 
     if (isDatabaseConfigured && db) {
       try {
-        await db.insert(optimizationRuns).values({
+        const [inserted] = await db.insert(optimizationRuns).values({
           runCode: run.runCode,
           horizon: run.horizon || "WEEKLY",
           startDate: new Date(run.startDate || Date.now()),
@@ -678,11 +680,13 @@ class DataStore {
           estimatedSavingsMinutes: run.estimatedSavingsMinutes || 0,
           optimizationScore: String(run.optimizationScore || "0.80"),
           status: run.status || "OPTIMAL",
-        });
+        }).returning();
+        return inserted;
       } catch (e) {
         console.warn("DB insert failed for optimization run:", e);
       }
     }
+    return run;
   }
 }
 

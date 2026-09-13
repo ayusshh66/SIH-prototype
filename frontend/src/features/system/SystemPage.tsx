@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { SectionHeader } from '../../components/domain/SectionHeader';
 import { PriorityBadge } from '../../components/domain/PriorityBadge';
 import { OptimizationBadge } from '../../components/domain/OptimizationBadge';
@@ -14,11 +14,20 @@ import { EmptyState } from '../../components/common/EmptyState';
 import { ErrorState } from '../../components/common/ErrorState';
 import { Modal } from '../../components/common/Modal';
 import { DetailDrawer } from '../../components/domain/DetailDrawer';
+import { getSystemHealth, type SystemHealth } from '../../api/client';
 
 export const SystemPage: React.FC = () => {
   const [activeTab, setActiveTab] = useState('status');
   const [modalOpen, setModalOpen] = useState(false);
   const [drawerOpen, setDrawerOpen] = useState(false);
+  const [health, setHealth] = useState<SystemHealth | null>(null);
+  const [healthError, setHealthError] = useState<string | null>(null);
+
+  useEffect(() => {
+    getSystemHealth()
+      .then((res) => setHealth(res.data))
+      .catch((err: unknown) => setHealthError(err instanceof Error ? err.message : String(err)));
+  }, []);
 
   const tabs = [
     { id: 'status', label: 'Domain Status System' },
@@ -53,6 +62,41 @@ export const SystemPage: React.FC = () => {
       {/* Tab 1: Domain Status System */}
       {activeTab === 'status' && (
         <div className="space-y-6 mt-4">
+          <Card title="Runtime Health" subtitle="Live backend integration status">
+            {healthError && <ErrorState title="Health Check Failed" message={healthError} />}
+            {health && (
+              <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-5 gap-3 font-mono text-xs">
+                {[
+                  ['Backend', health.backend.status],
+                  ['Database', health.database.status],
+                  ['Python Bridge', health.python_bridge.status],
+                  ['AI Engines', health.ai_engines.status],
+                  ['Mode', health.mode.source.toUpperCase()],
+                ].map(([label, status]) => (
+                  <div key={label} className="p-3 bg-background-main border-2 border-surface-border">
+                    <span className="block text-text-muted uppercase mb-1">{label}</span>
+                    <span
+                      className={
+                        status === 'HEALTHY' || status === 'LIVE'
+                          ? 'text-status-optimal font-bold'
+                          : status === 'MOCK' || status === 'NOT_CONFIGURED'
+                            ? 'text-status-warning font-bold'
+                            : 'text-status-critical font-bold'
+                      }
+                    >
+                      {status}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            )}
+            {health?.ai_engines.engines.length ? (
+              <div className="mt-4 text-xs font-mono text-text-muted">
+                Engines: {health.ai_engines.engines.join(', ')}
+              </div>
+            ) : null}
+          </Card>
+
           <Card title="1. Task & Defect Priority Scale (P1 - P4)">
             <div className="flex gap-3 flex-wrap items-center">
               <PriorityBadge priority="CRITICAL" />

@@ -17,6 +17,7 @@ export const ScenarioConfigForm: React.FC<Props> = ({ onSimulate, isSimulating }
   const [unavailableResource, setUnavailableResource] = useState('track_machine');
   const [affectedTask, setAffectedTask] = useState('TSK-ENG-NDLS-045-01');
   const [extraDuration, setExtraDuration] = useState(30);
+  const [baseScheduleId, setBaseScheduleId] = useState('current');
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -53,7 +54,7 @@ export const ScenarioConfigForm: React.FC<Props> = ({ onSimulate, isSimulating }
         affected_task_ids = [affectedTask];
         new_constraints = {
           task_id: affectedTask,
-          additional_duration_minutes: extraDuration,
+          new_duration_minutes: extraDuration,
         };
         break;
     }
@@ -61,7 +62,7 @@ export const ScenarioConfigForm: React.FC<Props> = ({ onSimulate, isSimulating }
     const payload: WhatIfScenarioPayload = {
       scenario_id: `whatif_${Date.now().toString(36)}`,
       scenario_type: scenarioType,
-      base_schedule_id: 'sched_base_001',
+      base_schedule_id: baseScheduleId,
       affected_train_ids,
       affected_task_ids,
       new_constraints,
@@ -233,8 +234,15 @@ export const ScenarioConfigForm: React.FC<Props> = ({ onSimulate, isSimulating }
 
         <div className="border-t-2 border-surface-border pt-4 mt-auto">
           <div className="text-[11px] font-mono text-text-muted mb-3 flex items-center justify-between">
-            <span>BASE SCHEDULE:</span>
-            <span className="font-bold text-text-primary">sched_base_001</span>
+            <label htmlFor="baseScheduleId" className="font-bold uppercase">
+              Base Schedule
+            </label>
+            <input
+              id="baseScheduleId"
+              value={baseScheduleId}
+              onChange={(e) => setBaseScheduleId(e.target.value)}
+              className="w-40 bg-background-main border border-surface-border px-2 py-1 text-text-primary font-bold"
+            />
           </div>
           <Button
             type="submit"

@@ -1,14 +1,56 @@
 import { Request, Response, NextFunction } from "express";
-import { db } from "../../db";
-import { optimizationRuns, maintenanceTasks, blocks, corridors, departments } from "../../db/schema";
-import { desc, eq, sql } from "drizzle-orm";
-import { runOptimization } from "./optimizer";
+import { aiAdapter } from "../../services/ai/aiAdapter.service";
+import { dataStore } from "../../services/data/dataStore";
+import type { EmergencyEventPayload, WhatIfScenarioPayload } from "../../services/ai/contracts";
 
 export const generatePlan = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const { horizon, startDate, endDate, corridorId } = req.body;
-    const result = await runOptimization({ horizon, startDate, endDate, corridorId });
-    res.status(200).json({ success: true, ...result });
+    const { horizon, corridorId, mode } = req.body;
+    const result = await aiAdapter.orchestratePlanning({ horizon, corridorId, mode });
+    res.status(200).json({ success: true, data: result });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const getShadowBlockCandidates = async (_req: Request, res: Response, next: NextFunction) => {
+  try {
+    const result = await aiAdapter.generateShadowBlocks();
+    res.json({ success: true, data: result.shadow_block_candidates });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const runWhatIfScenario = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const result = await aiAdapter.runWhatIf(req.body as WhatIfScenarioPayload);
+    res.json({ success: true, data: result });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const runEmergencyScenario = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const result = await aiAdapter.runEmergency(req.body as EmergencyEventPayload);
+    res.json({ success: true, data: result });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const getExplanations = async (_req: Request, res: Response, next: NextFunction) => {
+  try {
+    res.json({ success: true, data: aiAdapter.getLatestExplanations() });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const getConflicts = async (_req: Request, res: Response, next: NextFunction) => {
+  try {
+    res.json({ success: true, data: aiAdapter.getLatestConflicts() });
   } catch (error) {
     next(error);
   }
@@ -16,7 +58,7 @@ export const generatePlan = async (req: Request, res: Response, next: NextFuncti
 
 export const getRuns = async (_req: Request, res: Response, next: NextFunction) => {
   try {
-    const runs = await db.select().from(optimizationRuns).orderBy(desc(optimizationRuns.createdAt));
+    const runs = await dataStore.getOptimizationRuns();
     res.json({ success: true, count: runs.length, data: runs });
   } catch (error) {
     next(error);
@@ -25,40 +67,23 @@ export const getRuns = async (_req: Request, res: Response, next: NextFunction) 
 
 export const getDashboard = async (_req: Request, res: Response, next: NextFunction) => {
   try {
-    // 1. Task counts
-    const allTasks = await db.select().from(maintenanceTasks);
+    const [allTasks, allBlocks, allCorridors, allDepts, recentRuns] = await Promise.all([
+      dataStore.getTasks(),
+      dataStore.getBlocks(),
+      dataStore.getCorridors(),
+      dataStore.getDepartments(),
+      dataStore.getOptimizationRuns(),
+    ]);
+
     const pendingTasks = allTasks.filter((t) => t.status === "PENDING").length;
     const scheduledTasks = allTasks.filter((t) => t.status === "SCHEDULED").length;
     const completedTasks = allTasks.filter((t) => t.status === "COMPLETED").length;
     const overdueTasks = allTasks.filter((t) => t.overdueDays > 0).length;
-
-    // 2. Block counts
-    const allBlocks = await db.select().from(blocks);
     const proposedBlocks = allBlocks.filter((b) => b.status === "PROPOSED").length;
     const approvedBlocks = allBlocks.filter((b) => b.status === "APPROVED").length;
     const executedBlocks = allBlocks.filter((b) => b.status === "EXECUTED").length;
-
-    // 3. Total savings
     const totalMinutesSaved = allBlocks.reduce((acc, b) => acc + (b.savedMinutes || 0), 0);
     const totalHoursSaved = Number((totalMinutesSaved / 60).toFixed(1));
-
-    // 4. Corridors and Departments
-    const allCorridors = await db.select().from(corridors);
-    const allDepts = await db.select().from(departments);
-
-    // 5. Recent runs
-    const recentRuns = await db
-      .select()
-      .from(optimizationRuns)
-      .orderBy(desc(optimizationRuns.createdAt))
-      .limit(5);
-
-    // 6. Recent blocks
-    const recentBlocks = await db
-      .select()
-      .from(blocks)
-      .orderBy(desc(blocks.createdAt))
-      .limit(5);
 
     res.json({
       success: true,
@@ -77,8 +102,8 @@ export const getDashboard = async (_req: Request, res: Response, next: NextFunct
           activeCorridors: allCorridors.length,
           departmentsCount: allDepts.length,
         },
-        recentRuns,
-        recentBlocks,
+        recentRuns: recentRuns.slice(0, 5),
+        recentBlocks: allBlocks.slice(0, 5),
       },
     });
   } catch (error) {

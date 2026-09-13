@@ -3,10 +3,15 @@ import { db } from "../../db";
 import { maintenanceTasks, defects } from "../../db/schema";
 import { eq, desc } from "drizzle-orm";
 import { calculatePriorityScore } from "../planning/priority.engine";
+import { dataStore } from "../../services/data/dataStore";
 
 export const getTasks = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const statusQuery = req.query.status as string;
+    if (!db) {
+      const tasks = await dataStore.getTasks(statusQuery);
+      return res.json({ success: true, count: tasks.length, data: tasks });
+    }
     let query = db.select().from(maintenanceTasks).$dynamic();
 
     if (statusQuery) {

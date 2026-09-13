@@ -92,8 +92,8 @@ export interface Explanation {
   entity_id: string;
   summary: string;
   reason_codes: string[];
-  evidence: Record<string, any>;
-  deterministic_inputs: Record<string, any>;
+  evidence: Record<string, unknown>;
+  deterministic_inputs: Record<string, unknown>;
   generated_by: string;
 }
 
@@ -113,7 +113,7 @@ export interface OptimizationResult {
       start: string;
       end: string;
       durationMinutes?: number;
-      tasks?: any[];
+      tasks?: Array<Record<string, unknown>>;
     }>;
     start_time: string;
     end_time: string;
@@ -138,4 +138,14 @@ export interface OptimizationResult {
   };
   generated_at: string;
   explanations?: Explanation[];
+  summary?: {
+    tasksConsidered: number;
+    tasksScheduled: number;
+    blocksGenerated: number;
+    baselineBlockMinutes: number;
+    optimizedBlockMinutes: number;
+    savingMinutes: number;
+    savingPercentage: number;
+    optimizationScore: number;
+  };
 }

@@ -14,7 +14,7 @@ export interface AiBridgeError {
  * @param payload JSON-serializable input dictionary or list
  * @param timeoutMs Maximum execution time in milliseconds (default: 20000ms)
  */
-export async function invokeAiBridge<TInput = any, TOutput = any>(
+export async function invokeAiBridge<TInput = unknown, TOutput = unknown>(
   command: string,
   payload: TInput,
   timeoutMs = 20000
@@ -88,10 +88,11 @@ export async function invokeAiBridge<TInput = any, TOutput = any>(
       try {
         const parsed = JSON.parse(stdoutData.trim());
         resolve(parsed);
-      } catch (err: any) {
+      } catch (err: unknown) {
+        const message = err instanceof Error ? err.message : String(err);
         reject(
           new Error(
-            `Failed to parse JSON response from AI bridge '${command}': ${err.message}. Raw output: ${stdoutData.slice(
+            `Failed to parse JSON response from AI bridge '${command}': ${message}. Raw output: ${stdoutData.slice(
               0,
               500
             )}`
@@ -106,12 +107,13 @@ export async function invokeAiBridge<TInput = any, TOutput = any>(
       proc.stdin.write(inputStr, "utf-8", () => {
         proc.stdin.end();
       });
-    } catch (err: any) {
+    } catch (err: unknown) {
       if (!isSettled) {
         isSettled = true;
         clearTimeout(timer);
         proc.kill();
-        reject(new Error(`Failed to serialize input for AI bridge '${command}': ${err.message}`));
+        const message = err instanceof Error ? err.message : String(err);
+        reject(new Error(`Failed to serialize input for AI bridge '${command}': ${message}`));
       }
     }
   });

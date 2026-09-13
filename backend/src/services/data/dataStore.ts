@@ -11,7 +11,8 @@ import {
   blockTasks,
   optimizationRuns,
 } from "../../db/schema";
-import { eq, desc, and } from "drizzle-orm";
+import { eq, desc, and, like, or } from "drizzle-orm";
+import type { DbBlockView, CriticalityScore } from "../ai/contracts";
 
 export interface DepartmentItem {
   id: string;
@@ -67,7 +68,25 @@ export interface MaintenanceTaskItem {
   requiresPowerShutdown: boolean;
   createdAt: string;
   updatedAt: string;
-  criticalityDetail?: unknown;
+  criticalityDetail?: CriticalityScore;
+}
+
+export interface OptimizationRunRecord {
+  id?: string;
+  runId?: string;
+  runCode: string;
+  horizon: string;
+  startDate: string;
+  endDate: string;
+  tasksConsidered: number;
+  tasksScheduled: number;
+  blocksGenerated: number;
+  totalBlockMinutes: number;
+  baselineBlockMinutes: number;
+  estimatedSavingsMinutes: number;
+  optimizationScore: string;
+  status: string;
+  createdAt: string;
 }
 
 export interface TrainItem {
@@ -394,12 +413,15 @@ const SEED_RESOURCES: ResourceItem[] = [
   },
 ];
 
-const SEED_BLOCKS: Array<Record<string, any>> = [
+const SEED_BLOCKS: DbBlockView[] = [
   {
     id: "blk_55a1",
     blockCode: "BLK-NDLS-01",
     corridorId: "corr_ndls_agc",
     corridorCode: "NDLS-AGC",
+    optimizationRunId: "run_0192a",
+    runId: "run_0192a",
+    runCode: "RUN-20261103-W1",
     startAt: "2026-11-03T23:00:00.000Z",
     endAt: "2026-11-04T01:30:00.000Z",
     durationMinutes: 150,
@@ -442,7 +464,7 @@ const SEED_BLOCKS: Array<Record<string, any>> = [
   },
 ];
 
-const SEED_RUNS: Array<Record<string, any>> = [
+const SEED_RUNS: OptimizationRunRecord[] = [
   {
     id: "run_0192a",
     runCode: "RUN-20261103-W1",
@@ -465,57 +487,45 @@ const SEED_RUNS: Array<Record<string, any>> = [
 
 class DataStore {
   private inMemoryTasks: MaintenanceTaskItem[] = [...SEED_TASKS];
-  private inMemoryBlocks: any[] = [...SEED_BLOCKS];
-  private inMemoryRuns: any[] = [...SEED_RUNS];
+  private inMemoryBlocks: DbBlockView[] = [...SEED_BLOCKS];
+  private inMemoryRuns: OptimizationRunRecord[] = [...SEED_RUNS];
 
   async getDepartments(): Promise<DepartmentItem[]> {
-    if (isDatabaseConfigured && db) {
-      try {
-        const rows = await db.select().from(departments);
-        if (rows.length > 0) return rows as any;
-      } catch (e) {
-        console.warn("DB query failed for departments, using fallback:", e);
-      }
+    if (isDatabaseConfigured) {
+      if (!db) throw new Error("Database is configured but database client is not initialized.");
+      const rows = await db.select().from(departments);
+      return rows as unknown as DepartmentItem[];
     }
     return SEED_DEPARTMENTS;
   }
 
   async getCorridors(): Promise<CorridorItem[]> {
-    if (isDatabaseConfigured && db) {
-      try {
-        const rows = await db.select().from(corridors);
-        if (rows.length > 0) return rows as any;
-      } catch (e) {
-        console.warn("DB query failed for corridors, using fallback:", e);
-      }
+    if (isDatabaseConfigured) {
+      if (!db) throw new Error("Database is configured but database client is not initialized.");
+      const rows = await db.select().from(corridors);
+      return rows as unknown as CorridorItem[];
     }
     return SEED_CORRIDORS;
   }
 
   async getAssets(): Promise<AssetItem[]> {
-    if (isDatabaseConfigured && db) {
-      try {
-        const rows = await db.select().from(assets);
-        if (rows.length > 0) return rows as any;
-      } catch (e) {
-        console.warn("DB query failed for assets, using fallback:", e);
-      }
+    if (isDatabaseConfigured) {
+      if (!db) throw new Error("Database is configured but database client is not initialized.");
+      const rows = await db.select().from(assets);
+      return rows as unknown as AssetItem[];
     }
     return SEED_ASSETS;
   }
 
   async getTasks(status?: string): Promise<MaintenanceTaskItem[]> {
-    if (isDatabaseConfigured && db) {
-      try {
-        let query = db.select().from(maintenanceTasks).$dynamic();
-        if (status) {
-          query = query.where(eq(maintenanceTasks.status, status as any));
-        }
-        const rows = await query.orderBy(desc(maintenanceTasks.priorityScore));
-        if (rows.length > 0) return rows as any;
-      } catch (e) {
-        console.warn("DB query failed for tasks, using fallback:", e);
+    if (isDatabaseConfigured) {
+      if (!db) throw new Error("Database is configured but database client is not initialized.");
+      let query = db.select().from(maintenanceTasks).$dynamic();
+      if (status) {
+        query = query.where(eq(maintenanceTasks.status, status as typeof maintenanceTasks.status.enumValues[number]));
       }
+      const rows = await query.orderBy(desc(maintenanceTasks.priorityScore));
+      return rows as unknown as MaintenanceTaskItem[];
     }
     if (status) {
       return this.inMemoryTasks.filter((t) => t.status === status);
@@ -524,13 +534,10 @@ class DataStore {
   }
 
   async getTaskById(id: string): Promise<MaintenanceTaskItem | null> {
-    if (isDatabaseConfigured && db) {
-      try {
-        const rows = await db.select().from(maintenanceTasks).where(eq(maintenanceTasks.id, id as any));
-        if (rows.length > 0) return rows[0] as any;
-      } catch (e) {
-        console.warn("DB query failed for task by id, using fallback:", e);
-      }
+    if (isDatabaseConfigured) {
+      if (!db) throw new Error("Database is configured but database client is not initialized.");
+      const rows = await db.select().from(maintenanceTasks).where(eq(maintenanceTasks.id, id));
+      return rows.length > 0 ? (rows[0] as unknown as MaintenanceTaskItem) : null;
     }
     return this.inMemoryTasks.find((t) => t.id === id || t.taskCode === id) || null;
   }
@@ -539,8 +546,25 @@ class DataStore {
     id: string,
     score: number,
     priorityScore: string | number,
-    criticalityDetail?: any
+    criticalityDetail?: CriticalityScore
   ): Promise<MaintenanceTaskItem | null> {
+    if (isDatabaseConfigured) {
+      if (!db) throw new Error("Database is configured but database client is not initialized.");
+      const [updated] = await db
+        .update(maintenanceTasks)
+        .set({
+          criticalityScore: Math.round(score * 100),
+          priorityScore: String(priorityScore),
+          updatedAt: new Date(),
+        })
+        .where(eq(maintenanceTasks.id, id))
+        .returning();
+      if (updated) {
+        return { ...updated, criticalityDetail } as unknown as MaintenanceTaskItem;
+      }
+      return null;
+    }
+
     const task = this.inMemoryTasks.find((t) => t.id === id || t.taskCode === id);
     if (task) {
       task.criticalityScore = Math.round(score * 100);
@@ -548,48 +572,23 @@ class DataStore {
       task.criticalityDetail = criticalityDetail;
       task.updatedAt = new Date().toISOString();
     }
-
-    if (isDatabaseConfigured && db) {
-      try {
-        const [updated] = await db
-          .update(maintenanceTasks)
-          .set({
-            criticalityScore: Math.round(score * 100),
-            priorityScore: String(priorityScore),
-            updatedAt: new Date(),
-          })
-          .where(eq(maintenanceTasks.id, id as any))
-          .returning();
-        if (updated) {
-          return { ...updated, criticalityDetail } as any;
-        }
-      } catch (e) {
-        console.warn("DB update failed for task criticality:", e);
-      }
-    }
     return task || null;
   }
 
   async getTrains(): Promise<TrainItem[]> {
-    if (isDatabaseConfigured && db) {
-      try {
-        const rows = await db.select().from(trains);
-        if (rows.length > 0) return rows as any;
-      } catch (e) {
-        console.warn("DB query failed for trains, using fallback:", e);
-      }
+    if (isDatabaseConfigured) {
+      if (!db) throw new Error("Database is configured but database client is not initialized.");
+      const rows = await db.select().from(trains);
+      return rows as unknown as TrainItem[];
     }
     return SEED_TRAINS;
   }
 
   async getBlockWindows(): Promise<BlockWindowItem[]> {
-    if (isDatabaseConfigured && db) {
-      try {
-        const rows = await db.select().from(blockWindows);
-        if (rows.length > 0) return rows as any;
-      } catch (e) {
-        console.warn("DB query failed for block windows, using fallback:", e);
-      }
+    if (isDatabaseConfigured) {
+      if (!db) throw new Error("Database is configured but database client is not initialized.");
+      const rows = await db.select().from(blockWindows);
+      return rows as unknown as BlockWindowItem[];
     }
     return SEED_WINDOWS;
   }
@@ -598,18 +597,15 @@ class DataStore {
     return SEED_RESOURCES;
   }
 
-  async getBlocks(corridorId?: string): Promise<any[]> {
-    if (isDatabaseConfigured && db) {
-      try {
-        let query = db.select().from(blocks).$dynamic();
-        if (corridorId) {
-          query = query.where(eq(blocks.corridorId, corridorId as any));
-        }
-        const rows = await query.orderBy(desc(blocks.createdAt));
-        if (rows.length > 0) return rows;
-      } catch (e) {
-        console.warn("DB query failed for blocks, using fallback:", e);
+  async getBlocks(corridorId?: string): Promise<DbBlockView[]> {
+    if (isDatabaseConfigured) {
+      if (!db) throw new Error("Database is configured but database client is not initialized.");
+      let query = db.select().from(blocks).$dynamic();
+      if (corridorId) {
+        query = query.where(eq(blocks.corridorId, corridorId));
       }
+      const rows = await query.orderBy(desc(blocks.createdAt));
+      return rows as unknown as DbBlockView[];
     }
     if (corridorId && corridorId !== "all") {
       return this.inMemoryBlocks.filter(
@@ -619,8 +615,74 @@ class DataStore {
     return [...this.inMemoryBlocks];
   }
 
-  async saveBlocks(newBlocks: any[]): Promise<void> {
+  async getBlocksByRun(runId: string, runCode?: string): Promise<DbBlockView[]> {
+    if (isDatabaseConfigured) {
+      if (!db) throw new Error("Database is configured but database client is not initialized.");
+      if (runId) {
+        const rows = await db
+          .select()
+          .from(blocks)
+          .where(eq(blocks.optimizationRunId, runId))
+          .orderBy(desc(blocks.createdAt));
+        return rows as unknown as DbBlockView[];
+      }
+      if (runCode) {
+        const rows = await db
+          .select()
+          .from(blocks)
+          .where(like(blocks.blockCode, `%${runCode}%`))
+          .orderBy(desc(blocks.createdAt));
+        return rows as unknown as DbBlockView[];
+      }
+      return [];
+    }
+
+    if (runId) {
+      return this.inMemoryBlocks.filter(
+        (b) => b.optimizationRunId === runId || b.runId === runId
+      );
+    }
+
+    if (runCode) {
+      return this.inMemoryBlocks.filter(
+        (b) =>
+          b.runCode === runCode ||
+          b.blockCode.includes(runCode) ||
+          (b.explanation && (b.explanation as Record<string, unknown>).runCode === runCode)
+      );
+    }
+
+    return [];
+  }
+
+  async saveBlocks(newBlocks: DbBlockView[], runId?: string): Promise<void> {
+    const resolvedRunId = runId || newBlocks[0]?.runId || newBlocks[0]?.optimizationRunId;
+    if (isDatabaseConfigured) {
+      if (!db) throw new Error("Database is configured but database client is not initialized.");
+      for (const b of newBlocks) {
+        const blkRunId = b.optimizationRunId || b.runId || resolvedRunId || null;
+        await db.insert(blocks).values({
+          blockCode: b.blockCode,
+          corridorId: b.corridorId,
+          optimizationRunId: blkRunId,
+          startAt: new Date(b.startAt),
+          endAt: new Date(b.endAt),
+          durationMinutes: b.durationMinutes,
+          status: b.status || "PROPOSED",
+          planningHorizon: b.planningHorizon || "WEEKLY",
+          baselineDurationMinutes: b.baselineDurationMinutes || b.durationMinutes || 0,
+          savedMinutes: b.savedMinutes || 0,
+        }).onConflictDoNothing();
+      }
+    }
+
     for (const b of newBlocks) {
+      if (!b.optimizationRunId && resolvedRunId) {
+        b.optimizationRunId = resolvedRunId;
+      }
+      if (!b.runId && resolvedRunId) {
+        b.runId = resolvedRunId;
+      }
       const idx = this.inMemoryBlocks.findIndex((x) => x.id === b.id || x.blockCode === b.blockCode);
       if (idx >= 0) {
         this.inMemoryBlocks[idx] = b;
@@ -628,64 +690,44 @@ class DataStore {
         this.inMemoryBlocks.unshift(b);
       }
     }
-
-    if (isDatabaseConfigured && db) {
-      try {
-        for (const b of newBlocks) {
-          await db.insert(blocks).values({
-            blockCode: b.blockCode,
-            corridorId: b.corridorId,
-            startAt: new Date(b.startAt),
-            endAt: new Date(b.endAt),
-            durationMinutes: b.durationMinutes,
-            status: b.status || "PROPOSED",
-            planningHorizon: b.planningHorizon || "WEEKLY",
-            baselineDurationMinutes: b.baselineDurationMinutes || b.durationMinutes || 0,
-            savedMinutes: b.savedMinutes || 0,
-          }).onConflictDoNothing();
-        }
-      } catch (e) {
-        console.warn("DB insert failed for generated blocks:", e);
-      }
-    }
   }
 
-  async getOptimizationRuns(): Promise<any[]> {
-    if (isDatabaseConfigured && db) {
-      try {
-        const rows = await db.select().from(optimizationRuns).orderBy(desc(optimizationRuns.createdAt));
-        if (rows.length > 0) return rows;
-      } catch (e) {
-        console.warn("DB query failed for optimization runs, using fallback:", e);
-      }
+  async getOptimizationRuns(): Promise<OptimizationRunRecord[]> {
+    if (isDatabaseConfigured) {
+      if (!db) throw new Error("Database is configured but database client is not initialized.");
+      const rows = await db.select().from(optimizationRuns).orderBy(desc(optimizationRuns.createdAt));
+      return rows as unknown as OptimizationRunRecord[];
     }
     return [...this.inMemoryRuns];
   }
 
-  async saveOptimizationRun(run: any): Promise<any> {
-    this.inMemoryRuns.unshift(run);
-
-    if (isDatabaseConfigured && db) {
-      try {
-        const [inserted] = await db.insert(optimizationRuns).values({
-          runCode: run.runCode,
-          horizon: run.horizon || "WEEKLY",
-          startDate: new Date(run.startDate || Date.now()),
-          endDate: new Date(run.endDate || Date.now() + 7 * 86400000),
-          tasksConsidered: run.tasksConsidered || 0,
-          tasksScheduled: run.tasksScheduled || 0,
-          blocksGenerated: run.blocksGenerated || 0,
-          totalBlockMinutes: run.totalBlockMinutes || 0,
-          baselineBlockMinutes: run.baselineBlockMinutes || 0,
-          estimatedSavingsMinutes: run.estimatedSavingsMinutes || 0,
-          optimizationScore: String(run.optimizationScore || "0.80"),
-          status: run.status || "OPTIMAL",
-        }).returning();
-        return inserted;
-      } catch (e) {
-        console.warn("DB insert failed for optimization run:", e);
-      }
+  async saveOptimizationRun(run: OptimizationRunRecord): Promise<OptimizationRunRecord> {
+    if (!run.id) {
+      run.id = run.runId || `run_${Date.now()}`;
     }
+
+    if (isDatabaseConfigured) {
+      if (!db) throw new Error("Database is configured but database client is not initialized.");
+      const [inserted] = await db.insert(optimizationRuns).values({
+        runCode: run.runCode,
+        horizon: run.horizon || "WEEKLY",
+        startDate: new Date(run.startDate || Date.now()),
+        endDate: new Date(run.endDate || Date.now() + 7 * 86400000),
+        tasksConsidered: run.tasksConsidered || 0,
+        tasksScheduled: run.tasksScheduled || 0,
+        blocksGenerated: run.blocksGenerated || 0,
+        totalBlockMinutes: run.totalBlockMinutes || 0,
+        baselineBlockMinutes: run.baselineBlockMinutes || 0,
+        estimatedSavingsMinutes: run.estimatedSavingsMinutes || 0,
+        optimizationScore: String(run.optimizationScore || "0.80"),
+        status: run.status || "OPTIMAL",
+      }).returning();
+      const saved = (inserted || run) as OptimizationRunRecord;
+      this.inMemoryRuns.unshift(saved);
+      return saved;
+    }
+
+    this.inMemoryRuns.unshift(run);
     return run;
   }
 }

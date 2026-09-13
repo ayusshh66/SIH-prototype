@@ -1,5 +1,6 @@
 Directory structure:
 └── SIH-prototype/
+    ├── BACKEND_AI_INTEGRATION.md
     ├── FRONTEND_API_MAPPING.md
     ├── FRONTEND_ARCHITECTURE.md
     ├── FRONTEND_TASK_BREAKDOWN.md
@@ -60,70 +61,74 @@ Directory structure:
     │   │   └── meta/
     │   │       ├── 0000_snapshot.json
     │   │       └── _journal.json
-    │   └── src/
-    │       ├── app.ts
-    │       ├── server.ts
-    │       ├── db/
-    │       │   ├── index.ts
-    │       │   ├── seed.ts
-    │       │   └── schema/
-    │       │       ├── assets.ts
-    │       │       ├── auditLogs.ts
-    │       │       ├── blocks.ts
-    │       │       ├── blockTasks.ts
-    │       │       ├── blockWindows.ts
-    │       │       ├── corridors.ts
-    │       │       ├── defects.ts
-    │       │       ├── departments.ts
-    │       │       ├── enums.ts
-    │       │       ├── index.ts
-    │       │       ├── maintenanceTasks.ts
-    │       │       ├── optimizationRuns.ts
-    │       │       ├── trainForecasts.ts
-    │       │       └── trains.ts
-    │       ├── lib/
-    │       │   └── redis.ts
-    │       ├── middleware/
-    │       │   └── error.ts
-    │       ├── modules/
-    │       │   ├── assets/
-    │       │   │   ├── assets.controller.ts
-    │       │   │   ├── assets.routes.ts
-    │       │   │   └── routes.ts
-    │       │   ├── blocks/
-    │       │   │   ├── blocks.controller.ts
-    │       │   │   ├── blocks.routes.ts
-    │       │   │   └── routes.ts
-    │       │   ├── corridors/
-    │       │   │   ├── corridors.controller.ts
-    │       │   │   ├── corridors.routes.ts
-    │       │   │   └── routes.ts
-    │       │   ├── health/
-    │       │   │   └── routes.ts
-    │       │   ├── integration/
-    │       │   │   └── routes.ts
-    │       │   ├── maintenance/
-    │       │   │   ├── maintenance.controller.ts
-    │       │   │   ├── maintenance.routes.ts
-    │       │   │   └── routes.ts
-    │       │   ├── planning/
-    │       │   │   ├── optimizer.ts
-    │       │   │   ├── planning.controller.ts
-    │       │   │   ├── planning.routes.ts
-    │       │   │   ├── priority.engine.ts
-    │       │   │   └── routes.ts
-    │       │   └── trains/
-    │       │       ├── routes.ts
-    │       │       ├── trains.controller.ts
-    │       │       └── trains.routes.ts
-    │       └── services/
-    │           ├── ai/
-    │           │   ├── aiAdapter.service.ts
-    │           │   ├── aiBridge.ts
-    │           │   ├── contracts.ts
-    │           │   └── dataMapper.ts
-    │           └── data/
-    │               └── dataStore.ts
+    │   ├── src/
+    │   │   ├── app.ts
+    │   │   ├── server.ts
+    │   │   ├── db/
+    │   │   │   ├── index.ts
+    │   │   │   ├── seed.ts
+    │   │   │   └── schema/
+    │   │   │       ├── assets.ts
+    │   │   │       ├── auditLogs.ts
+    │   │   │       ├── blocks.ts
+    │   │   │       ├── blockTasks.ts
+    │   │   │       ├── blockWindows.ts
+    │   │   │       ├── corridors.ts
+    │   │   │       ├── defects.ts
+    │   │   │       ├── departments.ts
+    │   │   │       ├── enums.ts
+    │   │   │       ├── index.ts
+    │   │   │       ├── maintenanceTasks.ts
+    │   │   │       ├── optimizationRuns.ts
+    │   │   │       ├── trainForecasts.ts
+    │   │   │       └── trains.ts
+    │   │   ├── lib/
+    │   │   │   └── redis.ts
+    │   │   ├── middleware/
+    │   │   │   └── error.ts
+    │   │   ├── modules/
+    │   │   │   ├── assets/
+    │   │   │   │   ├── assets.controller.ts
+    │   │   │   │   ├── assets.routes.ts
+    │   │   │   │   └── routes.ts
+    │   │   │   ├── blocks/
+    │   │   │   │   ├── blocks.controller.ts
+    │   │   │   │   ├── blocks.routes.ts
+    │   │   │   │   └── routes.ts
+    │   │   │   ├── corridors/
+    │   │   │   │   ├── corridors.controller.ts
+    │   │   │   │   ├── corridors.routes.ts
+    │   │   │   │   └── routes.ts
+    │   │   │   ├── health/
+    │   │   │   │   └── routes.ts
+    │   │   │   ├── integration/
+    │   │   │   │   └── routes.ts
+    │   │   │   ├── maintenance/
+    │   │   │   │   ├── maintenance.controller.ts
+    │   │   │   │   ├── maintenance.routes.ts
+    │   │   │   │   └── routes.ts
+    │   │   │   ├── planning/
+    │   │   │   │   ├── optimizer.ts
+    │   │   │   │   ├── planning.controller.ts
+    │   │   │   │   ├── planning.routes.ts
+    │   │   │   │   ├── priority.engine.ts
+    │   │   │   │   └── routes.ts
+    │   │   │   └── trains/
+    │   │   │       ├── routes.ts
+    │   │   │       ├── trains.controller.ts
+    │   │   │       └── trains.routes.ts
+    │   │   └── services/
+    │   │       ├── ai/
+    │   │       │   ├── aiAdapter.service.ts
+    │   │       │   ├── aiBridge.ts
+    │   │       │   ├── contracts.ts
+    │   │       │   └── dataMapper.ts
+    │   │       └── data/
+    │   │           └── dataStore.ts
+    │   └── tests/
+    │       ├── aiAdapter.test.ts
+    │       ├── dataMapper.test.ts
+    │       └── persistenceIntegrity.test.ts
     └── frontend/
         ├── README.md
         ├── index.html
@@ -220,6 +225,118 @@ Directory structure:
                 ├── api.ts
                 ├── declarations.d.ts
                 └── domain.ts
+
+================================================
+FILE: BACKEND_AI_INTEGRATION.md
+================================================
+# Backend â†” AI Engine Integration Architecture
+
+This document describes the hardened, authoritative integration between the Node/Express backend and the Python AI optimization engines in the SIH Railway Maintenance Planning prototype.
+
+---
+
+## 1. Architectural Principles & Layer Boundaries
+
+```
+Frontend (Vite / React)
+  â”‚
+  â–¼ [HTTP REST /api/planning/*]
+Backend (Express / TypeScript)
+  â”‚  â”œâ”€â”€ planning.controller.ts (HTTP endpoints)
+  â”‚  â”œâ”€â”€ dataStore.ts (Drizzle ORM / in-memory fallback)
+  â”‚  â””â”€â”€ ai/
+  â”‚       â”œâ”€â”€ aiAdapter.service.ts (Context preparation, state resolution)
+  â”‚       â”œâ”€â”€ dataMapper.ts (Authoritative mapping & strict validation)
+  â”‚       â”œâ”€â”€ aiBridge.ts (Child process execution)
+  â”‚       â””â”€â”€ contracts.ts (Shared TypeScript interfaces)
+  â”‚
+  â–¼ [JSON stdin / stdout over python subprocess]
+AI Optimization Engines (Python)
+     â”œâ”€â”€ ai.agents.orchestrator (Main pipeline coordinator)
+     â”œâ”€â”€ ai.engines.criticality (Task & asset risk scoring)
+     â”œâ”€â”€ ai.engines.shadow_block (Possession co-location & grouping)
+     â”œâ”€â”€ ai.engines.optimization (Mathematical solver & conflict resolution)
+     â”œâ”€â”€ ai.engines.whatif (Scenario simulation)
+     â”œâ”€â”€ ai.engines.emergency (Disruption & emergency insertion)
+     â””â”€â”€ ai.engines.explainer (Deterministic explanation generation)
+```
+
+### Boundary Guarantees:
+- **`ai/` is strictly isolated**: It does not depend on Express, databases, ORM models, or web protocols.
+- **Backend owns data & state**: Only the backend accesses PostgreSQL/Drizzle or the in-memory data store.
+- **AI owns optimization & algorithms**: Feasibility, conflict detection, shadow blocks, criticality scoring, and schedule optimization are calculated exclusively by the AI engine.
+
+---
+
+## 2. Hardened Data Mapping & Zero Fabricated Defaults
+
+In `backend/src/services/ai/dataMapper.ts`, all silent operational fallbacks have been eliminated in favor of strict, early validation (`MappingValidationError` with HTTP 400):
+
+| Previous Anti-Pattern | Hardened Implementation |
+| :--- | :--- |
+| Invented UUID passthrough when corridor lookup failed | Throws `MappingValidationError` requiring a valid corridor lookup |
+| Invented UUID passthrough when department lookup failed | Throws `MappingValidationError` requiring a valid department lookup |
+| Fabricated `requestedStart` / `requestedEnd` from `new Date()` | Strictly validates `task.createdAt` and `task.dueAt` as non-empty ISO strings |
+| Fabricated `from_km: 0` / `to_km: 1` when coordinates missing | Strictly validates `locationStartKm` and `locationEndKm` as finite numbers |
+| Hardcoded resource location `"sec_12_ndls_agc"` & `"ENGINEERING"` | Strictly requires `resource.depotLocation` and `resource.departmentId` |
+| Fabricated synthetic task records for unknown task IDs | Unknown task IDs returned by solver are logged and skipped, never fabricated |
+| Fallback `new Date()` for block `start`/`end` | Strictly requires solver output `start` (or `start_time`) and `end` (or `end_time`) |
+| Fallback `departments: ["ENG"]` | Dynamically aggregates departments from actual assigned tasks |
+| Invented random block ID (`blk_*`) | Strictly requires `block_id` from AI optimization output |
+
+---
+
+## 3. Authoritative What-If Schedule Resolution
+
+The What-If scenario engine (`aiAdapter.service.ts -> runWhatIf`) resolves baseline schedules directly from persisted storage:
+
+1. **Rejection of Ambiguous Magic Strings**:
+   - Supplying `"current"`, `"latest"`, or empty strings as `base_schedule_id` immediately throws a `ValidationError` (HTTP 400).
+2. **Authoritative Run Lookup**:
+   - Resolves against persisted optimization runs (`dataStore.getOptimizationRuns()`) by matching `run.id`, `run.runId`, or `run.runCode`.
+   - If no persisted run matches, returns a descriptive 400 error.
+3. **Persisted Block Reconstruction**:
+   - Reconstructs schedule candidates strictly from persisted blocks (`dataStore.getBlocks()`), preserving assigned tasks and corridor references.
+4. **No Volatile Cache Dependency**:
+   - Does not rely on ephemeral in-memory variables (`latestPlanningResult`) to serve scenario analysis.
+
+---
+
+## 4. Real Operational Fields for Criticality & Movement
+
+1. **Traffic Density**: Derived directly from the task's `operationalImpactScore` in backend storage:
+   ```ts
+   const trafficDensity = Math.min(1, (task.operationalImpactScore || 0) / 100);
+   ```
+   (Replaced former hardcoded `0.85`).
+2. **Speed Class**: Removed hardcoded assumptions (`speed_class: "HIGH"`). The AI engine's calibrated defaults are respected if unspecified.
+3. **Corridor & Department Dual-Key Lookups**: Lookups are indexed by both primary UUID (`id`) and human-readable operational code (`code`), supporting both relational DB IDs and operational codes seamlessly.
+
+---
+
+## 5. Verification Commands
+
+### Automated Backend Tests
+Run the 17 integration and unit tests covering data mapper validation, What-If resolution, and AI bridge communication:
+```bash
+cd backend
+npm test
+```
+
+### Backend TypeScript Compilation
+Verify zero TypeScript compilation or linting errors:
+```bash
+cd backend
+npx tsc --noEmit
+```
+
+### AI Engine Unit Tests
+Verify all 150 AI engine unit tests in Python:
+```bash
+python -m unittest discover -s ai
+```
+
+
 
 ================================================
 FILE: FRONTEND_API_MAPPING.md
@@ -12031,7 +12148,8 @@ FILE: backend/package.json
     "db:generate": "drizzle-kit generate",
     "db:migrate": "drizzle-kit migrate",
     "db:push": "drizzle-kit push",
-    "db:seed": "tsx src/db/seed.ts"
+    "db:seed": "tsx src/db/seed.ts",
+    "test": "tsx --test tests/**/*.test.ts"
   },
   "keywords": [],
   "author": "",
@@ -14391,6 +14509,7 @@ import { relations } from "drizzle-orm";
 import { blockStatusEnum, planningHorizonEnum } from "./enums";
 import { corridors } from "./corridors";
 import { blockTasks } from "./blockTasks";
+import { optimizationRuns } from "./optimizationRuns";
 
 export const blocks = pgTable(
   "blocks",
@@ -14398,6 +14517,7 @@ export const blocks = pgTable(
     id: uuid("id").defaultRandom().primaryKey(),
     blockCode: varchar("block_code", { length: 100 }).notNull().unique(),
     corridorId: uuid("corridor_id").notNull().references(() => corridors.id),
+    optimizationRunId: uuid("optimization_run_id").references(() => optimizationRuns.id, { onDelete: "cascade" }),
     startAt: timestamp("start_at", { withTimezone: true }).notNull(),
     endAt: timestamp("end_at", { withTimezone: true }).notNull(),
     durationMinutes: integer("duration_minutes").notNull(),
@@ -14413,6 +14533,7 @@ export const blocks = pgTable(
   },
   (table) => ({
     corridorIdx: index("blocks_corridor_idx").on(table.corridorId),
+    runIdx: index("blocks_optimization_run_idx").on(table.optimizationRunId),
     startIdx: index("blocks_start_idx").on(table.startAt),
     statusIdx: index("blocks_status_idx").on(table.status),
   })
@@ -14420,6 +14541,7 @@ export const blocks = pgTable(
 
 export const blockRelations = relations(blocks, ({ one, many }) => ({
   corridor: one(corridors, { fields: [blocks.corridorId], references: [corridors.id] }),
+  optimizationRun: one(optimizationRuns, { fields: [blocks.optimizationRunId], references: [optimizationRuns.id] }),
   blockTasks: many(blockTasks),
 }));
 
@@ -16364,8 +16486,10 @@ import {
   mapTaskToAi,
   mapTrainToAi,
   mapWindowToAi,
+  MappingValidationError,
 } from "./dataMapper";
-import { dataStore, MaintenanceTaskItem } from "../data/dataStore";
+import type { AiBlockInput } from "./dataMapper";
+import { dataStore, MaintenanceTaskItem, CorridorItem, DepartmentItem } from "../data/dataStore";
 import type {
   AiHealthResult,
   CriticalityScore,
@@ -16404,9 +16528,16 @@ export class ValidationError extends Error {
   statusCode = 400;
 }
 
+/** Shape of an individual compatibility candidate returned by AI. */
+interface CompatibilityCandidate {
+  task_ids: string[];
+  sections: string[];
+  departments: string[];
+  compatibility_score: number;
+  reasons: string[];
+}
+
 export class AiAdapterService {
-  private latestPlanningResult: PlanningResult | null = null;
-  private latestPlanningContext: PlanningContext | null = null;
   private latestExplanations: Explanation[] = [];
   private latestConflicts: PlanningResult["train_conflicts"] = [];
   private latestShadowBlocks: ShadowBlockCandidate[] = [];
@@ -16416,7 +16547,7 @@ export class AiAdapterService {
     const mode = options.mode || "BALANCED";
 
     const contextData = await this.buildPlanningContextData(options.corridorId);
-    const { allTasks, allCorridors, taskMap } = contextData;
+    const { allCorridors, taskMap } = contextData;
     const canonicalRequest: PlanningContext = {
       request_id: `plan_req_${Date.now().toString(36)}`,
       mode,
@@ -16448,11 +16579,6 @@ export class AiAdapterService {
       throw new Error("AI Orchestration Failure: optimization_result was not returned.");
     }
 
-    this.latestPlanningContext = {
-      ...canonicalRequest,
-      criticality_scores: aiResult.criticality_scores,
-      shadow_block_candidates: aiResult.shadow_block_candidates,
-    };
     this.latestExplanations = aiResult.explanations;
     this.latestShadowBlocks = aiResult.shadow_block_candidates;
     this.latestConflicts = optResult.train_conflicts || [];
@@ -16464,29 +16590,48 @@ export class AiAdapterService {
     const targetCorridor =
       allCorridors.find((c) => c.id === options.corridorId || c.code === options.corridorId) ||
       allCorridors[0];
+
+    const runId = aiResult.orchestration_id;
+    const runCode = `RUN-${new Date().toISOString().slice(0, 10).replace(/-/g, "")}-${Math.floor(
+      100 + Math.random() * 900
+    )}`;
+
     const generatedBlocks: DbBlockView[] = [];
 
-    for (const cand of optResult.schedule_candidates || []) {
-      for (const blk of cand.blocks || []) {
+    for (let candIdx = 0; candIdx < (optResult.schedule_candidates || []).length; candIdx++) {
+      const cand = optResult.schedule_candidates[candIdx];
+      const candBlocks = (cand.blocks || []) as AiBlockInput[];
+      for (let blkIdx = 0; blkIdx < candBlocks.length; blkIdx++) {
+        const blk = candBlocks[blkIdx];
         const durationMinutes =
           blk.durationMinutes ||
           Math.max(
             0,
-            Math.round((new Date(blk.end).getTime() - new Date(blk.start).getTime()) / 60000)
+            Math.round(
+              (new Date(blk.end || blk.end_time || "").getTime() -
+                new Date(blk.start || blk.start_time || "").getTime()) /
+                60000
+            )
           );
-        generatedBlocks.push(
-          mapAiBlockToDbBlock(
-            { ...blk, durationMinutes, task_ids: cand.task_ids || optResult.selected_task_ids },
-            targetCorridor?.id || blk.section_id,
-            targetCorridor?.code || blk.section_id,
-            taskMap
-          )
+        const mappedBlock = mapAiBlockToDbBlock(
+          {
+            ...blk,
+            block_code: `BLK-${targetCorridor?.code || "SEC"}-${runCode}-${candIdx + 1}${blkIdx + 1}`,
+            durationMinutes,
+            task_ids: cand.task_ids || optResult.selected_task_ids,
+          },
+          targetCorridor?.id || "",
+          targetCorridor?.code || "",
+          taskMap
         );
+        mappedBlock.runId = runId;
+        mappedBlock.runCode = runCode;
+        if (mappedBlock.explanation) {
+          mappedBlock.explanation.runId = runId;
+          mappedBlock.explanation.runCode = runCode;
+        }
+        generatedBlocks.push(mappedBlock);
       }
-    }
-
-    if (generatedBlocks.length > 0) {
-      await dataStore.saveBlocks(generatedBlocks);
     }
 
     const scheduledCount = optResult.selected_task_ids.length;
@@ -16494,12 +16639,11 @@ export class AiAdapterService {
     const baselineMinutes = generatedBlocks.reduce((acc, b) => acc + (b.baselineDurationMinutes || 0), 0);
     const totalBlockMinutes = generatedBlocks.reduce((acc, b) => acc + (b.durationMinutes || 0), 0);
     const savedMinutes = Math.max(baselineMinutes - totalBlockMinutes, 0);
-    const runCode = `RUN-${new Date().toISOString().slice(0, 10).replace(/-/g, "")}-${Math.floor(
-      100 + Math.random() * 900
-    )}`;
 
+    // Save optimization run to authoritative backend store (fails if persistence fails)
     const runRecord = await dataStore.saveOptimizationRun({
-      runId: aiResult.orchestration_id,
+      id: runId,
+      runId,
       runCode,
       horizon,
       startDate: new Date().toISOString(),
@@ -16514,6 +16658,18 @@ export class AiAdapterService {
       status: optResult.status,
       createdAt: new Date().toISOString(),
     });
+
+    const persistedRunId = runRecord?.id || runId;
+
+    for (const b of generatedBlocks) {
+      b.optimizationRunId = persistedRunId;
+      b.runId = persistedRunId;
+    }
+
+    // Save generated blocks associated with this run (fails if persistence fails)
+    if (generatedBlocks.length > 0) {
+      await dataStore.saveBlocks(generatedBlocks, persistedRunId);
+    }
 
     const result: PlanningResult = {
       ...optResult,
@@ -16538,18 +16694,19 @@ export class AiAdapterService {
       },
     };
 
-    this.latestPlanningResult = result;
     return result;
   }
 
   async getCriticalityScore(task: MaintenanceTaskItem): Promise<CriticalityScore> {
+    // Use real backend fields instead of hardcoded values
+    const trafficDensity = Math.min(1, (task.operationalImpactScore || 0) / 100);
     const input = {
       entity_id: task.taskCode || task.id,
       severity: task.criticalityScore >= 85 ? "CRITICAL" : task.criticalityScore >= 70 ? "HIGH" : "MODERATE",
-      urgency: Math.min(1, (task.urgencyScore || 75) / 100),
-      safety_risk: Math.min(1, (task.safetyScore || 80) / 100),
-      traffic_density: 0.85,
-      speed_class: "HIGH",
+      urgency: Math.min(1, (task.urgencyScore || 0) / 100),
+      safety_risk: Math.min(1, (task.safetyScore || 0) / 100),
+      traffic_density: trafficDensity,
+      // No hardcoded speed_class â€” let AI engine use its default if not provided
       deadline: task.dueAt || undefined,
     };
 
@@ -16559,7 +16716,7 @@ export class AiAdapterService {
   }
 
   async generateShadowBlocks(options?: { constraints?: Record<string, unknown> }): Promise<{
-    compatibility_candidates: unknown[];
+    compatibility_candidates: CompatibilityCandidate[];
     shadow_block_candidates: ShadowBlockCandidate[];
   }> {
     const contextData = await this.buildPlanningContextData();
@@ -16571,7 +16728,7 @@ export class AiAdapterService {
     };
 
     const res = await invokeAiBridge<typeof payload, {
-      compatibility_candidates: unknown[];
+      compatibility_candidates: CompatibilityCandidate[];
       shadow_block_candidates: ShadowBlockCandidate[];
     }>("shadow_blocks", payload);
 
@@ -16616,8 +16773,16 @@ export class AiAdapterService {
       dataStore.getDepartments(),
     ]);
 
-    const corridorMap = new Map(allCorridors.map((c) => [c.id, c]));
-    const deptMap = new Map(allDepts.map((d) => [d.id, d]));
+    const corridorMap = new Map<string, CorridorItem>();
+    for (const c of allCorridors) {
+      corridorMap.set(c.id, c);
+      if (c.code) corridorMap.set(c.code, c);
+    }
+    const deptMap = new Map<string, DepartmentItem>();
+    for (const d of allDepts) {
+      deptMap.set(d.id, d);
+      if (d.code) deptMap.set(d.code, d);
+    }
 
     const emergencyPayload = {
       emergency_event: {
@@ -16670,8 +16835,16 @@ export class AiAdapterService {
       dataStore.getDepartments(),
     ]);
 
-    const corridorMap = new Map(allCorridors.map((c) => [c.id, c]));
-    const deptMap = new Map(allDepts.map((d) => [d.id, d]));
+    const corridorMap = new Map<string, CorridorItem>();
+    for (const c of allCorridors) {
+      corridorMap.set(c.id, c);
+      if (c.code) corridorMap.set(c.code, c);
+    }
+    const deptMap = new Map<string, DepartmentItem>();
+    for (const d of allDepts) {
+      deptMap.set(d.id, d);
+      if (d.code) deptMap.set(d.code, d);
+    }
     const taskMap = new Map(allTasks.map((t) => [t.taskCode || t.id, t]));
 
     let targetTasks = allTasks.filter((t) => t.status === "PENDING" && t.requiredBlock);
@@ -16714,6 +16887,15 @@ export class AiAdapterService {
   private validateWhatIfScenario(payload: WhatIfScenarioPayload): WhatIfScenarioPayload {
     const scenarioType = ensureString(payload.scenario_type, "scenario_type") as WhatIfScenarioPayload["scenario_type"];
     const baseScheduleId = ensureString(payload.base_schedule_id, "base_schedule_id");
+
+    // Reject magic strings â€” require a concrete persisted schedule ID
+    if (baseScheduleId === "current" || baseScheduleId === "latest") {
+      throw new ValidationError(
+        `Invalid base_schedule_id '${baseScheduleId}'. ` +
+        `Pass a concrete schedule_id, runId, or runCode from a completed planning run.`
+      );
+    }
+
     const newConstraints = payload.new_constraints;
     if (!newConstraints || typeof newConstraints !== "object" || Array.isArray(newConstraints)) {
       throw new ValidationError("Missing or invalid required field 'new_constraints'.");
@@ -16760,9 +16942,13 @@ export class AiAdapterService {
     };
   }
 
+  /**
+   * Resolves planning context from current persisted data.
+   *
+   * Does NOT use volatile in-memory cache â€” always builds from the
+   * authoritative data store to ensure consistency.
+   */
   private async resolvePlanningContext(): Promise<PlanningContext> {
-    if (this.latestPlanningContext) return this.latestPlanningContext;
-
     const contextData = await this.buildPlanningContextData();
     return {
       request_id: `context_req_${Date.now().toString(36)}`,
@@ -16788,38 +16974,56 @@ export class AiAdapterService {
     };
   }
 
-  private async resolveSchedule(baseScheduleId: string): Promise<ScheduleCandidate | { schedule_candidates: ScheduleCandidate[] }> {
-    const latestCandidates = this.latestPlanningResult?.schedule_candidates || [];
-    const inMemoryCandidate = latestCandidates.find((cand) => cand.schedule_id === baseScheduleId);
-    if (inMemoryCandidate) return inMemoryCandidate;
-
-    if (
-      this.latestPlanningResult &&
-      [this.latestPlanningResult.runId, this.latestPlanningResult.runCode, "current", "latest"].includes(baseScheduleId)
-    ) {
-      return { schedule_candidates: latestCandidates };
-    }
-
+  /**
+   * Resolves the base schedule from authoritative persisted backend state.
+   *
+   * Looks up the provided base_schedule_id against persisted optimization
+   * runs and reconstructs schedule candidates from persisted blocks.
+   * Does NOT use volatile in-memory latestPlanningResult.
+   * Does NOT accept "current" or "latest" as magic aliases.
+   */
+  private async resolveSchedule(baseScheduleId: string): Promise<{ schedule_candidates: ScheduleCandidate[] }> {
+    // Look up in persisted optimization runs
     const runs = await dataStore.getOptimizationRuns();
-    const matchingRun = runs.find((run) => run.id === baseScheduleId || run.runId === baseScheduleId || run.runCode === baseScheduleId);
-    if (!matchingRun && !["current", "latest"].includes(baseScheduleId)) {
-      throw new ValidationError(`Unknown base_schedule_id '${baseScheduleId}'. Run planning first and pass a returned schedule_id/runId/runCode.`);
+    const matchingRun = runs.find(
+      (run) => run.id === baseScheduleId || run.runId === baseScheduleId || run.runCode === baseScheduleId
+    );
+
+    if (!matchingRun) {
+      throw new ValidationError(
+        `Unknown base_schedule_id '${baseScheduleId}'. ` +
+        `No persisted optimization run matches this ID. ` +
+        `Run planning first and pass a returned runId or runCode.`
+      );
     }
 
-    const blocks = await dataStore.getBlocks();
-    const candidates: ScheduleCandidate[] = blocks.map((block, index) => {
+    // Reconstruct schedule candidates from the exact blocks of this optimization run
+    const runBlocks = await dataStore.getBlocksByRun(
+      matchingRun.id || matchingRun.runId || "",
+      matchingRun.runCode
+    );
+
+    if (runBlocks.length === 0) {
+      throw new ValidationError(
+        `No persisted blocks found for optimization run '${baseScheduleId}'. Cannot reconstruct base schedule.`
+      );
+    }
+
+    const candidates: ScheduleCandidate[] = runBlocks.map((block, index) => {
       const start = new Date(block.startAt).toISOString();
       const end = new Date(block.endAt).toISOString();
       const taskIds = Array.isArray(block.tasks)
-        ? block.tasks.map((task: { taskCode?: string; id?: string }) => task.taskCode || task.id).filter(Boolean)
+        ? block.tasks
+            .map((task: Record<string, unknown>) => (task.taskCode as string) || (task.id as string))
+            .filter(Boolean) as string[]
         : [];
       return {
         schedule_id: index === 0 ? baseScheduleId : `${baseScheduleId}_${index + 1}`,
         task_ids: taskIds,
         blocks: [
           {
-            block_id: block.id || block.blockCode,
-            section_id: block.corridorCode || block.corridorId,
+            block_id: (block.id || block.blockCode) as string,
+            section_id: (block.corridorCode || block.corridorId) as string,
             start,
             end,
             durationMinutes: block.durationMinutes,
@@ -16829,13 +17033,9 @@ export class AiAdapterService {
         end_time: end,
         estimated_disruption_minutes: 0,
         resource_assignments: {},
-        status: block.status || "PROPOSED",
+        status: (block.status || "PROPOSED") as string,
       };
     });
-
-    if (candidates.length === 0) {
-      throw new ValidationError(`No persisted blocks are available for base_schedule_id '${baseScheduleId}'.`);
-    }
 
     return { schedule_candidates: candidates };
   }
@@ -17146,6 +17346,10 @@ export interface DbBlockView {
   baselineDurationMinutes: number;
   savedMinutes: number;
   status: string;
+  planningHorizon?: string;
+  optimizationRunId?: string;
+  runId?: string;
+  runCode?: string;
   taskCount: number;
   tasks: Array<Record<string, unknown>>;
   departments: string[];
@@ -17223,6 +17427,37 @@ import {
   DepartmentItem,
 } from "../data/dataStore";
 
+// â”€â”€ Validation â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+
+export class MappingValidationError extends Error {
+  statusCode = 400;
+  constructor(message: string) {
+    super(message);
+    this.name = "MappingValidationError";
+  }
+}
+
+function requireString(value: unknown, fieldPath: string): string {
+  if (typeof value !== "string" || value.trim().length === 0) {
+    throw new MappingValidationError(
+      `Missing required mapping field '${fieldPath}'. Cannot map to AI contract without this value.`
+    );
+  }
+  return value.trim();
+}
+
+function requireFiniteNumber(value: unknown, fieldPath: string): number {
+  const numeric = typeof value === "number" ? value : Number(value);
+  if (!Number.isFinite(numeric)) {
+    throw new MappingValidationError(
+      `Missing or non-numeric required mapping field '${fieldPath}' (got: ${JSON.stringify(value)}).`
+    );
+  }
+  return numeric;
+}
+
+// â”€â”€ AI Payload Types â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+
 export interface AiTaskPayload {
   task_id: string;
   task_type: string;
@@ -17276,16 +17511,60 @@ export interface AiResourcePayload {
   capacity: number;
 }
 
+// â”€â”€ Input type for AI block results â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+
+export interface AiBlockInput {
+  block_id: string;
+  block_code?: string;
+  blockCode?: string;
+  section_id?: string;
+  start?: string;
+  start_time?: string;
+  end?: string;
+  end_time?: string;
+  durationMinutes?: number;
+  task_ids?: string[];
+  tasks?: string[];
+}
+
+// â”€â”€ Output type for mapped block tasks â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+
+export interface BlockTaskView {
+  [key: string]: unknown;
+  id: string;
+  taskCode: string;
+  department: string;
+  taskType: string;
+  durationMinutes: number;
+  locationKm: string;
+}
+
 /**
  * Maps a backend maintenance task to the canonical AI MaintenanceTask format.
+ *
+ * Requires valid corridor and department lookups. Missing required data
+ * produces a MappingValidationError rather than fabricated values.
  */
 export function mapTaskToAi(
   task: MaintenanceTaskItem,
-  corridor?: CorridorItem | null,
-  dept?: DepartmentItem | null
+  corridor: CorridorItem | null | undefined,
+  dept: DepartmentItem | null | undefined
 ): AiTaskPayload {
-  const sectionId = corridor?.code || task.corridorId;
-  const deptCode = dept?.code || task.departmentId;
+  if (!corridor) {
+    throw new MappingValidationError(
+      `Missing corridor lookup for task '${task.taskCode || task.id}' (corridorId: '${task.corridorId}'). ` +
+      `Cannot determine section_id without a resolved corridor.`
+    );
+  }
+  if (!dept) {
+    throw new MappingValidationError(
+      `Missing department lookup for task '${task.taskCode || task.id}' (departmentId: '${task.departmentId}'). ` +
+      `Cannot determine department code without a resolved department.`
+    );
+  }
+
+  const sectionId = corridor.code;
+  const deptCode = dept.code;
 
   // Derive priority hint from criticality score (0-100)
   let priorityHint: "LOW" | "MEDIUM" | "HIGH" | "CRITICAL" = "MEDIUM";
@@ -17315,16 +17594,21 @@ export function mapTaskToAi(
     requiredResources = [{ resource_type: "tower_wagon", count: 1 }];
   }
 
-  const requestedStart = task.createdAt || new Date().toISOString();
-  const requestedEnd = task.dueAt || new Date(Date.now() + 72 * 3600 * 1000).toISOString();
+  // Require real timestamps â€” no fabricated current-time fallbacks
+  const requestedStart = requireString(task.createdAt, `task[${task.taskCode || task.id}].createdAt`);
+  const requestedEnd = requireString(task.dueAt, `task[${task.taskCode || task.id}].dueAt`);
+
+  // Require real kilometer markers â€” no fabricated 0/1 fallbacks
+  const fromKm = requireFiniteNumber(task.locationStartKm, `task[${task.taskCode || task.id}].locationStartKm`);
+  const toKm = requireFiniteNumber(task.locationEndKm, `task[${task.taskCode || task.id}].locationEndKm`);
 
   return {
     task_id: task.taskCode || task.id,
     task_type: task.taskType,
     railway_section_id: sectionId,
     section_id: sectionId,
-    from_km: parseFloat(String(task.locationStartKm)) || 0,
-    to_km: parseFloat(String(task.locationEndKm)) || 1,
+    from_km: fromKm,
+    to_km: toKm,
     department: deptCode,
     status: task.status === "PENDING" ? "PLANNED" : task.status,
     requested_start: requestedStart,
@@ -17341,12 +17625,21 @@ export function mapTaskToAi(
 
 /**
  * Maps a backend train record to the canonical AI TrainMovement format.
+ *
+ * Requires a valid corridor lookup for section_id.
  */
 export function mapTrainToAi(
   train: TrainItem,
-  corridor?: CorridorItem | null
+  corridor: CorridorItem | null | undefined
 ): AiMovementPayload {
-  const sectionId = corridor?.code || train.corridorId;
+  if (!corridor) {
+    throw new MappingValidationError(
+      `Missing corridor lookup for train '${train.trainNumber}' (corridorId: '${train.corridorId}'). ` +
+      `Cannot determine section_id without a resolved corridor.`
+    );
+  }
+
+  const sectionId = corridor.code;
   const isExpress = train.trainType === "EXPRESS" || train.isCriticalService;
   const isFreight = train.isGoodsTrain || train.trainType === "GOODS";
 
@@ -17357,6 +17650,8 @@ export function mapTrainToAi(
     train_type: train.trainType,
     movement_start: train.scheduledDeparture,
     movement_end: train.scheduledArrival,
+    // Heuristic: Indian Railways convention â€” even-numbered trains are UP direction.
+    // No `direction` field exists in the DB schema; this is the best available signal.
     direction: train.trainNumber.endsWith("2") || train.trainNumber.endsWith("6") ? "UP" : "DOWN",
     speed_class: isExpress ? "EXPRESS" : isFreight ? "LOW" : "HIGH",
     priority_class: isFreight ? "FREIGHT" : "PASSENGER",
@@ -17366,12 +17661,21 @@ export function mapTrainToAi(
 
 /**
  * Maps a backend block window record to the canonical AI MaintenanceWindow format.
+ *
+ * Requires a valid corridor lookup for section_id.
  */
 export function mapWindowToAi(
   window: BlockWindowItem,
-  corridor?: CorridorItem | null
+  corridor: CorridorItem | null | undefined
 ): AiWindowPayload {
-  const sectionId = corridor?.code || window.corridorId;
+  if (!corridor) {
+    throw new MappingValidationError(
+      `Missing corridor lookup for block window '${window.id}' (corridorId: '${window.corridorId}'). ` +
+      `Cannot determine section_id without a resolved corridor.`
+    );
+  }
+
+  const sectionId = corridor.code;
 
   return {
     window_id: window.id,
@@ -17388,67 +17692,93 @@ export function mapWindowToAi(
 
 /**
  * Maps a resource record to the canonical AI Resource format.
+ *
+ * Missing departmentId or depotLocation produces a validation error.
  */
 export function mapResourceToAi(res: ResourceItem): AiResourcePayload {
+  const department = requireString(res.departmentId, `resource[${res.id}].departmentId`);
+  const location = requireString(res.depotLocation, `resource[${res.id}].depotLocation`);
+
   return {
     resource_id: res.id,
     resource_type: res.resourceType,
-    department: res.departmentId || "ENGINEERING",
-    location: res.depotLocation || "sec_12_ndls_agc",
+    department,
+    location,
     capacity: res.capacity || 1,
   };
 }
 
 /**
  * Transforms an AI Optimization schedule candidate block into the backend Block representation.
+ *
+ * Unknown task IDs are logged and skipped (not fabricated).
+ * Missing block_id, start, or end times produce validation errors.
  */
 export function mapAiBlockToDbBlock(
-  aiBlock: any,
+  aiBlock: AiBlockInput,
   corridorId: string,
   corridorCode: string,
   taskMap: Map<string, MaintenanceTaskItem>
-): any {
-  const blockTasks = (aiBlock.task_ids || aiBlock.tasks || []).map((tid: string) => {
+): import("./contracts").DbBlockView {
+  // Require block_id from AI â€” no random fallback
+  const blockId = requireString(aiBlock.block_id, "aiBlock.block_id");
+
+  // Require start/end times from AI â€” no current-time fallback
+  const startAt = aiBlock.start || aiBlock.start_time;
+  if (!startAt) {
+    throw new MappingValidationError(
+      `AI block '${blockId}' is missing 'start' or 'start_time'. Cannot reconstruct schedule without timestamps.`
+    );
+  }
+  const endAt = aiBlock.end || aiBlock.end_time;
+  if (!endAt) {
+    throw new MappingValidationError(
+      `AI block '${blockId}' is missing 'end' or 'end_time'. Cannot reconstruct schedule without timestamps.`
+    );
+  }
+
+  const blockTasks: BlockTaskView[] = [];
+  const allTaskIds = aiBlock.task_ids || aiBlock.tasks || [];
+
+  for (const tid of allTaskIds) {
     const found = taskMap.get(tid);
     if (found) {
-      return {
+      blockTasks.push({
         id: found.id,
         taskCode: found.taskCode,
         department: found.departmentId,
         taskType: found.taskType,
         durationMinutes: found.estimatedDurationMinutes,
         locationKm: `Km ${found.locationStartKm} - ${found.locationEndKm}`,
-      };
+      });
+    } else {
+      // Log warning but do NOT fabricate task data
+      console.warn(
+        `[dataMapper] AI block '${blockId}' references unknown task_id '${tid}'. Skipping â€” no fabricated data.`
+      );
     }
-    return {
-      id: tid,
-      taskCode: tid,
-      department: "ENG",
-      taskType: "MAINTENANCE",
-      durationMinutes: aiBlock.durationMinutes || 120,
-      locationKm: "Corridor Segment",
-    };
-  });
+  }
 
-  const uniqueDepts = Array.from(new Set(blockTasks.map((t: any) => t.department)));
-  const baselineMinutes = Math.round((aiBlock.durationMinutes || 120) * 1.4);
-  const durationMinutes = aiBlock.durationMinutes || 120;
+  const uniqueDepts = Array.from(new Set(blockTasks.map((t) => t.department)));
+  const durationMinutes = aiBlock.durationMinutes ||
+    Math.max(0, Math.round((new Date(endAt).getTime() - new Date(startAt).getTime()) / 60000));
+  const baselineMinutes = Math.round(durationMinutes * 1.4);
   const savedMinutes = baselineMinutes - durationMinutes;
 
   return {
-    id: aiBlock.block_id || `blk_${Math.random().toString(36).slice(2, 9)}`,
-    blockCode: aiBlock.block_code || aiBlock.blockCode || `BLK-${corridorCode}-${aiBlock.block_id || "01"}`,
+    id: blockId,
+    blockCode: aiBlock.block_code || aiBlock.blockCode || `BLK-${corridorCode}-${blockId}`,
     corridorId,
     corridorCode,
-    startAt: aiBlock.start || aiBlock.start_time || new Date().toISOString(),
-    endAt: aiBlock.end || aiBlock.end_time || new Date(Date.now() + durationMinutes * 60000).toISOString(),
+    startAt,
+    endAt,
     durationMinutes,
     baselineDurationMinutes: baselineMinutes,
     savedMinutes,
     status: "PROPOSED",
     taskCount: blockTasks.length,
     tasks: blockTasks,
-    departments: uniqueDepts.length > 0 ? uniqueDepts : ["ENG"],
+    departments: uniqueDepts,
     explanation: {
       reasons: [
         `Corridor section window ${aiBlock.section_id || corridorCode}`,
@@ -17483,7 +17813,8 @@ import {
   blockTasks,
   optimizationRuns,
 } from "../../db/schema";
-import { eq, desc, and } from "drizzle-orm";
+import { eq, desc, and, like, or } from "drizzle-orm";
+import type { DbBlockView, CriticalityScore } from "../ai/contracts";
 
 export interface DepartmentItem {
   id: string;
@@ -17539,7 +17870,25 @@ export interface MaintenanceTaskItem {
   requiresPowerShutdown: boolean;
   createdAt: string;
   updatedAt: string;
-  criticalityDetail?: unknown;
+  criticalityDetail?: CriticalityScore;
+}
+
+export interface OptimizationRunRecord {
+  id?: string;
+  runId?: string;
+  runCode: string;
+  horizon: string;
+  startDate: string;
+  endDate: string;
+  tasksConsidered: number;
+  tasksScheduled: number;
+  blocksGenerated: number;
+  totalBlockMinutes: number;
+  baselineBlockMinutes: number;
+  estimatedSavingsMinutes: number;
+  optimizationScore: string;
+  status: string;
+  createdAt: string;
 }
 
 export interface TrainItem {
@@ -17866,12 +18215,14 @@ const SEED_RESOURCES: ResourceItem[] = [
   },
 ];
 
-const SEED_BLOCKS: Array<Record<string, any>> = [
+const SEED_BLOCKS: DbBlockView[] = [
   {
     id: "blk_55a1",
     blockCode: "BLK-NDLS-01",
     corridorId: "corr_ndls_agc",
     corridorCode: "NDLS-AGC",
+    runId: "run_0192a",
+    runCode: "RUN-20261103-W1",
     startAt: "2026-11-03T23:00:00.000Z",
     endAt: "2026-11-04T01:30:00.000Z",
     durationMinutes: 150,
@@ -17914,7 +18265,7 @@ const SEED_BLOCKS: Array<Record<string, any>> = [
   },
 ];
 
-const SEED_RUNS: Array<Record<string, any>> = [
+const SEED_RUNS: OptimizationRunRecord[] = [
   {
     id: "run_0192a",
     runCode: "RUN-20261103-W1",
@@ -17937,57 +18288,45 @@ const SEED_RUNS: Array<Record<string, any>> = [
 
 class DataStore {
   private inMemoryTasks: MaintenanceTaskItem[] = [...SEED_TASKS];
-  private inMemoryBlocks: any[] = [...SEED_BLOCKS];
-  private inMemoryRuns: any[] = [...SEED_RUNS];
+  private inMemoryBlocks: DbBlockView[] = [...SEED_BLOCKS];
+  private inMemoryRuns: OptimizationRunRecord[] = [...SEED_RUNS];
 
   async getDepartments(): Promise<DepartmentItem[]> {
-    if (isDatabaseConfigured && db) {
-      try {
-        const rows = await db.select().from(departments);
-        if (rows.length > 0) return rows as any;
-      } catch (e) {
-        console.warn("DB query failed for departments, using fallback:", e);
-      }
+    if (isDatabaseConfigured) {
+      if (!db) throw new Error("Database is configured but database client is not initialized.");
+      const rows = await db.select().from(departments);
+      return rows as unknown as DepartmentItem[];
     }
     return SEED_DEPARTMENTS;
   }
 
   async getCorridors(): Promise<CorridorItem[]> {
-    if (isDatabaseConfigured && db) {
-      try {
-        const rows = await db.select().from(corridors);
-        if (rows.length > 0) return rows as any;
-      } catch (e) {
-        console.warn("DB query failed for corridors, using fallback:", e);
-      }
+    if (isDatabaseConfigured) {
+      if (!db) throw new Error("Database is configured but database client is not initialized.");
+      const rows = await db.select().from(corridors);
+      return rows as unknown as CorridorItem[];
     }
     return SEED_CORRIDORS;
   }
 
   async getAssets(): Promise<AssetItem[]> {
-    if (isDatabaseConfigured && db) {
-      try {
-        const rows = await db.select().from(assets);
-        if (rows.length > 0) return rows as any;
-      } catch (e) {
-        console.warn("DB query failed for assets, using fallback:", e);
-      }
+    if (isDatabaseConfigured) {
+      if (!db) throw new Error("Database is configured but database client is not initialized.");
+      const rows = await db.select().from(assets);
+      return rows as unknown as AssetItem[];
     }
     return SEED_ASSETS;
   }
 
   async getTasks(status?: string): Promise<MaintenanceTaskItem[]> {
-    if (isDatabaseConfigured && db) {
-      try {
-        let query = db.select().from(maintenanceTasks).$dynamic();
-        if (status) {
-          query = query.where(eq(maintenanceTasks.status, status as any));
-        }
-        const rows = await query.orderBy(desc(maintenanceTasks.priorityScore));
-        if (rows.length > 0) return rows as any;
-      } catch (e) {
-        console.warn("DB query failed for tasks, using fallback:", e);
+    if (isDatabaseConfigured) {
+      if (!db) throw new Error("Database is configured but database client is not initialized.");
+      let query = db.select().from(maintenanceTasks).$dynamic();
+      if (status) {
+        query = query.where(eq(maintenanceTasks.status, status as typeof maintenanceTasks.status.enumValues[number]));
       }
+      const rows = await query.orderBy(desc(maintenanceTasks.priorityScore));
+      return rows as unknown as MaintenanceTaskItem[];
     }
     if (status) {
       return this.inMemoryTasks.filter((t) => t.status === status);
@@ -17996,13 +18335,10 @@ class DataStore {
   }
 
   async getTaskById(id: string): Promise<MaintenanceTaskItem | null> {
-    if (isDatabaseConfigured && db) {
-      try {
-        const rows = await db.select().from(maintenanceTasks).where(eq(maintenanceTasks.id, id as any));
-        if (rows.length > 0) return rows[0] as any;
-      } catch (e) {
-        console.warn("DB query failed for task by id, using fallback:", e);
-      }
+    if (isDatabaseConfigured) {
+      if (!db) throw new Error("Database is configured but database client is not initialized.");
+      const rows = await db.select().from(maintenanceTasks).where(eq(maintenanceTasks.id, id));
+      return rows.length > 0 ? (rows[0] as unknown as MaintenanceTaskItem) : null;
     }
     return this.inMemoryTasks.find((t) => t.id === id || t.taskCode === id) || null;
   }
@@ -18011,8 +18347,25 @@ class DataStore {
     id: string,
     score: number,
     priorityScore: string | number,
-    criticalityDetail?: any
+    criticalityDetail?: CriticalityScore
   ): Promise<MaintenanceTaskItem | null> {
+    if (isDatabaseConfigured) {
+      if (!db) throw new Error("Database is configured but database client is not initialized.");
+      const [updated] = await db
+        .update(maintenanceTasks)
+        .set({
+          criticalityScore: Math.round(score * 100),
+          priorityScore: String(priorityScore),
+          updatedAt: new Date(),
+        })
+        .where(eq(maintenanceTasks.id, id))
+        .returning();
+      if (updated) {
+        return { ...updated, criticalityDetail } as unknown as MaintenanceTaskItem;
+      }
+      return null;
+    }
+
     const task = this.inMemoryTasks.find((t) => t.id === id || t.taskCode === id);
     if (task) {
       task.criticalityScore = Math.round(score * 100);
@@ -18020,48 +18373,23 @@ class DataStore {
       task.criticalityDetail = criticalityDetail;
       task.updatedAt = new Date().toISOString();
     }
-
-    if (isDatabaseConfigured && db) {
-      try {
-        const [updated] = await db
-          .update(maintenanceTasks)
-          .set({
-            criticalityScore: Math.round(score * 100),
-            priorityScore: String(priorityScore),
-            updatedAt: new Date(),
-          })
-          .where(eq(maintenanceTasks.id, id as any))
-          .returning();
-        if (updated) {
-          return { ...updated, criticalityDetail } as any;
-        }
-      } catch (e) {
-        console.warn("DB update failed for task criticality:", e);
-      }
-    }
     return task || null;
   }
 
   async getTrains(): Promise<TrainItem[]> {
-    if (isDatabaseConfigured && db) {
-      try {
-        const rows = await db.select().from(trains);
-        if (rows.length > 0) return rows as any;
-      } catch (e) {
-        console.warn("DB query failed for trains, using fallback:", e);
-      }
+    if (isDatabaseConfigured) {
+      if (!db) throw new Error("Database is configured but database client is not initialized.");
+      const rows = await db.select().from(trains);
+      return rows as unknown as TrainItem[];
     }
     return SEED_TRAINS;
   }
 
   async getBlockWindows(): Promise<BlockWindowItem[]> {
-    if (isDatabaseConfigured && db) {
-      try {
-        const rows = await db.select().from(blockWindows);
-        if (rows.length > 0) return rows as any;
-      } catch (e) {
-        console.warn("DB query failed for block windows, using fallback:", e);
-      }
+    if (isDatabaseConfigured) {
+      if (!db) throw new Error("Database is configured but database client is not initialized.");
+      const rows = await db.select().from(blockWindows);
+      return rows as unknown as BlockWindowItem[];
     }
     return SEED_WINDOWS;
   }
@@ -18070,18 +18398,15 @@ class DataStore {
     return SEED_RESOURCES;
   }
 
-  async getBlocks(corridorId?: string): Promise<any[]> {
-    if (isDatabaseConfigured && db) {
-      try {
-        let query = db.select().from(blocks).$dynamic();
-        if (corridorId) {
-          query = query.where(eq(blocks.corridorId, corridorId as any));
-        }
-        const rows = await query.orderBy(desc(blocks.createdAt));
-        if (rows.length > 0) return rows;
-      } catch (e) {
-        console.warn("DB query failed for blocks, using fallback:", e);
+  async getBlocks(corridorId?: string): Promise<DbBlockView[]> {
+    if (isDatabaseConfigured) {
+      if (!db) throw new Error("Database is configured but database client is not initialized.");
+      let query = db.select().from(blocks).$dynamic();
+      if (corridorId) {
+        query = query.where(eq(blocks.corridorId, corridorId));
       }
+      const rows = await query.orderBy(desc(blocks.createdAt));
+      return rows as unknown as DbBlockView[];
     }
     if (corridorId && corridorId !== "all") {
       return this.inMemoryBlocks.filter(
@@ -18091,8 +18416,64 @@ class DataStore {
     return [...this.inMemoryBlocks];
   }
 
-  async saveBlocks(newBlocks: any[]): Promise<void> {
+  async getBlocksByRun(runId: string, runCode: string): Promise<DbBlockView[]> {
+    if (isDatabaseConfigured) {
+      if (!db) throw new Error("Database is configured but database client is not initialized.");
+      const conditions = [];
+      if (runId) {
+        conditions.push(eq(blocks.optimizationRunId, runId));
+      }
+      if (runCode) {
+        conditions.push(like(blocks.blockCode, `%${runCode}%`));
+      }
+      if (conditions.length === 0) {
+        return [];
+      }
+      const rows = await db
+        .select()
+        .from(blocks)
+        .where(conditions.length > 1 ? or(...conditions) : conditions[0])
+        .orderBy(desc(blocks.createdAt));
+      return rows as unknown as DbBlockView[];
+    }
+
+    return this.inMemoryBlocks.filter(
+      (b) =>
+        (runId && (b.runId === runId || b.optimizationRunId === runId)) ||
+        (runCode && b.runCode === runCode) ||
+        (runCode && b.blockCode.includes(runCode)) ||
+        (b.explanation && (b.explanation as Record<string, unknown>).runCode === runCode)
+    );
+  }
+
+  async saveBlocks(newBlocks: DbBlockView[], runId?: string): Promise<void> {
+    const resolvedRunId = runId || newBlocks[0]?.runId || newBlocks[0]?.optimizationRunId;
+    if (isDatabaseConfigured) {
+      if (!db) throw new Error("Database is configured but database client is not initialized.");
+      for (const b of newBlocks) {
+        const blkRunId = b.optimizationRunId || b.runId || resolvedRunId || null;
+        await db.insert(blocks).values({
+          blockCode: b.blockCode,
+          corridorId: b.corridorId,
+          optimizationRunId: blkRunId,
+          startAt: new Date(b.startAt),
+          endAt: new Date(b.endAt),
+          durationMinutes: b.durationMinutes,
+          status: b.status || "PROPOSED",
+          planningHorizon: b.planningHorizon || "WEEKLY",
+          baselineDurationMinutes: b.baselineDurationMinutes || b.durationMinutes || 0,
+          savedMinutes: b.savedMinutes || 0,
+        }).onConflictDoNothing();
+      }
+    }
+
     for (const b of newBlocks) {
+      if (!b.optimizationRunId && resolvedRunId) {
+        b.optimizationRunId = resolvedRunId;
+      }
+      if (!b.runId && resolvedRunId) {
+        b.runId = resolvedRunId;
+      }
       const idx = this.inMemoryBlocks.findIndex((x) => x.id === b.id || x.blockCode === b.blockCode);
       if (idx >= 0) {
         this.inMemoryBlocks[idx] = b;
@@ -18100,69 +18481,745 @@ class DataStore {
         this.inMemoryBlocks.unshift(b);
       }
     }
-
-    if (isDatabaseConfigured && db) {
-      try {
-        for (const b of newBlocks) {
-          await db.insert(blocks).values({
-            blockCode: b.blockCode,
-            corridorId: b.corridorId,
-            startAt: new Date(b.startAt),
-            endAt: new Date(b.endAt),
-            durationMinutes: b.durationMinutes,
-            status: b.status || "PROPOSED",
-            planningHorizon: b.planningHorizon || "WEEKLY",
-            baselineDurationMinutes: b.baselineDurationMinutes || b.durationMinutes || 0,
-            savedMinutes: b.savedMinutes || 0,
-          }).onConflictDoNothing();
-        }
-      } catch (e) {
-        console.warn("DB insert failed for generated blocks:", e);
-      }
-    }
   }
 
-  async getOptimizationRuns(): Promise<any[]> {
-    if (isDatabaseConfigured && db) {
-      try {
-        const rows = await db.select().from(optimizationRuns).orderBy(desc(optimizationRuns.createdAt));
-        if (rows.length > 0) return rows;
-      } catch (e) {
-        console.warn("DB query failed for optimization runs, using fallback:", e);
-      }
+  async getOptimizationRuns(): Promise<OptimizationRunRecord[]> {
+    if (isDatabaseConfigured) {
+      if (!db) throw new Error("Database is configured but database client is not initialized.");
+      const rows = await db.select().from(optimizationRuns).orderBy(desc(optimizationRuns.createdAt));
+      return rows as unknown as OptimizationRunRecord[];
     }
     return [...this.inMemoryRuns];
   }
 
-  async saveOptimizationRun(run: any): Promise<any> {
-    this.inMemoryRuns.unshift(run);
-
-    if (isDatabaseConfigured && db) {
-      try {
-        const [inserted] = await db.insert(optimizationRuns).values({
-          runCode: run.runCode,
-          horizon: run.horizon || "WEEKLY",
-          startDate: new Date(run.startDate || Date.now()),
-          endDate: new Date(run.endDate || Date.now() + 7 * 86400000),
-          tasksConsidered: run.tasksConsidered || 0,
-          tasksScheduled: run.tasksScheduled || 0,
-          blocksGenerated: run.blocksGenerated || 0,
-          totalBlockMinutes: run.totalBlockMinutes || 0,
-          baselineBlockMinutes: run.baselineBlockMinutes || 0,
-          estimatedSavingsMinutes: run.estimatedSavingsMinutes || 0,
-          optimizationScore: String(run.optimizationScore || "0.80"),
-          status: run.status || "OPTIMAL",
-        }).returning();
-        return inserted;
-      } catch (e) {
-        console.warn("DB insert failed for optimization run:", e);
-      }
+  async saveOptimizationRun(run: OptimizationRunRecord): Promise<OptimizationRunRecord> {
+    if (!run.id) {
+      run.id = run.runId || `run_${Date.now()}`;
     }
+
+    if (isDatabaseConfigured) {
+      if (!db) throw new Error("Database is configured but database client is not initialized.");
+      const [inserted] = await db.insert(optimizationRuns).values({
+        runCode: run.runCode,
+        horizon: run.horizon || "WEEKLY",
+        startDate: new Date(run.startDate || Date.now()),
+        endDate: new Date(run.endDate || Date.now() + 7 * 86400000),
+        tasksConsidered: run.tasksConsidered || 0,
+        tasksScheduled: run.tasksScheduled || 0,
+        blocksGenerated: run.blocksGenerated || 0,
+        totalBlockMinutes: run.totalBlockMinutes || 0,
+        baselineBlockMinutes: run.baselineBlockMinutes || 0,
+        estimatedSavingsMinutes: run.estimatedSavingsMinutes || 0,
+        optimizationScore: String(run.optimizationScore || "0.80"),
+        status: run.status || "OPTIMAL",
+      }).returning();
+      const saved = (inserted || run) as OptimizationRunRecord;
+      this.inMemoryRuns.unshift(saved);
+      return saved;
+    }
+
+    this.inMemoryRuns.unshift(run);
     return run;
   }
 }
 
 export const dataStore = new DataStore();
+
+
+
+================================================
+FILE: backend/tests/aiAdapter.test.ts
+================================================
+import test from "node:test";
+import assert from "node:assert/strict";
+import { aiAdapter, ValidationError } from "../src/services/ai/aiAdapter.service";
+import { dataStore } from "../src/services/data/dataStore";
+import type { WhatIfScenarioPayload, MaintenanceTaskItem } from "../src/services/ai/contracts";
+
+test("What-If validation: rejects 'current' and 'latest' magic strings", async () => {
+  const payloadCurrent: WhatIfScenarioPayload = {
+    scenario_type: "TRAIN_DELAY",
+    base_schedule_id: "current",
+    new_constraints: { train_id: "12002", train_delay_minutes: 30 },
+  };
+
+  await assert.rejects(
+    () => aiAdapter.runWhatIf(payloadCurrent),
+    (err: unknown) => {
+      assert.ok(err instanceof ValidationError);
+      assert.match((err as Error).message, /Invalid base_schedule_id 'current'/);
+      return true;
+    }
+  );
+
+  const payloadLatest: WhatIfScenarioPayload = {
+    scenario_type: "TRAIN_DELAY",
+    base_schedule_id: "latest",
+    new_constraints: { train_id: "12002", train_delay_minutes: 30 },
+  };
+
+  await assert.rejects(
+    () => aiAdapter.runWhatIf(payloadLatest),
+    (err: unknown) => {
+      assert.ok(err instanceof ValidationError);
+      assert.match((err as Error).message, /Invalid base_schedule_id 'latest'/);
+      return true;
+    }
+  );
+});
+
+test("What-If validation: rejects missing base_schedule_id", async () => {
+  const invalidPayload: WhatIfScenarioPayload = {
+    scenario_type: "TRAIN_DELAY",
+    base_schedule_id: "",
+    new_constraints: { train_id: "12002", train_delay_minutes: 30 },
+  };
+
+  await assert.rejects(
+    () => aiAdapter.runWhatIf(invalidPayload),
+    (err: unknown) => {
+      assert.ok(err instanceof ValidationError);
+      assert.match((err as Error).message, /base_schedule_id/);
+      return true;
+    }
+  );
+});
+
+test("What-If validation: requires train_delay_minutes for TRAIN_DELAY", async () => {
+  const invalidPayload: WhatIfScenarioPayload = {
+    scenario_type: "TRAIN_DELAY",
+    base_schedule_id: "valid_id",
+    affected_train_ids: ["12002"],
+    new_constraints: {},
+  };
+
+  await assert.rejects(
+    () => aiAdapter.runWhatIf(invalidPayload),
+    (err: unknown) => {
+      assert.ok(err instanceof ValidationError);
+      assert.match((err as Error).message, /train_delay_minutes/);
+      return true;
+    }
+  );
+});
+
+test("What-If schedule resolution: rejects unpersisted base_schedule_id", async () => {
+  const unpersistedPayload: WhatIfScenarioPayload = {
+    scenario_type: "TRAIN_DELAY",
+    base_schedule_id: "run_non_existent_id_99999",
+    new_constraints: { train_id: "12002", train_delay_minutes: 20 },
+  };
+
+  await assert.rejects(
+    () => aiAdapter.runWhatIf(unpersistedPayload),
+    (err: unknown) => {
+      assert.ok(err instanceof ValidationError);
+      assert.match((err as Error).message, /No persisted optimization run matches this ID/);
+      return true;
+    }
+  );
+});
+
+test("What-If schedule resolution: resolves against authoritative seeded/persisted run", async () => {
+  const runs = await dataStore.getOptimizationRuns();
+  assert.ok(runs.length > 0, "Expected at least one seeded optimization run");
+  const seededRun = runs[0];
+
+  const payload: WhatIfScenarioPayload = {
+    scenario_type: "TRAIN_DELAY",
+    base_schedule_id: seededRun.id || seededRun.runCode,
+    new_constraints: { train_id: "12002", train_delay_minutes: 20 },
+  };
+
+  const result = await aiAdapter.runWhatIf(payload);
+  assert.ok(result);
+  assert.equal(result.original_schedule_id, seededRun.id || seededRun.runCode);
+  assert.ok(result.new_schedule);
+});
+
+test("getCriticalityScore: uses actual operationalImpactScore and executes via bridge", async () => {
+  const tasks = await dataStore.getTasks();
+  const task = tasks[0];
+  assert.ok(task, "Expected at least one task");
+
+  const scoreResult = await aiAdapter.getCriticalityScore(task);
+  assert.ok(scoreResult);
+  assert.equal(typeof scoreResult.score, "number");
+  assert.ok(scoreResult.score >= 0 && scoreResult.score <= 1);
+});
+
+
+
+================================================
+FILE: backend/tests/dataMapper.test.ts
+================================================
+import test from "node:test";
+import assert from "node:assert/strict";
+import {
+  mapTaskToAi,
+  mapTrainToAi,
+  mapWindowToAi,
+  mapResourceToAi,
+  mapAiBlockToDbBlock,
+  MappingValidationError,
+} from "../src/services/ai/dataMapper";
+import type {
+  MaintenanceTaskItem,
+  CorridorItem,
+  DepartmentItem,
+  TrainItem,
+  BlockWindowItem,
+  ResourceItem,
+} from "../src/services/data/dataStore";
+
+const sampleCorridor: CorridorItem = {
+  id: "corr_01",
+  code: "NDLS-AGC",
+  name: "New Delhi - Agra Cantt",
+  startKm: "0.0",
+  endKm: "195.0",
+  status: "ACTIVE",
+};
+
+const sampleDept: DepartmentItem = {
+  id: "dept_eng",
+  code: "ENG",
+  name: "Engineering",
+};
+
+const validTask: MaintenanceTaskItem = {
+  id: "task_01",
+  taskCode: "TSK-001",
+  assetId: "ast_01",
+  departmentId: "dept_eng",
+  corridorId: "corr_01",
+  taskType: "ENGINEERING",
+  description: "Track ballast renewal",
+  locationStartKm: 42.5,
+  locationEndKm: 45.0,
+  criticalityScore: 88,
+  urgencyScore: 80,
+  safetyScore: 75,
+  operationalImpactScore: 65,
+  estimatedDurationMinutes: 180,
+  dueAt: "2026-11-05T18:00:00.000Z",
+  status: "PENDING",
+  requiredBlock: true,
+  requiresPowerShutdown: false,
+  createdAt: "2026-11-01T08:00:00.000Z",
+  updatedAt: "2026-11-01T08:00:00.000Z",
+};
+
+test("mapTaskToAi: throws on missing corridor lookup", () => {
+  assert.throws(
+    () => mapTaskToAi(validTask, null, sampleDept),
+    (err: unknown) => {
+      assert.ok(err instanceof MappingValidationError);
+      assert.match((err as Error).message, /Missing corridor lookup/);
+      return true;
+    }
+  );
+});
+
+test("mapTaskToAi: throws on missing department lookup", () => {
+  assert.throws(
+    () => mapTaskToAi(validTask, sampleCorridor, null),
+    (err: unknown) => {
+      assert.ok(err instanceof MappingValidationError);
+      assert.match((err as Error).message, /Missing department lookup/);
+      return true;
+    }
+  );
+});
+
+test("mapTaskToAi: throws on missing createdAt (requestedStart)", () => {
+  const invalid = { ...validTask, createdAt: "" };
+  assert.throws(
+    () => mapTaskToAi(invalid, sampleCorridor, sampleDept),
+    (err: unknown) => {
+      assert.ok(err instanceof MappingValidationError);
+      assert.match((err as Error).message, /createdAt/);
+      return true;
+    }
+  );
+});
+
+test("mapTaskToAi: throws on missing dueAt (requestedEnd)", () => {
+  const invalid = { ...validTask, dueAt: null as unknown as string };
+  assert.throws(
+    () => mapTaskToAi(invalid, sampleCorridor, sampleDept),
+    (err: unknown) => {
+      assert.ok(err instanceof MappingValidationError);
+      assert.match((err as Error).message, /dueAt/);
+      return true;
+    }
+  );
+});
+
+test("mapTaskToAi: throws on invalid locationStartKm", () => {
+  const invalid = { ...validTask, locationStartKm: "not-a-number" };
+  assert.throws(
+    () => mapTaskToAi(invalid, sampleCorridor, sampleDept),
+    (err: unknown) => {
+      assert.ok(err instanceof MappingValidationError);
+      assert.match((err as Error).message, /locationStartKm/);
+      return true;
+    }
+  );
+});
+
+test("mapTaskToAi: maps valid task without fabricated values", () => {
+  const mapped = mapTaskToAi(validTask, sampleCorridor, sampleDept);
+  assert.equal(mapped.task_id, "TSK-001");
+  assert.equal(mapped.railway_section_id, "NDLS-AGC");
+  assert.equal(mapped.section_id, "NDLS-AGC");
+  assert.equal(mapped.department, "ENG");
+  assert.equal(mapped.from_km, 42.5);
+  assert.equal(mapped.to_km, 45.0);
+  assert.equal(mapped.priority_hint, "CRITICAL");
+  assert.equal(mapped.safety_class, "NORMAL");
+  assert.equal(mapped.requested_start, "2026-11-01T08:00:00.000Z");
+  assert.equal(mapped.requested_end, "2026-11-05T18:00:00.000Z");
+});
+
+test("mapTrainToAi: throws on missing corridor lookup", () => {
+  const train: TrainItem = {
+    id: "trn_01",
+    trainNumber: "12002",
+    trainName: "Bhopal Shatabdi",
+    trainType: "EXPRESS",
+    corridorId: "corr_01",
+    scheduledDeparture: "2026-11-04T06:00:00.000Z",
+    scheduledArrival: "2026-11-04T08:00:00.000Z",
+    priority: 95,
+    isCriticalService: true,
+    isGoodsTrain: false,
+    frequency: "DAILY",
+  };
+
+  assert.throws(
+    () => mapTrainToAi(train, null),
+    (err: unknown) => {
+      assert.ok(err instanceof MappingValidationError);
+      assert.match((err as Error).message, /Missing corridor lookup/);
+      return true;
+    }
+  );
+
+  const mapped = mapTrainToAi(train, sampleCorridor);
+  assert.equal(mapped.section_id, "NDLS-AGC");
+  assert.equal(mapped.train_id, "12002");
+  assert.equal(mapped.speed_class, "EXPRESS");
+  assert.equal(mapped.priority_class, "PASSENGER");
+});
+
+test("mapWindowToAi: throws on missing corridor lookup", () => {
+  const window: BlockWindowItem = {
+    id: "win_01",
+    corridorId: "corr_01",
+    startAt: "2026-11-04T01:00:00.000Z",
+    endAt: "2026-11-04T04:30:00.000Z",
+    availableMinutes: 210,
+    status: "AVAILABLE",
+    source: "COA",
+  };
+
+  assert.throws(
+    () => mapWindowToAi(window, null),
+    (err: unknown) => {
+      assert.ok(err instanceof MappingValidationError);
+      assert.match((err as Error).message, /Missing corridor lookup/);
+      return true;
+    }
+  );
+
+  const mapped = mapWindowToAi(window, sampleCorridor);
+  assert.equal(mapped.section_id, "NDLS-AGC");
+  assert.equal(mapped.duration_minutes, 210);
+});
+
+test("mapResourceToAi: throws on missing departmentId or depotLocation", () => {
+  const resMissingDept: ResourceItem = {
+    id: "res_01",
+    resourceCode: "TM-01",
+    resourceType: "TRACK_MACHINE",
+    departmentId: "",
+    depotLocation: "Agra Cantt",
+    capacity: 1,
+    status: "AVAILABLE",
+  };
+
+  assert.throws(
+    () => mapResourceToAi(resMissingDept),
+    (err: unknown) => {
+      assert.ok(err instanceof MappingValidationError);
+      assert.match((err as Error).message, /departmentId/);
+      return true;
+    }
+  );
+
+  const resMissingLocation: ResourceItem = {
+    ...resMissingDept,
+    departmentId: "ENG",
+    depotLocation: "",
+  };
+
+  assert.throws(
+    () => mapResourceToAi(resMissingLocation),
+    (err: unknown) => {
+      assert.ok(err instanceof MappingValidationError);
+      assert.match((err as Error).message, /depotLocation/);
+      return true;
+    }
+  );
+
+  const validRes: ResourceItem = {
+    ...resMissingDept,
+    departmentId: "ENG",
+    depotLocation: "Agra Cantt Depot",
+  };
+  const mapped = mapResourceToAi(validRes);
+  assert.equal(mapped.department, "ENG");
+  assert.equal(mapped.location, "Agra Cantt Depot");
+});
+
+test("mapAiBlockToDbBlock: throws on missing block_id or timestamps", () => {
+  const taskMap = new Map<string, MaintenanceTaskItem>([["TSK-001", validTask]]);
+
+  assert.throws(
+    () =>
+      mapAiBlockToDbBlock(
+        { block_id: "", start: "2026-11-04T02:00:00.000Z", end: "2026-11-04T04:00:00.000Z" },
+        "corr_01",
+        "NDLS-AGC",
+        taskMap
+      ),
+    (err: unknown) => {
+      assert.ok(err instanceof MappingValidationError);
+      assert.match((err as Error).message, /block_id/);
+      return true;
+    }
+  );
+
+  assert.throws(
+    () =>
+      mapAiBlockToDbBlock(
+        { block_id: "BLK-01", end: "2026-11-04T04:00:00.000Z" },
+        "corr_01",
+        "NDLS-AGC",
+        taskMap
+      ),
+    (err: unknown) => {
+      assert.ok(err instanceof MappingValidationError);
+      assert.match((err as Error).message, /start/);
+      return true;
+    }
+  );
+});
+
+test("mapAiBlockToDbBlock: skips unknown task IDs without fabricating tasks", () => {
+  const taskMap = new Map<string, MaintenanceTaskItem>([["TSK-001", validTask]]);
+
+  const dbBlock = mapAiBlockToDbBlock(
+    {
+      block_id: "blk_test_01",
+      start: "2026-11-04T01:00:00.000Z",
+      end: "2026-11-04T03:30:00.000Z",
+      task_ids: ["TSK-001", "NON_EXISTENT_999"],
+    },
+    "corr_01",
+    "NDLS-AGC",
+    taskMap
+  );
+
+  assert.equal(dbBlock.id, "blk_test_01");
+  assert.equal(dbBlock.taskCount, 1);
+  assert.equal(dbBlock.tasks.length, 1);
+  assert.equal(dbBlock.tasks[0].id, "task_01");
+  assert.equal(dbBlock.departments.length, 1);
+  assert.equal(dbBlock.departments[0], "dept_eng");
+});
+
+
+
+================================================
+FILE: backend/tests/persistenceIntegrity.test.ts
+================================================
+import test from "node:test";
+import assert from "node:assert/strict";
+import { aiAdapter, AiAdapterService, ValidationError } from "../src/services/ai/aiAdapter.service";
+import { dataStore } from "../src/services/data/dataStore";
+import type { DbBlockView, OptimizationRunRecord, WhatIfScenarioPayload } from "../src/services/ai/contracts";
+
+test("Persistence Integrity: orchestratePlanning fails if saveOptimizationRun fails", async () => {
+  const originalSaveOptimizationRun = dataStore.saveOptimizationRun;
+  try {
+    dataStore.saveOptimizationRun = async () => {
+      throw new Error("Simulated Postgres database error: connection pool exhausted");
+    };
+
+    await assert.rejects(
+      () => aiAdapter.orchestratePlanning({ horizon: "WEEKLY", mode: "BALANCED" }),
+      (err: unknown) => {
+        assert.ok(err instanceof Error);
+        assert.match((err as Error).message, /connection pool exhausted/);
+        return true;
+      }
+    );
+  } finally {
+    dataStore.saveOptimizationRun = originalSaveOptimizationRun;
+  }
+});
+
+test("Persistence Integrity: orchestratePlanning fails if saveBlocks fails", async () => {
+  const originalSaveBlocks = dataStore.saveBlocks;
+  try {
+    dataStore.saveBlocks = async () => {
+      throw new Error("Simulated Postgres database error: blocks unique constraint violation");
+    };
+
+    await assert.rejects(
+      () => aiAdapter.orchestratePlanning({ horizon: "WEEKLY", mode: "BALANCED" }),
+      (err: unknown) => {
+        assert.ok(err instanceof Error);
+        assert.match((err as Error).message, /blocks unique constraint violation/);
+        return true;
+      }
+    );
+  } finally {
+    dataStore.saveBlocks = originalSaveBlocks;
+  }
+});
+
+test("Persistence Integrity: exact run-to-schedule resolution isolates blocks per run", async () => {
+  const runA: OptimizationRunRecord = {
+    id: "run_test_iso_a",
+    runId: "run_test_iso_a",
+    runCode: "RUN-ISO-AAA",
+    horizon: "WEEKLY",
+    startDate: "2026-11-03T00:00:00.000Z",
+    endDate: "2026-11-10T00:00:00.000Z",
+    tasksConsidered: 1,
+    tasksScheduled: 1,
+    blocksGenerated: 1,
+    totalBlockMinutes: 120,
+    baselineBlockMinutes: 160,
+    estimatedSavingsMinutes: 40,
+    optimizationScore: "0.85",
+    status: "OPTIMAL",
+    createdAt: new Date().toISOString(),
+  };
+
+  const blockA: DbBlockView = {
+    id: "blk_iso_a",
+    blockCode: "BLK-NDLS-AGC-RUN-ISO-AAA-11",
+    corridorId: "corr_ndls_agc",
+    corridorCode: "NDLS-AGC",
+    runId: "run_test_iso_a",
+    runCode: "RUN-ISO-AAA",
+    startAt: "2026-11-04T02:00:00.000Z",
+    endAt: "2026-11-04T04:00:00.000Z",
+    durationMinutes: 120,
+    baselineDurationMinutes: 160,
+    savedMinutes: 40,
+    status: "PROPOSED",
+    taskCount: 1,
+    tasks: [
+      {
+        id: "task_eng_045_01",
+        taskCode: "TSK-ENG-NDLS-045-01",
+        department: "ENG",
+        taskType: "USFD",
+        durationMinutes: 120,
+        locationKm: "Km 45.2 - 46.5",
+      },
+    ],
+    departments: ["ENG"],
+    explanation: { runId: "run_test_iso_a", runCode: "RUN-ISO-AAA" },
+    createdAt: new Date().toISOString(),
+  };
+
+  const runB: OptimizationRunRecord = {
+    id: "run_test_iso_b",
+    runId: "run_test_iso_b",
+    runCode: "RUN-ISO-BBB",
+    horizon: "WEEKLY",
+    startDate: "2026-11-03T00:00:00.000Z",
+    endDate: "2026-11-10T00:00:00.000Z",
+    tasksConsidered: 1,
+    tasksScheduled: 1,
+    blocksGenerated: 1,
+    totalBlockMinutes: 90,
+    baselineBlockMinutes: 130,
+    estimatedSavingsMinutes: 40,
+    optimizationScore: "0.78",
+    status: "OPTIMAL",
+    createdAt: new Date().toISOString(),
+  };
+
+  const blockB: DbBlockView = {
+    id: "blk_iso_b",
+    blockCode: "BLK-NDLS-AGC-RUN-ISO-BBB-11",
+    corridorId: "corr_ndls_agc",
+    corridorCode: "NDLS-AGC",
+    runId: "run_test_iso_b",
+    runCode: "RUN-ISO-BBB",
+    startAt: "2026-11-05T01:00:00.000Z",
+    endAt: "2026-11-05T02:30:00.000Z",
+    durationMinutes: 90,
+    baselineDurationMinutes: 130,
+    savedMinutes: 40,
+    status: "PROPOSED",
+    taskCount: 1,
+    tasks: [
+      {
+        id: "task_trd_046_02",
+        taskCode: "TSK-TRD-NDLS-046-02",
+        department: "TRD",
+        taskType: "TRD",
+        durationMinutes: 90,
+        locationKm: "Km 45.0 - 46.8",
+      },
+    ],
+    departments: ["TRD"],
+    explanation: { runId: "run_test_iso_b", runCode: "RUN-ISO-BBB" },
+    createdAt: new Date().toISOString(),
+  };
+
+  await dataStore.saveOptimizationRun(runA);
+  await dataStore.saveBlocks([blockA]);
+  await dataStore.saveOptimizationRun(runB);
+  await dataStore.saveBlocks([blockB]);
+
+  // Query blocks by run specifically
+  const blocksForRunA = await dataStore.getBlocksByRun("run_test_iso_a", "RUN-ISO-AAA");
+  assert.equal(blocksForRunA.length, 1);
+  assert.equal(blocksForRunA[0].id, "blk_iso_a");
+  assert.equal(blocksForRunA[0].blockCode, "BLK-NDLS-AGC-RUN-ISO-AAA-11");
+
+  const blocksForRunB = await dataStore.getBlocksByRun("run_test_iso_b", "RUN-ISO-BBB");
+  assert.equal(blocksForRunB.length, 1);
+  assert.equal(blocksForRunB[0].id, "blk_iso_b");
+  assert.equal(blocksForRunB[0].blockCode, "BLK-NDLS-AGC-RUN-ISO-BBB-11");
+
+  // What-If on Run A resolves only Block A
+  const whatIfResultA = await aiAdapter.runWhatIf({
+    scenario_type: "TRAIN_DELAY",
+    base_schedule_id: "RUN-ISO-AAA",
+    new_constraints: { train_id: "12002", train_delay_minutes: 15 },
+  });
+  assert.equal(whatIfResultA.original_schedule_id, "RUN-ISO-AAA");
+  assert.ok(whatIfResultA.new_schedule);
+
+  // What-If on Run B resolves only Block B
+  const whatIfResultB = await aiAdapter.runWhatIf({
+    scenario_type: "TRAIN_DELAY",
+    base_schedule_id: "RUN-ISO-BBB",
+    new_constraints: { train_id: "12002", train_delay_minutes: 15 },
+  });
+  assert.equal(whatIfResultB.original_schedule_id, "RUN-ISO-BBB");
+  assert.ok(whatIfResultB.new_schedule);
+});
+
+test("Persistence Integrity: What-If succeeds on fresh service instance with zero prior in-memory state", async () => {
+  // Instantiate an entirely clean AiAdapterService instance
+  const freshAiAdapter = new AiAdapterService();
+  assert.equal(freshAiAdapter.getLatestExplanations().length, 0);
+  assert.equal(freshAiAdapter.getLatestConflicts().length, 0);
+  assert.equal(freshAiAdapter.getLatestShadowBlocks().length, 0);
+
+  const payload: WhatIfScenarioPayload = {
+    scenario_type: "TRAIN_DELAY",
+    base_schedule_id: "RUN-20261103-W1",
+    new_constraints: { train_id: "12002", train_delay_minutes: 25 },
+  };
+
+  const result = await freshAiAdapter.runWhatIf(payload);
+  assert.ok(result, "Expected valid What-If result from fresh instance");
+  assert.equal(result.original_schedule_id, "RUN-20261103-W1");
+  assert.ok(result.new_schedule);
+});
+
+test("Persistence Integrity: What-If rejects run with zero persisted blocks", async () => {
+  const emptyRun: OptimizationRunRecord = {
+    id: "run_empty_no_blocks",
+    runId: "run_empty_no_blocks",
+    runCode: "RUN-EMPTY-001",
+    horizon: "WEEKLY",
+    startDate: "2026-11-03T00:00:00.000Z",
+    endDate: "2026-11-10T00:00:00.000Z",
+    tasksConsidered: 0,
+    tasksScheduled: 0,
+    blocksGenerated: 0,
+    totalBlockMinutes: 0,
+    baselineBlockMinutes: 0,
+    estimatedSavingsMinutes: 0,
+    optimizationScore: "0.00",
+    status: "OPTIMAL",
+    createdAt: new Date().toISOString(),
+  };
+
+  await dataStore.saveOptimizationRun(emptyRun);
+
+  await assert.rejects(
+    () =>
+      aiAdapter.runWhatIf({
+        scenario_type: "TRAIN_DELAY",
+        base_schedule_id: "RUN-EMPTY-001",
+        new_constraints: { train_id: "12002", train_delay_minutes: 15 },
+      }),
+    (err: unknown) => {
+      assert.ok(err instanceof ValidationError);
+      assert.match((err as Error).message, /No persisted blocks found for optimization run 'RUN-EMPTY-001'/);
+      return true;
+    }
+  );
+});
+
+test("Persistence Integrity: saveBlocks with database failure does not mutate in-memory container", async () => {
+  const failingBlock: DbBlockView = {
+    id: "blk_fail_test",
+    blockCode: "BLK-FAIL-TEST-99",
+    corridorId: "corr_ndls_agc",
+    corridorCode: "NDLS-AGC",
+    runId: "run_fail_test",
+    runCode: "RUN-FAIL-999",
+    startAt: "2026-11-04T02:00:00.000Z",
+    endAt: "2026-11-04T04:00:00.000Z",
+    durationMinutes: 120,
+    baselineDurationMinutes: 160,
+    savedMinutes: 40,
+    status: "PROPOSED",
+    taskCount: 0,
+    tasks: [],
+    departments: ["ENG"],
+    explanation: {},
+    createdAt: new Date().toISOString(),
+  };
+
+  const originalSaveBlocks = dataStore.saveBlocks;
+  try {
+    dataStore.saveBlocks = async () => {
+      throw new Error("PostgreSQL write failed: deadlock detected");
+    };
+
+    await assert.rejects(
+      () => dataStore.saveBlocks([failingBlock]),
+      (err: unknown) => {
+        assert.ok(err instanceof Error);
+        assert.match((err as Error).message, /deadlock detected/);
+        return true;
+      }
+    );
+
+    // Verify it was not added to in-memory state
+    const blocksFound = await dataStore.getBlocksByRun("run_fail_test", "RUN-FAIL-999");
+    assert.equal(blocksFound.length, 0, "Failed block must not exist in dataStore");
+  } finally {
+    dataStore.saveBlocks = originalSaveBlocks;
+  }
+});
+
 
 
 

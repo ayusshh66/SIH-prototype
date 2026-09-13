@@ -170,6 +170,10 @@ export interface DbBlockView {
   baselineDurationMinutes: number;
   savedMinutes: number;
   status: string;
+  planningHorizon?: string;
+  optimizationRunId?: string;
+  runId?: string;
+  runCode?: string;
   taskCount: number;
   tasks: Array<Record<string, unknown>>;
   departments: string[];

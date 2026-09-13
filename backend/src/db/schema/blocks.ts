@@ -3,6 +3,7 @@ import { relations } from "drizzle-orm";
 import { blockStatusEnum, planningHorizonEnum } from "./enums";
 import { corridors } from "./corridors";
 import { blockTasks } from "./blockTasks";
+import { optimizationRuns } from "./optimizationRuns";
 
 export const blocks = pgTable(
   "blocks",
@@ -10,6 +11,7 @@ export const blocks = pgTable(
     id: uuid("id").defaultRandom().primaryKey(),
     blockCode: varchar("block_code", { length: 100 }).notNull().unique(),
     corridorId: uuid("corridor_id").notNull().references(() => corridors.id),
+    optimizationRunId: uuid("optimization_run_id").references(() => optimizationRuns.id, { onDelete: "cascade" }),
     startAt: timestamp("start_at", { withTimezone: true }).notNull(),
     endAt: timestamp("end_at", { withTimezone: true }).notNull(),
     durationMinutes: integer("duration_minutes").notNull(),
@@ -25,6 +27,7 @@ export const blocks = pgTable(
   },
   (table) => ({
     corridorIdx: index("blocks_corridor_idx").on(table.corridorId),
+    runIdx: index("blocks_optimization_run_idx").on(table.optimizationRunId),
     startIdx: index("blocks_start_idx").on(table.startAt),
     statusIdx: index("blocks_status_idx").on(table.status),
   })
@@ -32,5 +35,6 @@ export const blocks = pgTable(
 
 export const blockRelations = relations(blocks, ({ one, many }) => ({
   corridor: one(corridors, { fields: [blocks.corridorId], references: [corridors.id] }),
+  optimizationRun: one(optimizationRuns, { fields: [blocks.optimizationRunId], references: [optimizationRuns.id] }),
   blockTasks: many(blockTasks),
 }));

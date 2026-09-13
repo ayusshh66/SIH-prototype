@@ -7,6 +7,37 @@ import {
   DepartmentItem,
 } from "../data/dataStore";
 
+// ── Validation ─────────────────────────────────────────────────────────
+
+export class MappingValidationError extends Error {
+  statusCode = 400;
+  constructor(message: string) {
+    super(message);
+    this.name = "MappingValidationError";
+  }
+}
+
+function requireString(value: unknown, fieldPath: string): string {
+  if (typeof value !== "string" || value.trim().length === 0) {
+    throw new MappingValidationError(
+      `Missing required mapping field '${fieldPath}'. Cannot map to AI contract without this value.`
+    );
+  }
+  return value.trim();
+}
+
+function requireFiniteNumber(value: unknown, fieldPath: string): number {
+  const numeric = typeof value === "number" ? value : Number(value);
+  if (!Number.isFinite(numeric)) {
+    throw new MappingValidationError(
+      `Missing or non-numeric required mapping field '${fieldPath}' (got: ${JSON.stringify(value)}).`
+    );
+  }
+  return numeric;
+}
+
+// ── AI Payload Types ───────────────────────────────────────────────────
+
 export interface AiTaskPayload {
   task_id: string;
   task_type: string;
@@ -60,16 +91,60 @@ export interface AiResourcePayload {
   capacity: number;
 }
 
+// ── Input type for AI block results ────────────────────────────────────
+
+export interface AiBlockInput {
+  block_id: string;
+  block_code?: string;
+  blockCode?: string;
+  section_id?: string;
+  start?: string;
+  start_time?: string;
+  end?: string;
+  end_time?: string;
+  durationMinutes?: number;
+  task_ids?: string[];
+  tasks?: string[];
+}
+
+// ── Output type for mapped block tasks ─────────────────────────────────
+
+export interface BlockTaskView {
+  [key: string]: unknown;
+  id: string;
+  taskCode: string;
+  department: string;
+  taskType: string;
+  durationMinutes: number;
+  locationKm: string;
+}
+
 /**
  * Maps a backend maintenance task to the canonical AI MaintenanceTask format.
+ *
+ * Requires valid corridor and department lookups. Missing required data
+ * produces a MappingValidationError rather than fabricated values.
  */
 export function mapTaskToAi(
   task: MaintenanceTaskItem,
-  corridor?: CorridorItem | null,
-  dept?: DepartmentItem | null
+  corridor: CorridorItem | null | undefined,
+  dept: DepartmentItem | null | undefined
 ): AiTaskPayload {
-  const sectionId = corridor?.code || task.corridorId;
-  const deptCode = dept?.code || task.departmentId;
+  if (!corridor) {
+    throw new MappingValidationError(
+      `Missing corridor lookup for task '${task.taskCode || task.id}' (corridorId: '${task.corridorId}'). ` +
+      `Cannot determine section_id without a resolved corridor.`
+    );
+  }
+  if (!dept) {
+    throw new MappingValidationError(
+      `Missing department lookup for task '${task.taskCode || task.id}' (departmentId: '${task.departmentId}'). ` +
+      `Cannot determine department code without a resolved department.`
+    );
+  }
+
+  const sectionId = corridor.code;
+  const deptCode = dept.code;
 
   // Derive priority hint from criticality score (0-100)
   let priorityHint: "LOW" | "MEDIUM" | "HIGH" | "CRITICAL" = "MEDIUM";
@@ -99,16 +174,21 @@ export function mapTaskToAi(
     requiredResources = [{ resource_type: "tower_wagon", count: 1 }];
   }
 
-  const requestedStart = task.createdAt || new Date().toISOString();
-  const requestedEnd = task.dueAt || new Date(Date.now() + 72 * 3600 * 1000).toISOString();
+  // Require real timestamps — no fabricated current-time fallbacks
+  const requestedStart = requireString(task.createdAt, `task[${task.taskCode || task.id}].createdAt`);
+  const requestedEnd = requireString(task.dueAt, `task[${task.taskCode || task.id}].dueAt`);
+
+  // Require real kilometer markers — no fabricated 0/1 fallbacks
+  const fromKm = requireFiniteNumber(task.locationStartKm, `task[${task.taskCode || task.id}].locationStartKm`);
+  const toKm = requireFiniteNumber(task.locationEndKm, `task[${task.taskCode || task.id}].locationEndKm`);
 
   return {
     task_id: task.taskCode || task.id,
     task_type: task.taskType,
     railway_section_id: sectionId,
     section_id: sectionId,
-    from_km: parseFloat(String(task.locationStartKm)) || 0,
-    to_km: parseFloat(String(task.locationEndKm)) || 1,
+    from_km: fromKm,
+    to_km: toKm,
     department: deptCode,
     status: task.status === "PENDING" ? "PLANNED" : task.status,
     requested_start: requestedStart,
@@ -125,12 +205,21 @@ export function mapTaskToAi(
 
 /**
  * Maps a backend train record to the canonical AI TrainMovement format.
+ *
+ * Requires a valid corridor lookup for section_id.
  */
 export function mapTrainToAi(
   train: TrainItem,
-  corridor?: CorridorItem | null
+  corridor: CorridorItem | null | undefined
 ): AiMovementPayload {
-  const sectionId = corridor?.code || train.corridorId;
+  if (!corridor) {
+    throw new MappingValidationError(
+      `Missing corridor lookup for train '${train.trainNumber}' (corridorId: '${train.corridorId}'). ` +
+      `Cannot determine section_id without a resolved corridor.`
+    );
+  }
+
+  const sectionId = corridor.code;
   const isExpress = train.trainType === "EXPRESS" || train.isCriticalService;
   const isFreight = train.isGoodsTrain || train.trainType === "GOODS";
 
@@ -141,6 +230,8 @@ export function mapTrainToAi(
     train_type: train.trainType,
     movement_start: train.scheduledDeparture,
     movement_end: train.scheduledArrival,
+    // Heuristic: Indian Railways convention — even-numbered trains are UP direction.
+    // No `direction` field exists in the DB schema; this is the best available signal.
     direction: train.trainNumber.endsWith("2") || train.trainNumber.endsWith("6") ? "UP" : "DOWN",
     speed_class: isExpress ? "EXPRESS" : isFreight ? "LOW" : "HIGH",
     priority_class: isFreight ? "FREIGHT" : "PASSENGER",
@@ -150,12 +241,21 @@ export function mapTrainToAi(
 
 /**
  * Maps a backend block window record to the canonical AI MaintenanceWindow format.
+ *
+ * Requires a valid corridor lookup for section_id.
  */
 export function mapWindowToAi(
   window: BlockWindowItem,
-  corridor?: CorridorItem | null
+  corridor: CorridorItem | null | undefined
 ): AiWindowPayload {
-  const sectionId = corridor?.code || window.corridorId;
+  if (!corridor) {
+    throw new MappingValidationError(
+      `Missing corridor lookup for block window '${window.id}' (corridorId: '${window.corridorId}'). ` +
+      `Cannot determine section_id without a resolved corridor.`
+    );
+  }
+
+  const sectionId = corridor.code;
 
   return {
     window_id: window.id,
@@ -172,67 +272,93 @@ export function mapWindowToAi(
 
 /**
  * Maps a resource record to the canonical AI Resource format.
+ *
+ * Missing departmentId or depotLocation produces a validation error.
  */
 export function mapResourceToAi(res: ResourceItem): AiResourcePayload {
+  const department = requireString(res.departmentId, `resource[${res.id}].departmentId`);
+  const location = requireString(res.depotLocation, `resource[${res.id}].depotLocation`);
+
   return {
     resource_id: res.id,
     resource_type: res.resourceType,
-    department: res.departmentId || "ENGINEERING",
-    location: res.depotLocation || "sec_12_ndls_agc",
+    department,
+    location,
     capacity: res.capacity || 1,
   };
 }
 
 /**
  * Transforms an AI Optimization schedule candidate block into the backend Block representation.
+ *
+ * Unknown task IDs are logged and skipped (not fabricated).
+ * Missing block_id, start, or end times produce validation errors.
  */
 export function mapAiBlockToDbBlock(
-  aiBlock: any,
+  aiBlock: AiBlockInput,
   corridorId: string,
   corridorCode: string,
   taskMap: Map<string, MaintenanceTaskItem>
-): any {
-  const blockTasks = (aiBlock.task_ids || aiBlock.tasks || []).map((tid: string) => {
+): import("./contracts").DbBlockView {
+  // Require block_id from AI — no random fallback
+  const blockId = requireString(aiBlock.block_id, "aiBlock.block_id");
+
+  // Require start/end times from AI — no current-time fallback
+  const startAt = aiBlock.start || aiBlock.start_time;
+  if (!startAt) {
+    throw new MappingValidationError(
+      `AI block '${blockId}' is missing 'start' or 'start_time'. Cannot reconstruct schedule without timestamps.`
+    );
+  }
+  const endAt = aiBlock.end || aiBlock.end_time;
+  if (!endAt) {
+    throw new MappingValidationError(
+      `AI block '${blockId}' is missing 'end' or 'end_time'. Cannot reconstruct schedule without timestamps.`
+    );
+  }
+
+  const blockTasks: BlockTaskView[] = [];
+  const allTaskIds = aiBlock.task_ids || aiBlock.tasks || [];
+
+  for (const tid of allTaskIds) {
     const found = taskMap.get(tid);
     if (found) {
-      return {
+      blockTasks.push({
         id: found.id,
         taskCode: found.taskCode,
         department: found.departmentId,
         taskType: found.taskType,
         durationMinutes: found.estimatedDurationMinutes,
         locationKm: `Km ${found.locationStartKm} - ${found.locationEndKm}`,
-      };
+      });
+    } else {
+      // Log warning but do NOT fabricate task data
+      console.warn(
+        `[dataMapper] AI block '${blockId}' references unknown task_id '${tid}'. Skipping — no fabricated data.`
+      );
     }
-    return {
-      id: tid,
-      taskCode: tid,
-      department: "ENG",
-      taskType: "MAINTENANCE",
-      durationMinutes: aiBlock.durationMinutes || 120,
-      locationKm: "Corridor Segment",
-    };
-  });
+  }
 
-  const uniqueDepts = Array.from(new Set(blockTasks.map((t: any) => t.department)));
-  const baselineMinutes = Math.round((aiBlock.durationMinutes || 120) * 1.4);
-  const durationMinutes = aiBlock.durationMinutes || 120;
+  const uniqueDepts = Array.from(new Set(blockTasks.map((t) => t.department)));
+  const durationMinutes = aiBlock.durationMinutes ||
+    Math.max(0, Math.round((new Date(endAt).getTime() - new Date(startAt).getTime()) / 60000));
+  const baselineMinutes = Math.round(durationMinutes * 1.4);
   const savedMinutes = baselineMinutes - durationMinutes;
 
   return {
-    id: aiBlock.block_id || `blk_${Math.random().toString(36).slice(2, 9)}`,
-    blockCode: aiBlock.block_code || aiBlock.blockCode || `BLK-${corridorCode}-${aiBlock.block_id || "01"}`,
+    id: blockId,
+    blockCode: aiBlock.block_code || aiBlock.blockCode || `BLK-${corridorCode}-${blockId}`,
     corridorId,
     corridorCode,
-    startAt: aiBlock.start || aiBlock.start_time || new Date().toISOString(),
-    endAt: aiBlock.end || aiBlock.end_time || new Date(Date.now() + durationMinutes * 60000).toISOString(),
+    startAt,
+    endAt,
     durationMinutes,
     baselineDurationMinutes: baselineMinutes,
     savedMinutes,
     status: "PROPOSED",
     taskCount: blockTasks.length,
     tasks: blockTasks,
-    departments: uniqueDepts.length > 0 ? uniqueDepts : ["ENG"],
+    departments: uniqueDepts,
     explanation: {
       reasons: [
         `Corridor section window ${aiBlock.section_id || corridorCode}`,

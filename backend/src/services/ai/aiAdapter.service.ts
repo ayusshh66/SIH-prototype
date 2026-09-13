@@ -5,8 +5,10 @@ import {
   mapTaskToAi,
   mapTrainToAi,
   mapWindowToAi,
+  MappingValidationError,
 } from "./dataMapper";
-import { dataStore, MaintenanceTaskItem } from "../data/dataStore";
+import type { AiBlockInput } from "./dataMapper";
+import { dataStore, MaintenanceTaskItem, CorridorItem, DepartmentItem } from "../data/dataStore";
 import type {
   AiHealthResult,
   CriticalityScore,
@@ -45,9 +47,16 @@ export class ValidationError extends Error {
   statusCode = 400;
 }
 
+/** Shape of an individual compatibility candidate returned by AI. */
+interface CompatibilityCandidate {
+  task_ids: string[];
+  sections: string[];
+  departments: string[];
+  compatibility_score: number;
+  reasons: string[];
+}
+
 export class AiAdapterService {
-  private latestPlanningResult: PlanningResult | null = null;
-  private latestPlanningContext: PlanningContext | null = null;
   private latestExplanations: Explanation[] = [];
   private latestConflicts: PlanningResult["train_conflicts"] = [];
   private latestShadowBlocks: ShadowBlockCandidate[] = [];
@@ -57,7 +66,7 @@ export class AiAdapterService {
     const mode = options.mode || "BALANCED";
 
     const contextData = await this.buildPlanningContextData(options.corridorId);
-    const { allTasks, allCorridors, taskMap } = contextData;
+    const { allCorridors, taskMap } = contextData;
     const canonicalRequest: PlanningContext = {
       request_id: `plan_req_${Date.now().toString(36)}`,
       mode,
@@ -89,11 +98,6 @@ export class AiAdapterService {
       throw new Error("AI Orchestration Failure: optimization_result was not returned.");
     }
 
-    this.latestPlanningContext = {
-      ...canonicalRequest,
-      criticality_scores: aiResult.criticality_scores,
-      shadow_block_candidates: aiResult.shadow_block_candidates,
-    };
     this.latestExplanations = aiResult.explanations;
     this.latestShadowBlocks = aiResult.shadow_block_candidates;
     this.latestConflicts = optResult.train_conflicts || [];
@@ -105,29 +109,48 @@ export class AiAdapterService {
     const targetCorridor =
       allCorridors.find((c) => c.id === options.corridorId || c.code === options.corridorId) ||
       allCorridors[0];
+
+    const runId = aiResult.orchestration_id;
+    const runCode = `RUN-${new Date().toISOString().slice(0, 10).replace(/-/g, "")}-${Math.floor(
+      100 + Math.random() * 900
+    )}`;
+
     const generatedBlocks: DbBlockView[] = [];
 
-    for (const cand of optResult.schedule_candidates || []) {
-      for (const blk of cand.blocks || []) {
+    for (let candIdx = 0; candIdx < (optResult.schedule_candidates || []).length; candIdx++) {
+      const cand = optResult.schedule_candidates[candIdx];
+      const candBlocks = (cand.blocks || []) as AiBlockInput[];
+      for (let blkIdx = 0; blkIdx < candBlocks.length; blkIdx++) {
+        const blk = candBlocks[blkIdx];
         const durationMinutes =
           blk.durationMinutes ||
           Math.max(
             0,
-            Math.round((new Date(blk.end).getTime() - new Date(blk.start).getTime()) / 60000)
+            Math.round(
+              (new Date(blk.end || blk.end_time || "").getTime() -
+                new Date(blk.start || blk.start_time || "").getTime()) /
+                60000
+            )
           );
-        generatedBlocks.push(
-          mapAiBlockToDbBlock(
-            { ...blk, durationMinutes, task_ids: cand.task_ids || optResult.selected_task_ids },
-            targetCorridor?.id || blk.section_id,
-            targetCorridor?.code || blk.section_id,
-            taskMap
-          )
+        const mappedBlock = mapAiBlockToDbBlock(
+          {
+            ...blk,
+            block_code: `BLK-${targetCorridor?.code || "SEC"}-${runCode}-${candIdx + 1}${blkIdx + 1}`,
+            durationMinutes,
+            task_ids: cand.task_ids || optResult.selected_task_ids,
+          },
+          targetCorridor?.id || "",
+          targetCorridor?.code || "",
+          taskMap
         );
+        mappedBlock.runId = runId;
+        mappedBlock.runCode = runCode;
+        if (mappedBlock.explanation) {
+          mappedBlock.explanation.runId = runId;
+          mappedBlock.explanation.runCode = runCode;
+        }
+        generatedBlocks.push(mappedBlock);
       }
-    }
-
-    if (generatedBlocks.length > 0) {
-      await dataStore.saveBlocks(generatedBlocks);
     }
 
     const scheduledCount = optResult.selected_task_ids.length;
@@ -135,12 +158,11 @@ export class AiAdapterService {
     const baselineMinutes = generatedBlocks.reduce((acc, b) => acc + (b.baselineDurationMinutes || 0), 0);
     const totalBlockMinutes = generatedBlocks.reduce((acc, b) => acc + (b.durationMinutes || 0), 0);
     const savedMinutes = Math.max(baselineMinutes - totalBlockMinutes, 0);
-    const runCode = `RUN-${new Date().toISOString().slice(0, 10).replace(/-/g, "")}-${Math.floor(
-      100 + Math.random() * 900
-    )}`;
 
+    // Save optimization run to authoritative backend store (fails if persistence fails)
     const runRecord = await dataStore.saveOptimizationRun({
-      runId: aiResult.orchestration_id,
+      id: runId,
+      runId,
       runCode,
       horizon,
       startDate: new Date().toISOString(),
@@ -155,6 +177,18 @@ export class AiAdapterService {
       status: optResult.status,
       createdAt: new Date().toISOString(),
     });
+
+    const persistedRunId = runRecord?.id || runId;
+
+    for (const b of generatedBlocks) {
+      b.optimizationRunId = persistedRunId;
+      b.runId = persistedRunId;
+    }
+
+    // Save generated blocks associated with this run (fails if persistence fails)
+    if (generatedBlocks.length > 0) {
+      await dataStore.saveBlocks(generatedBlocks, persistedRunId);
+    }
 
     const result: PlanningResult = {
       ...optResult,
@@ -179,18 +213,19 @@ export class AiAdapterService {
       },
     };
 
-    this.latestPlanningResult = result;
     return result;
   }
 
   async getCriticalityScore(task: MaintenanceTaskItem): Promise<CriticalityScore> {
+    // Use real backend fields instead of hardcoded values
+    const trafficDensity = Math.min(1, (task.operationalImpactScore || 0) / 100);
     const input = {
       entity_id: task.taskCode || task.id,
       severity: task.criticalityScore >= 85 ? "CRITICAL" : task.criticalityScore >= 70 ? "HIGH" : "MODERATE",
-      urgency: Math.min(1, (task.urgencyScore || 75) / 100),
-      safety_risk: Math.min(1, (task.safetyScore || 80) / 100),
-      traffic_density: 0.85,
-      speed_class: "HIGH",
+      urgency: Math.min(1, (task.urgencyScore || 0) / 100),
+      safety_risk: Math.min(1, (task.safetyScore || 0) / 100),
+      traffic_density: trafficDensity,
+      // No hardcoded speed_class — let AI engine use its default if not provided
       deadline: task.dueAt || undefined,
     };
 
@@ -200,7 +235,7 @@ export class AiAdapterService {
   }
 
   async generateShadowBlocks(options?: { constraints?: Record<string, unknown> }): Promise<{
-    compatibility_candidates: unknown[];
+    compatibility_candidates: CompatibilityCandidate[];
     shadow_block_candidates: ShadowBlockCandidate[];
   }> {
     const contextData = await this.buildPlanningContextData();
@@ -212,7 +247,7 @@ export class AiAdapterService {
     };
 
     const res = await invokeAiBridge<typeof payload, {
-      compatibility_candidates: unknown[];
+      compatibility_candidates: CompatibilityCandidate[];
       shadow_block_candidates: ShadowBlockCandidate[];
     }>("shadow_blocks", payload);
 
@@ -257,8 +292,16 @@ export class AiAdapterService {
       dataStore.getDepartments(),
     ]);
 
-    const corridorMap = new Map(allCorridors.map((c) => [c.id, c]));
-    const deptMap = new Map(allDepts.map((d) => [d.id, d]));
+    const corridorMap = new Map<string, CorridorItem>();
+    for (const c of allCorridors) {
+      corridorMap.set(c.id, c);
+      if (c.code) corridorMap.set(c.code, c);
+    }
+    const deptMap = new Map<string, DepartmentItem>();
+    for (const d of allDepts) {
+      deptMap.set(d.id, d);
+      if (d.code) deptMap.set(d.code, d);
+    }
 
     const emergencyPayload = {
       emergency_event: {
@@ -311,8 +354,16 @@ export class AiAdapterService {
       dataStore.getDepartments(),
     ]);
 
-    const corridorMap = new Map(allCorridors.map((c) => [c.id, c]));
-    const deptMap = new Map(allDepts.map((d) => [d.id, d]));
+    const corridorMap = new Map<string, CorridorItem>();
+    for (const c of allCorridors) {
+      corridorMap.set(c.id, c);
+      if (c.code) corridorMap.set(c.code, c);
+    }
+    const deptMap = new Map<string, DepartmentItem>();
+    for (const d of allDepts) {
+      deptMap.set(d.id, d);
+      if (d.code) deptMap.set(d.code, d);
+    }
     const taskMap = new Map(allTasks.map((t) => [t.taskCode || t.id, t]));
 
     let targetTasks = allTasks.filter((t) => t.status === "PENDING" && t.requiredBlock);
@@ -355,6 +406,15 @@ export class AiAdapterService {
   private validateWhatIfScenario(payload: WhatIfScenarioPayload): WhatIfScenarioPayload {
     const scenarioType = ensureString(payload.scenario_type, "scenario_type") as WhatIfScenarioPayload["scenario_type"];
     const baseScheduleId = ensureString(payload.base_schedule_id, "base_schedule_id");
+
+    // Reject magic strings — require a concrete persisted schedule ID
+    if (baseScheduleId === "current" || baseScheduleId === "latest") {
+      throw new ValidationError(
+        `Invalid base_schedule_id '${baseScheduleId}'. ` +
+        `Pass a concrete schedule_id, runId, or runCode from a completed planning run.`
+      );
+    }
+
     const newConstraints = payload.new_constraints;
     if (!newConstraints || typeof newConstraints !== "object" || Array.isArray(newConstraints)) {
       throw new ValidationError("Missing or invalid required field 'new_constraints'.");
@@ -401,9 +461,13 @@ export class AiAdapterService {
     };
   }
 
+  /**
+   * Resolves planning context from current persisted data.
+   *
+   * Does NOT use volatile in-memory cache — always builds from the
+   * authoritative data store to ensure consistency.
+   */
   private async resolvePlanningContext(): Promise<PlanningContext> {
-    if (this.latestPlanningContext) return this.latestPlanningContext;
-
     const contextData = await this.buildPlanningContextData();
     return {
       request_id: `context_req_${Date.now().toString(36)}`,
@@ -429,38 +493,56 @@ export class AiAdapterService {
     };
   }
 
-  private async resolveSchedule(baseScheduleId: string): Promise<ScheduleCandidate | { schedule_candidates: ScheduleCandidate[] }> {
-    const latestCandidates = this.latestPlanningResult?.schedule_candidates || [];
-    const inMemoryCandidate = latestCandidates.find((cand) => cand.schedule_id === baseScheduleId);
-    if (inMemoryCandidate) return inMemoryCandidate;
-
-    if (
-      this.latestPlanningResult &&
-      [this.latestPlanningResult.runId, this.latestPlanningResult.runCode, "current", "latest"].includes(baseScheduleId)
-    ) {
-      return { schedule_candidates: latestCandidates };
-    }
-
+  /**
+   * Resolves the base schedule from authoritative persisted backend state.
+   *
+   * Looks up the provided base_schedule_id against persisted optimization
+   * runs and reconstructs schedule candidates from persisted blocks.
+   * Does NOT use volatile in-memory latestPlanningResult.
+   * Does NOT accept "current" or "latest" as magic aliases.
+   */
+  private async resolveSchedule(baseScheduleId: string): Promise<{ schedule_candidates: ScheduleCandidate[] }> {
+    // Look up in persisted optimization runs
     const runs = await dataStore.getOptimizationRuns();
-    const matchingRun = runs.find((run) => run.id === baseScheduleId || run.runId === baseScheduleId || run.runCode === baseScheduleId);
-    if (!matchingRun && !["current", "latest"].includes(baseScheduleId)) {
-      throw new ValidationError(`Unknown base_schedule_id '${baseScheduleId}'. Run planning first and pass a returned schedule_id/runId/runCode.`);
+    const matchingRun = runs.find(
+      (run) => run.id === baseScheduleId || run.runId === baseScheduleId || run.runCode === baseScheduleId
+    );
+
+    if (!matchingRun) {
+      throw new ValidationError(
+        `Unknown base_schedule_id '${baseScheduleId}'. ` +
+        `No persisted optimization run matches this ID. ` +
+        `Run planning first and pass a returned runId or runCode.`
+      );
     }
 
-    const blocks = await dataStore.getBlocks();
-    const candidates: ScheduleCandidate[] = blocks.map((block, index) => {
+    // Reconstruct schedule candidates from the exact blocks of this optimization run
+    const runBlocks = await dataStore.getBlocksByRun(
+      matchingRun.id || matchingRun.runId || "",
+      matchingRun.runCode
+    );
+
+    if (runBlocks.length === 0) {
+      throw new ValidationError(
+        `No persisted blocks found for optimization run '${baseScheduleId}'. Cannot reconstruct base schedule.`
+      );
+    }
+
+    const candidates: ScheduleCandidate[] = runBlocks.map((block, index) => {
       const start = new Date(block.startAt).toISOString();
       const end = new Date(block.endAt).toISOString();
       const taskIds = Array.isArray(block.tasks)
-        ? block.tasks.map((task: { taskCode?: string; id?: string }) => task.taskCode || task.id).filter(Boolean)
+        ? block.tasks
+            .map((task: Record<string, unknown>) => (task.taskCode as string) || (task.id as string))
+            .filter(Boolean) as string[]
         : [];
       return {
         schedule_id: index === 0 ? baseScheduleId : `${baseScheduleId}_${index + 1}`,
         task_ids: taskIds,
         blocks: [
           {
-            block_id: block.id || block.blockCode,
-            section_id: block.corridorCode || block.corridorId,
+            block_id: (block.id || block.blockCode) as string,
+            section_id: (block.corridorCode || block.corridorId) as string,
             start,
             end,
             durationMinutes: block.durationMinutes,
@@ -470,13 +552,9 @@ export class AiAdapterService {
         end_time: end,
         estimated_disruption_minutes: 0,
         resource_assignments: {},
-        status: block.status || "PROPOSED",
+        status: (block.status || "PROPOSED") as string,
       };
     });
-
-    if (candidates.length === 0) {
-      throw new ValidationError(`No persisted blocks are available for base_schedule_id '${baseScheduleId}'.`);
-    }
 
     return { schedule_candidates: candidates };
   }

@@ -1,0 +1,3 @@
+ALTER TABLE "blocks" ADD COLUMN "optimization_run_id" uuid;--> statement-breakpoint
+ALTER TABLE "blocks" ADD CONSTRAINT "blocks_optimization_run_id_optimization_runs_id_fk" FOREIGN KEY ("optimization_run_id") REFERENCES "public"."optimization_runs"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+CREATE INDEX "blocks_optimization_run_idx" ON "blocks" USING btree ("optimization_run_id");

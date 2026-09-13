@@ -1,0 +1,131 @@
+/**
+ * Indian Railways Automatic Block Planning System
+ * Design System Tokens — Professional Control Room Theme
+ */
+
+:root {
+  /* Color Palette - Operations Surfaces */
+  --bg-canvas: #080C14;
+  --bg-surface: #0E1526;
+  --bg-surface-raised: #151F36;
+  --bg-surface-hover: #1D2A47;
+  --bg-surface-active: #24355A;
+
+  /* Borders & Dividers */
+  --border-subtle: #182238;
+  --border-default: #233252;
+  --border-strong: #364C78;
+  --border-highlight: #38BDF8;
+
+  /* Typography Colors */
+  --text-primary: #F8FAFC;
+  --text-secondary: #94A3B8;
+  --text-muted: #64748B;
+  --text-inverse: #080C14;
+  --text-cyan: #38BDF8;
+
+  /* Brand Accents - Indian Railways Operations */
+  --ir-blue: #2563EB;
+  --ir-blue-hover: #1D4ED8;
+  --ir-blue-bg: rgba(37, 99, 235, 0.12);
+  --ir-blue-border: rgba(37, 99, 235, 0.35);
+
+  /* Railway Departments */
+  --dept-eng: #3B82F6;
+  --dept-eng-bg: rgba(59, 130, 246, 0.12);
+  --dept-eng-border: rgba(59, 130, 246, 0.35);
+
+  --dept-trd: #F59E0B;
+  --dept-trd-bg: rgba(245, 158, 11, 0.12);
+  --dept-trd-border: rgba(245, 158, 11, 0.35);
+
+  --dept-snt: #10B981;
+  --dept-snt-bg: rgba(16, 185, 129, 0.12);
+  --dept-snt-border: rgba(16, 185, 129, 0.35);
+
+  /* Operational Priorities */
+  --priority-critical: #EF4444;
+  --priority-critical-bg: rgba(239, 68, 68, 0.12);
+  --priority-critical-border: rgba(239, 68, 68, 0.35);
+
+  --priority-high: #F97316;
+  --priority-high-bg: rgba(249, 115, 22, 0.12);
+  --priority-high-border: rgba(249, 115, 22, 0.35);
+
+  --priority-medium: #FBBF24;
+  --priority-medium-bg: rgba(251, 191, 36, 0.12);
+  --priority-medium-border: rgba(251, 191, 36, 0.35);
+
+  --priority-low: #94A3B8;
+  --priority-low-bg: rgba(148, 163, 184, 0.10);
+  --priority-low-border: rgba(148, 163, 184, 0.25);
+
+  /* Optimization Statuses */
+  --status-optimal: #10B981;
+  --status-optimal-bg: rgba(16, 185, 129, 0.12);
+  --status-optimal-border: rgba(16, 185, 129, 0.35);
+
+  --status-feasible: #3B82F6;
+  --status-feasible-bg: rgba(59, 130, 246, 0.12);
+  --status-feasible-border: rgba(59, 130, 246, 0.35);
+
+  --status-partial: #F59E0B;
+  --status-partial-bg: rgba(245, 158, 11, 0.12);
+  --status-partial-border: rgba(245, 158, 11, 0.35);
+
+  --status-infeasible: #EF4444;
+  --status-infeasible-bg: rgba(239, 68, 68, 0.12);
+  --status-infeasible-border: rgba(239, 68, 68, 0.35);
+
+  --status-failed: #DC2626;
+  --status-failed-bg: rgba(220, 38, 38, 0.15);
+  --status-failed-border: rgba(220, 38, 38, 0.40);
+
+  /* Conflicts */
+  --conflict-train: #EF4444;
+  --conflict-resource: #F59E0B;
+  --conflict-window: #3B82F6;
+  --conflict-safety: #DC2626;
+  --conflict-deadline: #A855F7;
+
+  /* Typography */
+  --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  --font-mono: 'JetBrains Mono', 'SF Mono', 'Roboto Mono', Menlo, Consolas, monospace;
+
+  /* Font Sizes */
+  --text-xs: 0.725rem;   /* 11.6px */
+  --text-sm: 0.8125rem;  /* 13px */
+  --text-base: 0.875rem; /* 14px */
+  --text-md: 0.9375rem;  /* 15px */
+  --text-lg: 1.125rem;   /* 18px */
+  --text-xl: 1.25rem;    /* 20px */
+  --text-2xl: 1.5rem;    /* 24px */
+  --text-3xl: 1.875rem;  /* 30px */
+
+  /* Spacing Scale */
+  --space-1: 0.25rem;  /* 4px */
+  --space-2: 0.5rem;   /* 8px */
+  --space-3: 0.75rem;  /* 12px */
+  --space-4: 1rem;     /* 16px */
+  --space-5: 1.25rem;  /* 20px */
+  --space-6: 1.5rem;   /* 24px */
+  --space-8: 2rem;     /* 32px */
+  --space-10: 2.5rem;  /* 40px */
+
+  /* Radii */
+  --radius-xs: 2px;
+  --radius-sm: 4px;
+  --radius-md: 6px;
+  --radius-lg: 8px;
+  --radius-full: 9999px;
+
+  /* Focus & Elevation */
+  --focus-ring: 0 0 0 2px var(--bg-canvas), 0 0 0 4px var(--ir-blue);
+  --shadow-panel: 0 4px 16px -2px rgba(0, 0, 0, 0.45);
+  --shadow-drawer: -4px 0 24px 0 rgba(0, 0, 0, 0.65);
+
+  /* Layout dimensions */
+  --sidebar-width: 250px;
+  --sidebar-collapsed-width: 68px;
+  --header-height: 56px;
+}

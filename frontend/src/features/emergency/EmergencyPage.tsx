@@ -59,7 +59,7 @@ const formatTimeWindow = (isoStart: string, isoEnd: string): string => {
 export const EmergencyPage: React.FC = () => {
   // Form state
   const [eventType, setEventType] = useState('NEW_USFD_DEFECT');
-  const [sectionId, setSectionId] = useState('sec_12_ndls_agc');
+  const [sectionId, setSectionId] = useState('NDLS-AGC');
   const [severity, setSeverity] = useState('CRITICAL');
   const [kmLocation, setKmLocation] = useState('45.300');
   const [durationMinutes, setDurationMinutes] = useState(120);
@@ -141,8 +141,8 @@ export const EmergencyPage: React.FC = () => {
                 onChange={(e) => setSectionId(e.target.value)}
                 className="w-full bg-background-main border-2 border-surface-border px-3 py-2 text-sm font-mono text-text-primary focus:outline-none focus:border-text-cyan"
               >
-                <option value="sec_12_ndls_agc">NDLS-AGC (New Delhi - Agra Cantt)</option>
-                <option value="sec_15_agc_gwl">AGC-GWL (Agra Cantt - Gwalior Jn)</option>
+                <option value="NDLS-AGC">NDLS-AGC (New Delhi - Agra Cantt)</option>
+                <option value="AGC-GWL">AGC-GWL (Agra Cantt - Gwalior Jn)</option>
               </select>
             </div>
 

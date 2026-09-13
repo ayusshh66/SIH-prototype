@@ -13,17 +13,48 @@ export const TrainsPage: React.FC = () => {
   useEffect(() => {
     getTrainMovements()
       .then((res) => {
-        if (res.success) setTrains(res.data);
+        if (res.success) setTrains(res.data ?? []);
       })
+      .catch(() => setTrains([]))
       .finally(() => setLoading(false));
   }, []);
 
-  const filteredTrains = trains.filter((t) => {
+  const normalizedTrains = (trains ?? []).map((train, index) => {
+    const trainNumber = String(train?.trainNumber ?? train?.train_number ?? `TRAIN-${index + 1}`);
+    const trainName = String(train?.trainName ?? train?.train_name ?? 'Unknown Train');
+    const sectionId = String(train?.corridorId ?? train?.section_id ?? 'N/A');
+    const trainType = String(train?.trainType ?? train?.train_type ?? 'PASSENGER');
+    const direction = String(train?.direction ?? 'UP');
+    const speedClass = String(train?.speed_class ?? train?.speedClass ?? 'NORMAL');
+    const priorityValue = train?.priority ?? train?.priority_level ?? 'MEDIUM';
+    const priority = typeof priorityValue === 'number'
+      ? priorityValue >= 80 ? 'HIGH' : priorityValue >= 50 ? 'MEDIUM' : 'LOW'
+      : String(priorityValue).toUpperCase();
+    const start = train?.scheduledDeparture ?? train?.movement_start ?? train?.startTime ?? new Date().toISOString();
+    const end = train?.scheduledArrival ?? train?.movement_end ?? train?.endTime ?? start;
+
+    return {
+      ...train,
+      id: train?.id ?? train?.movement_id ?? `${trainNumber}-${index}`,
+      trainNumber,
+      trainName,
+      sectionId,
+      trainType,
+      direction,
+      speedClass,
+      priority,
+      start,
+      end,
+    };
+  });
+
+  const filteredTrains = normalizedTrains.filter((t) => {
+    const searchText = search.toLowerCase();
     const matchesSearch =
-      t.train_number.toLowerCase().includes(search.toLowerCase()) ||
-      t.train_name.toLowerCase().includes(search.toLowerCase()) ||
-      t.section_id.toLowerCase().includes(search.toLowerCase());
-    const matchesType = typeFilter === 'ALL' || t.train_type === typeFilter;
+      String(t.trainNumber).toLowerCase().includes(searchText) ||
+      String(t.trainName).toLowerCase().includes(searchText) ||
+      String(t.sectionId).toLowerCase().includes(searchText);
+    const matchesType = typeFilter === 'ALL' || t.trainType === typeFilter;
     return matchesSearch && matchesType;
   });
 
@@ -86,12 +117,12 @@ export const TrainsPage: React.FC = () => {
         ) : (
           <div className="space-y-3">
             {filteredTrains.map((train) => {
-              const startTime = new Date(train.movement_start).toLocaleTimeString([], {
+              const startTime = new Date(train.start).toLocaleTimeString([], {
                 hour: '2-digit',
                 minute: '2-digit',
                 hour12: false,
               });
-              const endTime = new Date(train.movement_end).toLocaleTimeString([], {
+              const endTime = new Date(train.end).toLocaleTimeString([], {
                 hour: '2-digit',
                 minute: '2-digit',
                 hour12: false,
@@ -99,7 +130,7 @@ export const TrainsPage: React.FC = () => {
 
               return (
                 <div
-                  key={train.movement_id}
+                  key={train.id}
                   className="flex flex-wrap items-center justify-between gap-4 p-4 bg-background-main border-2 border-surface-border hover:border-text-muted transition-colors"
                 >
                   <div className="flex items-center gap-3 min-w-[260px]">
@@ -109,21 +140,21 @@ export const TrainsPage: React.FC = () => {
                     <div>
                       <div className="flex items-center gap-2">
                         <span className="font-mono font-bold text-sm text-text-primary">
-                          {train.train_number}
+                          {train.trainNumber}
                         </span>
                         <span className="font-medium text-xs text-text-primary">
-                          {train.train_name}
+                          {train.trainName}
                         </span>
                         <span
                           className={`px-1.5 py-0.5 font-mono text-[10px] font-bold uppercase border ${
-                            train.train_type === 'EXPRESS'
+                            train.trainType === 'EXPRESS'
                               ? 'bg-status-optimal/10 text-status-optimal border-status-optimal/40'
-                              : train.train_type === 'GOODS'
+                              : train.trainType === 'GOODS'
                               ? 'bg-status-warning/10 text-status-warning border-status-warning/40'
                               : 'bg-surface-card text-text-muted border-surface-border'
                           }`}
                         >
-                          {train.train_type}
+                          {train.trainType}
                         </span>
                       </div>
                       <div className="flex items-center gap-3 text-[11px] font-mono text-text-muted mt-1">
@@ -131,9 +162,9 @@ export const TrainsPage: React.FC = () => {
                           <Navigation size={11} /> {train.direction} LINE
                         </span>
                         <span>•</span>
-                        <span>SPEED: {train.speed_class}</span>
+                        <span>SPEED: {train.speedClass}</span>
                         <span>•</span>
-                        <span>SECTION: {train.section_id}</span>
+                        <span>SECTION: {train.sectionId}</span>
                       </div>
                     </div>
                   </div>

@@ -28,20 +28,20 @@ export const WhatIfScenariosPage: React.FC = () => {
       preset = {
         scenario_id: `whatif_td_${Date.now().toString(36)}`,
         scenario_type: 'TRAIN_DELAY',
-        base_schedule_id: 'current',
+        base_schedule_id: 'run_0192a',
         affected_train_ids: ['12002'],
         affected_task_ids: ['TSK-ENG-NDLS-045-01'],
         new_constraints: {
           train_delay_minutes: 45,
           train_id: '12002',
-          section_id: 'sec_12_ndls_agc',
+          section_id: 'NDLS-AGC',
         },
       };
     } else if (type === 'tower_wagon_down') {
       preset = {
         scenario_id: `whatif_ru_${Date.now().toString(36)}`,
         scenario_type: 'RESOURCE_UNAVAILABLE',
-        base_schedule_id: 'current',
+        base_schedule_id: 'run_0192a',
         affected_task_ids: ['TSK-TRD-NDLS-046-02'],
         new_constraints: {
           unavailable_resource_type: 'tower_wagon',
@@ -52,7 +52,7 @@ export const WhatIfScenariosPage: React.FC = () => {
       preset = {
         scenario_id: `whatif_bu_${Date.now().toString(36)}`,
         scenario_type: 'BLOCK_UNAVAILABLE',
-        base_schedule_id: 'current',
+        base_schedule_id: 'run_0192a',
         affected_task_ids: ['TSK-ENG-NDLS-045-01', 'TSK-TRD-NDLS-046-02'],
         new_constraints: {
           unavailable_block_id: 'blk_55a1',

@@ -17,7 +17,7 @@ export const ScenarioConfigForm: React.FC<Props> = ({ onSimulate, isSimulating }
   const [unavailableResource, setUnavailableResource] = useState('track_machine');
   const [affectedTask, setAffectedTask] = useState('TSK-ENG-NDLS-045-01');
   const [extraDuration, setExtraDuration] = useState(30);
-  const [baseScheduleId, setBaseScheduleId] = useState('current');
+  const [baseScheduleId, setBaseScheduleId] = useState('run_0192a');
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -33,7 +33,7 @@ export const ScenarioConfigForm: React.FC<Props> = ({ onSimulate, isSimulating }
         new_constraints = {
           train_delay_minutes: delayMinutes,
           train_id: affectedTrain,
-          section_id: 'sec_12_ndls_agc',
+          section_id: 'NDLS-AGC',
         };
         break;
       case 'BLOCK_UNAVAILABLE':

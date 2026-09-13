@@ -381,6 +381,16 @@ const SEED_WINDOWS: BlockWindowItem[] = [
     status: "AVAILABLE",
     createdAt: new Date().toISOString(),
   },
+  {
+    id: "win_agc_gwl_01",
+    corridorId: "corr_agc_gwl",
+    startAt: new Date(base.getTime() + 22 * 3600 * 1000).toISOString(),
+    endAt: new Date(base.getTime() + 25 * 3600 * 1000).toISOString(),
+    availableMinutes: 180,
+    source: "COA",
+    status: "AVAILABLE",
+    createdAt: new Date().toISOString(),
+  },
 ];
 
 const SEED_RESOURCES: ResourceItem[] = [

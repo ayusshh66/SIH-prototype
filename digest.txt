@@ -16906,9 +16906,14 @@ import { Request, Response, NextFunction } from "express";
 import { db } from "../../db";
 import { assets } from "../../db/schema";
 import { eq } from "drizzle-orm";
+import { dataStore } from "../../services/data/dataStore";
 
 export const getAssets = async (_req: Request, res: Response, next: NextFunction) => {
   try {
+    if (!db) {
+      const allAssets = await dataStore.getAssets();
+      return res.json({ success: true, count: allAssets.length, data: allAssets });
+    }
     const allAssets = await db.select().from(assets);
     res.json({ success: true, count: allAssets.length, data: allAssets });
   } catch (error) {
@@ -16918,6 +16923,13 @@ export const getAssets = async (_req: Request, res: Response, next: NextFunction
 
 export const getAssetById = async (req: Request, res: Response, next: NextFunction) => {
   try {
+    if (!db) {
+      const asset = (await dataStore.getAssets()).find((item) => item.id === req.params.id || item.assetCode === req.params.id);
+      if (!asset) {
+        return res.status(404).json({ success: false, error: "Asset not found" });
+      }
+      return res.json({ success: true, data: asset });
+    }
     const asset = await db.select().from(assets).where(eq(assets.id, req.params.id as any));
     if (!asset.length) {
       return res.status(404).json({ success: false, error: "Asset not found" });
@@ -17010,6 +17022,13 @@ export const getBlocks = async (req: Request, res: Response, next: NextFunction)
 
 export const getBlockById = async (req: Request, res: Response, next: NextFunction) => {
   try {
+    if (!db) {
+      const block = (await dataStore.getBlocks()).find((b) => b.id === req.params.id || b.blockCode === req.params.id);
+      if (!block) {
+        return res.status(404).json({ success: false, error: "Block not found" });
+      }
+      return res.json({ success: true, data: { ...block, tasks: block.tasks || [] } });
+    }
     const block = await db.select().from(blocks).where(eq(blocks.id, req.params.id as any));
     if (!block.length) {
       return res.status(404).json({ success: false, error: "Block not found" });
@@ -17150,9 +17169,14 @@ import { Request, Response, NextFunction } from "express";
 import { db } from "../../db";
 import { corridors, blockWindows } from "../../db/schema";
 import { eq } from "drizzle-orm";
+import { dataStore } from "../../services/data/dataStore";
 
 export const getCorridors = async (_req: Request, res: Response, next: NextFunction) => {
   try {
+    if (!db) {
+      const allCorridors = await dataStore.getCorridors();
+      return res.json({ success: true, count: allCorridors.length, data: allCorridors });
+    }
     const allCorridors = await db.select().from(corridors);
     res.json({ success: true, count: allCorridors.length, data: allCorridors });
   } catch (error) {
@@ -17163,6 +17187,13 @@ export const getCorridors = async (_req: Request, res: Response, next: NextFunct
 export const getCorridorById = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const corridorId = req.params.id as string;
+    if (!db) {
+      const corridor = (await dataStore.getCorridors()).find((item) => item.id === corridorId || item.code === corridorId);
+      if (!corridor) {
+        return res.status(404).json({ success: false, error: "Corridor not found" });
+      }
+      return res.json({ success: true, data: corridor });
+    }
     const corridor = await db.select().from(corridors).where(eq(corridors.id, corridorId as any));
     if (!corridor.length) {
       return res.status(404).json({ success: false, error: "Corridor not found" });
@@ -17176,6 +17207,10 @@ export const getCorridorById = async (req: Request, res: Response, next: NextFun
 export const getCorridorWindows = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const corridorId = req.params.id as string;
+    if (!db) {
+      const windows = (await dataStore.getBlockWindows()).filter((win) => win.corridorId === corridorId);
+      return res.json({ success: true, count: windows.length, data: windows });
+    }
     const windows = await db
       .select()
       .from(blockWindows)
@@ -17481,6 +17516,10 @@ export const getTasks = async (req: Request, res: Response, next: NextFunction) 
 
 export const getAllTasks = async (_req: Request, res: Response, next: NextFunction) => {
   try {
+    if (!db) {
+      const allTasks = await dataStore.getTasks();
+      return res.json({ success: true, count: allTasks.length, data: allTasks });
+    }
     const allTasks = await db.select().from(maintenanceTasks).orderBy(desc(maintenanceTasks.createdAt));
     res.json({ success: true, count: allTasks.length, data: allTasks });
   } catch (error) {
@@ -17490,6 +17529,13 @@ export const getAllTasks = async (_req: Request, res: Response, next: NextFuncti
 
 export const getTaskById = async (req: Request, res: Response, next: NextFunction) => {
   try {
+    if (!db) {
+      const task = await dataStore.getTaskById(req.params.id as string);
+      if (!task) {
+        return res.status(404).json({ success: false, error: "Task not found" });
+      }
+      return res.json({ success: true, data: task });
+    }
     const task = await db.select().from(maintenanceTasks).where(eq(maintenanceTasks.id, req.params.id as any));
     if (!task.length) {
       return res.status(404).json({ success: false, error: "Task not found" });
@@ -18272,9 +18318,14 @@ import { Request, Response, NextFunction } from "express";
 import { db } from "../../db";
 import { trains, trainForecasts, blockWindows } from "../../db/schema";
 import { desc, eq } from "drizzle-orm";
+import { dataStore } from "../../services/data/dataStore";
 
 export const getTrains = async (_req: Request, res: Response, next: NextFunction) => {
   try {
+    if (!db) {
+      const allTrains = await dataStore.getTrains();
+      return res.json({ success: true, count: allTrains.length, data: allTrains });
+    }
     const allTrains = await db.select().from(trains).orderBy(desc(trains.scheduledArrival));
     res.json({ success: true, count: allTrains.length, data: allTrains });
   } catch (error) {
@@ -18312,6 +18363,12 @@ export const createTrainForecast = async (req: Request, res: Response, next: Nex
 export const getBlockWindows = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const corridorId = req.query.corridorId as string;
+    if (!db) {
+      const windows = corridorId
+        ? (await dataStore.getBlockWindows()).filter((w) => w.corridorId === corridorId)
+        : await dataStore.getBlockWindows();
+      return res.json({ success: true, count: windows.length, data: windows });
+    }
     let query = db.select().from(blockWindows).$dynamic();
 
     if (corridorId) {
@@ -20043,6 +20100,16 @@ const SEED_WINDOWS: BlockWindowItem[] = [
     corridorId: "corr_ndls_agc",
     startAt: new Date(base.getTime() + 11 * 3600 * 1000).toISOString(),
     endAt: new Date(base.getTime() + 14 * 3600 * 1000).toISOString(),
+    availableMinutes: 180,
+    source: "COA",
+    status: "AVAILABLE",
+    createdAt: new Date().toISOString(),
+  },
+  {
+    id: "win_agc_gwl_01",
+    corridorId: "corr_agc_gwl",
+    startAt: new Date(base.getTime() + 22 * 3600 * 1000).toISOString(),
+    endAt: new Date(base.getTime() + 25 * 3600 * 1000).toISOString(),
     availableMinutes: 180,
     source: "COA",
     status: "AVAILABLE",

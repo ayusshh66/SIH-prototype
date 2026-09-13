@@ -2,9 +2,14 @@ import { Request, Response, NextFunction } from "express";
 import { db } from "../../db";
 import { corridors, blockWindows } from "../../db/schema";
 import { eq } from "drizzle-orm";
+import { dataStore } from "../../services/data/dataStore";
 
 export const getCorridors = async (_req: Request, res: Response, next: NextFunction) => {
   try {
+    if (!db) {
+      const allCorridors = await dataStore.getCorridors();
+      return res.json({ success: true, count: allCorridors.length, data: allCorridors });
+    }
     const allCorridors = await db.select().from(corridors);
     res.json({ success: true, count: allCorridors.length, data: allCorridors });
   } catch (error) {
@@ -15,6 +20,13 @@ export const getCorridors = async (_req: Request, res: Response, next: NextFunct
 export const getCorridorById = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const corridorId = req.params.id as string;
+    if (!db) {
+      const corridor = (await dataStore.getCorridors()).find((item) => item.id === corridorId || item.code === corridorId);
+      if (!corridor) {
+        return res.status(404).json({ success: false, error: "Corridor not found" });
+      }
+      return res.json({ success: true, data: corridor });
+    }
     const corridor = await db.select().from(corridors).where(eq(corridors.id, corridorId as any));
     if (!corridor.length) {
       return res.status(404).json({ success: false, error: "Corridor not found" });
@@ -28,6 +40,10 @@ export const getCorridorById = async (req: Request, res: Response, next: NextFun
 export const getCorridorWindows = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const corridorId = req.params.id as string;
+    if (!db) {
+      const windows = (await dataStore.getBlockWindows()).filter((win) => win.corridorId === corridorId);
+      return res.json({ success: true, count: windows.length, data: windows });
+    }
     const windows = await db
       .select()
       .from(blockWindows)

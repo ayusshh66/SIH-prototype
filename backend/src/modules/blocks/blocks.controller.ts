@@ -26,6 +26,13 @@ export const getBlocks = async (req: Request, res: Response, next: NextFunction)
 
 export const getBlockById = async (req: Request, res: Response, next: NextFunction) => {
   try {
+    if (!db) {
+      const block = (await dataStore.getBlocks()).find((b) => b.id === req.params.id || b.blockCode === req.params.id);
+      if (!block) {
+        return res.status(404).json({ success: false, error: "Block not found" });
+      }
+      return res.json({ success: true, data: { ...block, tasks: block.tasks || [] } });
+    }
     const block = await db.select().from(blocks).where(eq(blocks.id, req.params.id as any));
     if (!block.length) {
       return res.status(404).json({ success: false, error: "Block not found" });

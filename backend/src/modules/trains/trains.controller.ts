@@ -2,9 +2,14 @@ import { Request, Response, NextFunction } from "express";
 import { db } from "../../db";
 import { trains, trainForecasts, blockWindows } from "../../db/schema";
 import { desc, eq } from "drizzle-orm";
+import { dataStore } from "../../services/data/dataStore";
 
 export const getTrains = async (_req: Request, res: Response, next: NextFunction) => {
   try {
+    if (!db) {
+      const allTrains = await dataStore.getTrains();
+      return res.json({ success: true, count: allTrains.length, data: allTrains });
+    }
     const allTrains = await db.select().from(trains).orderBy(desc(trains.scheduledArrival));
     res.json({ success: true, count: allTrains.length, data: allTrains });
   } catch (error) {
@@ -42,6 +47,12 @@ export const createTrainForecast = async (req: Request, res: Response, next: Nex
 export const getBlockWindows = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const corridorId = req.query.corridorId as string;
+    if (!db) {
+      const windows = corridorId
+        ? (await dataStore.getBlockWindows()).filter((w) => w.corridorId === corridorId)
+        : await dataStore.getBlockWindows();
+      return res.json({ success: true, count: windows.length, data: windows });
+    }
     let query = db.select().from(blockWindows).$dynamic();
 
     if (corridorId) {

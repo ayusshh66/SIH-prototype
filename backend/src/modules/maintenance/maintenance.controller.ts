@@ -27,6 +27,10 @@ export const getTasks = async (req: Request, res: Response, next: NextFunction) 
 
 export const getAllTasks = async (_req: Request, res: Response, next: NextFunction) => {
   try {
+    if (!db) {
+      const allTasks = await dataStore.getTasks();
+      return res.json({ success: true, count: allTasks.length, data: allTasks });
+    }
     const allTasks = await db.select().from(maintenanceTasks).orderBy(desc(maintenanceTasks.createdAt));
     res.json({ success: true, count: allTasks.length, data: allTasks });
   } catch (error) {
@@ -36,6 +40,13 @@ export const getAllTasks = async (_req: Request, res: Response, next: NextFuncti
 
 export const getTaskById = async (req: Request, res: Response, next: NextFunction) => {
   try {
+    if (!db) {
+      const task = await dataStore.getTaskById(req.params.id as string);
+      if (!task) {
+        return res.status(404).json({ success: false, error: "Task not found" });
+      }
+      return res.json({ success: true, data: task });
+    }
     const task = await db.select().from(maintenanceTasks).where(eq(maintenanceTasks.id, req.params.id as any));
     if (!task.length) {
       return res.status(404).json({ success: false, error: "Task not found" });

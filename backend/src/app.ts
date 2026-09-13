@@ -17,14 +17,18 @@ app.use(helmet());
 app.use(cors());
 app.use(express.json());
 
+// Root health & info
 app.get("/", (_req, res) => {
   res.json({
     name: "Automatic Railway Block Planning API",
     version: "1.0.0",
     status: "running",
+    docs: "/README.md",
+    timestamp: new Date().toISOString(),
   });
 });
 
+// Register module routes
 app.use("/api/health", healthRoutes);
 app.use("/api/assets", assetRoutes);
 app.use("/api/corridors", corridorRoutes);
@@ -34,6 +38,15 @@ app.use("/api/blocks", blockRoutes);
 app.use("/api/planning", planningRoutes);
 app.use("/api/integration", integrationRoutes);
 
+// Catch-all 404 handler for unknown routes
+app.use((_req, res) => {
+  res.status(404).json({
+    success: false,
+    error: "Route not found",
+  });
+});
+
+// Centralized error handler
 app.use(errorHandler);
 
 export default app;

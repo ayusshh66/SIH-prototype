@@ -1,0 +1,118 @@
+import { spawn } from "child_process";
+import path from "path";
+
+export interface AiBridgeError {
+  status: "FAILED";
+  error: string;
+  traceback?: string;
+}
+
+/**
+ * Invokes the Python AI bridge CLI module with a specified command and input payload.
+ *
+ * @param command Bridge command (e.g. "plan", "criticality", "shadow_blocks", "what_if", "emergency", "health")
+ * @param payload JSON-serializable input dictionary or list
+ * @param timeoutMs Maximum execution time in milliseconds (default: 20000ms)
+ */
+export async function invokeAiBridge<TInput = any, TOutput = any>(
+  command: string,
+  payload: TInput,
+  timeoutMs = 20000
+): Promise<TOutput> {
+  return new Promise<TOutput>((resolve, reject) => {
+    const pythonBin = process.env.PYTHON_BIN || "python";
+    // Target project root (where ai/ package resides)
+    const rootDir = path.resolve(__dirname, "../../../../");
+
+    const proc = spawn(pythonBin, ["-m", "ai.bridge", command], {
+      cwd: rootDir,
+      env: {
+        ...process.env,
+        PYTHONPATH: rootDir,
+        PYTHONUNBUFFERED: "1",
+      },
+    });
+
+    let stdoutData = "";
+    let stderrData = "";
+    let isSettled = false;
+
+    const timer = setTimeout(() => {
+      if (!isSettled) {
+        isSettled = true;
+        proc.kill();
+        reject(new Error(`AI bridge command '${command}' timed out after ${timeoutMs}ms.`));
+      }
+    }, timeoutMs);
+
+    proc.stdout.on("data", (chunk) => {
+      stdoutData += chunk.toString("utf-8");
+    });
+
+    proc.stderr.on("data", (chunk) => {
+      stderrData += chunk.toString("utf-8");
+    });
+
+    proc.on("error", (err) => {
+      if (!isSettled) {
+        isSettled = true;
+        clearTimeout(timer);
+        reject(new Error(`Failed to spawn Python process (${pythonBin}): ${err.message}`));
+      }
+    });
+
+    proc.on("close", (code) => {
+      if (isSettled) return;
+      isSettled = true;
+      clearTimeout(timer);
+
+      if (code !== 0) {
+        // Attempt to parse JSON error from stderr or stdout
+        try {
+          const parsedErr = JSON.parse(stderrData || stdoutData);
+          if (parsedErr && parsedErr.error) {
+            return reject(new Error(`AI Engine Error [${command}]: ${parsedErr.error}`));
+          }
+        } catch {
+          // fall through
+        }
+        return reject(
+          new Error(
+            `AI bridge command '${command}' exited with code ${code}. Stderr: ${
+              stderrData || "No stderr output"
+            }`
+          )
+        );
+      }
+
+      try {
+        const parsed = JSON.parse(stdoutData.trim());
+        resolve(parsed);
+      } catch (err: any) {
+        reject(
+          new Error(
+            `Failed to parse JSON response from AI bridge '${command}': ${err.message}. Raw output: ${stdoutData.slice(
+              0,
+              500
+            )}`
+          )
+        );
+      }
+    });
+
+    // Write input payload to stdin and close stdin stream
+    try {
+      const inputStr = JSON.stringify(payload ?? {});
+      proc.stdin.write(inputStr, "utf-8", () => {
+        proc.stdin.end();
+      });
+    } catch (err: any) {
+      if (!isSettled) {
+        isSettled = true;
+        clearTimeout(timer);
+        proc.kill();
+        reject(new Error(`Failed to serialize input for AI bridge '${command}': ${err.message}`));
+      }
+    }
+  });
+}

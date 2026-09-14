@@ -1,5 +1,6 @@
 import React from 'react';
 import { motion } from 'framer-motion';
+import { getBlockJpoStatus } from './jpoPlanning';
 
 export const BlockGanttBar: React.FC<{ block: any; onClick: () => void }> = ({ block, onClick }) => {
   const startDate = new Date(block.startAt);
@@ -14,6 +15,8 @@ export const BlockGanttBar: React.FC<{ block: any; onClick: () => void }> = ({ b
   const dept = (block.departments && block.departments[0]) || 'ENG';
   const hasConflict = Boolean(block.conflict || block.hasConflict || block.status === 'CONFLICT');
   const isShadow = block.isShadowBlock || (block.departments && block.departments.length > 1);
+  const jpoStatus = getBlockJpoStatus(block);
+  const isJpoViolation = jpoStatus === 'JPO_VIOLATION';
 
   // Department color styles
   let deptBg = 'bg-dept-engineering-bg text-dept-engineering border-dept-engineering/40';
@@ -60,6 +63,15 @@ export const BlockGanttBar: React.FC<{ block: any; onClick: () => void }> = ({ b
             SHADOW
           </span>
         )}
+        <span
+          className={`text-[9px] font-mono px-1 py-0.2 rounded-sm uppercase ${
+            isJpoViolation
+              ? 'bg-crit-p1 text-white'
+              : 'bg-status-feasible text-white'
+          }`}
+        >
+          {jpoStatus}
+        </span>
       </div>
 
       <span className="font-mono text-micro text-content-tertiary tabular-nums hidden sm:inline">

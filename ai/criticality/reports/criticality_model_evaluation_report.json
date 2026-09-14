@@ -1,0 +1,200 @@
+{
+  "dataset_path": "C:\\Users\\sethk\\SIH-prototype\\ai\\data\\datasets\\criticality_v1_seed42.csv",
+  "model_artifact_path": "C:\\Users\\sethk\\SIH-prototype\\ai\\criticality\\artifacts\\gradientboostingregressor_criticality_gbr_v1.joblib",
+  "model_name": "GradientBoostingRegressor",
+  "model_version": "criticality_gbr_v1",
+  "seed": 42,
+  "train_sample_count": 560,
+  "validation_sample_count": 120,
+  "test_sample_count": 120,
+  "metrics": {
+    "mae": 0.004601900291688874,
+    "rmse": 0.005832045952280934,
+    "r2": 0.9871766932052527
+  },
+  "ml_vs_rule_based": {
+    "average_absolute_difference": 0.09280345026449645
+  },
+  "feature_importance": [
+    {
+      "feature": "severity",
+      "importance": 0.7327819133343477
+    },
+    {
+      "feature": "safety_risk",
+      "importance": 0.11570275528837255
+    },
+    {
+      "feature": "urgency",
+      "importance": 0.09938196094107328
+    },
+    {
+      "feature": "deadline_proximity",
+      "importance": 0.03271987364193866
+    },
+    {
+      "feature": "traffic_density",
+      "importance": 0.016484116142852254
+    },
+    {
+      "feature": "speed_class",
+      "importance": 0.0029293806514154503
+    }
+  ],
+  "top_3_important_features": [
+    {
+      "feature": "severity",
+      "importance": 0.7327819133343477
+    },
+    {
+      "feature": "safety_risk",
+      "importance": 0.11570275528837255
+    },
+    {
+      "feature": "urgency",
+      "importance": 0.09938196094107328
+    }
+  ],
+  "representative_examples": [
+    {
+      "entity_id": "usfd_073_v4",
+      "features": {
+        "severity": 0.15,
+        "urgency": 0.8149,
+        "safety_risk": 0.3925,
+        "traffic_density": 0.5864,
+        "speed_class": 1.0,
+        "deadline_proximity": 0.0
+      },
+      "rule_based_score": 0.497996,
+      "ml_prediction": 0.425335,
+      "absolute_difference": 0.072661
+    },
+    {
+      "entity_id": "usfd_073_v7",
+      "features": {
+        "severity": 0.15,
+        "urgency": 0.9255,
+        "safety_risk": 0.3786,
+        "traffic_density": 0.6746,
+        "speed_class": 1.0,
+        "deadline_proximity": 0.0
+      },
+      "rule_based_score": 0.529854,
+      "ml_prediction": 0.447634,
+      "absolute_difference": 0.08222
+    },
+    {
+      "entity_id": "usfd_069_v4",
+      "features": {
+        "severity": 0.75,
+        "urgency": 0.7155,
+        "safety_risk": 0.4205,
+        "traffic_density": 0.6278,
+        "speed_class": 0.75,
+        "deadline_proximity": 0.4
+      },
+      "rule_based_score": 0.519256,
+      "ml_prediction": 0.435199,
+      "absolute_difference": 0.084057
+    },
+    {
+      "entity_id": "usfd_074_v5",
+      "features": {
+        "severity": 0.75,
+        "urgency": 1.0,
+        "safety_risk": 0.6817,
+        "traffic_density": 0.5307,
+        "speed_class": 1.0,
+        "deadline_proximity": 0.1
+      },
+      "rule_based_score": 0.603658,
+      "ml_prediction": 0.463186,
+      "absolute_difference": 0.140472
+    },
+    {
+      "entity_id": "usfd_071_v6",
+      "features": {
+        "severity": 0.15,
+        "urgency": 0.7021,
+        "safety_risk": 0.7938,
+        "traffic_density": 0.6681,
+        "speed_class": 1.0,
+        "deadline_proximity": 0.4
+      },
+      "rule_based_score": 0.60327,
+      "ml_prediction": 0.465441,
+      "absolute_difference": 0.137829
+    },
+    {
+      "entity_id": "usfd_075_v4",
+      "features": {
+        "severity": 0.75,
+        "urgency": 0.8826,
+        "safety_risk": 0.5841,
+        "traffic_density": 0.6481,
+        "speed_class": 1.0,
+        "deadline_proximity": 0.4
+      },
+      "rule_based_score": 0.594446,
+      "ml_prediction": 0.470368,
+      "absolute_difference": 0.124078
+    },
+    {
+      "entity_id": "usfd_076_v3",
+      "features": {
+        "severity": 0.15,
+        "urgency": 1.0,
+        "safety_risk": 0.7688,
+        "traffic_density": 0.6039,
+        "speed_class": 1.0,
+        "deadline_proximity": 0.4
+      },
+      "rule_based_score": 0.655604,
+      "ml_prediction": 0.503974,
+      "absolute_difference": 0.15163
+    },
+    {
+      "entity_id": "usfd_070_v0",
+      "features": {
+        "severity": 0.45,
+        "urgency": 0.9822,
+        "safety_risk": 0.3322,
+        "traffic_density": 0.5623,
+        "speed_class": 0.75,
+        "deadline_proximity": 0.0
+      },
+      "rule_based_score": 0.518644,
+      "ml_prediction": 0.444491,
+      "absolute_difference": 0.074153
+    },
+    {
+      "entity_id": "usfd_073_v0",
+      "features": {
+        "severity": 0.15,
+        "urgency": 0.7099,
+        "safety_risk": 0.4036,
+        "traffic_density": 0.6596,
+        "speed_class": 0.75,
+        "deadline_proximity": 0.0
+      },
+      "rule_based_score": 0.486122,
+      "ml_prediction": 0.419866,
+      "absolute_difference": 0.066256
+    },
+    {
+      "entity_id": "usfd_079_v7",
+      "features": {
+        "severity": 1.0,
+        "urgency": 0.9518,
+        "safety_risk": 0.9991,
+        "traffic_density": 0.8163,
+        "speed_class": 1.0,
+        "deadline_proximity": 0.4
+      },
+      "rule_based_score": 0.721154,
+      "ml_prediction": 0.522697,
+      "absolute_difference": 0.198457
+    }
+  ]
+}

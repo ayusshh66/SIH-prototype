@@ -24,6 +24,7 @@ import os
 import sys
 import unittest
 from datetime import datetime, timedelta, timezone
+from pathlib import Path
 
 # Ensure project root is on sys.path
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", ".."))
@@ -400,6 +401,141 @@ class TestBatchScoring(unittest.TestCase):
         self.assertEqual(len(results), 10)
         for r in results:
             self.assertIn("score", r)
+
+
+class TestModelBasedIntegration(unittest.TestCase):
+    """Verify the optional model-based path is safe and contract-compatible."""
+
+    def test_model_based_returns_valid_score(self):
+        engine = CriticalityEngine()
+        result = engine.score({
+            "entity_id": "model_valid",
+            "severity": "CRITICAL",
+            "urgency": 0.95,
+            "safety_risk": 0.97,
+            "traffic_density": 0.85,
+            "speed_class": "EXPRESS",
+            "deadline": "2026-11-03T18:00:00Z",
+        }, scoring_mode="MODEL_BASED")
+        self.assertEqual(result["scoring_mode"], "MODEL_BASED")
+        self.assertIn(result["priority_class"], ("P1", "P2", "P3", "P4"))
+        self.assertGreaterEqual(result["score"], 0.0)
+        self.assertLessEqual(result["score"], 1.0)
+
+    def test_model_based_returns_model_metadata(self):
+        engine = CriticalityEngine()
+        result = engine.score({
+            "entity_id": "model_metadata",
+            "severity": "SEVERE",
+            "urgency": 0.80,
+            "safety_risk": 0.76,
+            "traffic_density": 0.70,
+            "speed_class": "HIGH",
+            "deadline": "2026-11-03T18:00:00Z",
+        }, scoring_mode="MODEL_BASED")
+        self.assertIn("model_metadata", result)
+        self.assertEqual(result["model_metadata"]["model_version"], "criticality_gbr_v1")
+        self.assertIn("top_contributing_features", result["model_metadata"])
+
+    def test_model_based_contributing_features_are_valid(self):
+        engine = CriticalityEngine()
+        result = engine.score({
+            "entity_id": "model_features",
+            "severity": "CRITICAL",
+            "urgency": 0.90,
+            "safety_risk": 0.88,
+            "traffic_density": 0.80,
+            "speed_class": "EXPRESS",
+            "deadline": "2026-11-03T14:00:00Z",
+        }, scoring_mode="MODEL_BASED")
+        top = result["model_metadata"]["top_contributing_features"]
+        self.assertEqual(len(top), 3)
+        for item in top:
+            self.assertIn("feature", item)
+            self.assertIn("importance", item)
+            self.assertGreaterEqual(item["importance"], 0.0)
+
+    def test_model_based_priority_mapping_remains_correct(self):
+        engine = CriticalityEngine()
+        result = engine.score({
+            "entity_id": "model_priority",
+            "severity": "CRITICAL",
+            "urgency": 0.99,
+            "safety_risk": 0.99,
+            "traffic_density": 0.95,
+            "speed_class": "EXPRESS",
+            "deadline": "2026-11-03T12:00:00Z",
+        }, scoring_mode="MODEL_BASED")
+        self.assertEqual(result["priority_class"], engine._priority_class(result["score"]))
+        self.assertEqual(result["model_metadata"]["priority_level"], result["priority_class"])
+
+    def test_score_unchanged_by_explanation_generation(self):
+        engine = CriticalityEngine()
+        result = engine.score({
+            "entity_id": "model_explain",
+            "severity": "MODERATE",
+            "urgency": 0.65,
+            "safety_risk": 0.67,
+            "traffic_density": 0.60,
+            "speed_class": "MEDIUM",
+            "deadline": "2026-11-03T18:00:00Z",
+        }, scoring_mode="MODEL_BASED")
+        self.assertEqual(result["score"], result["model_metadata"]["predicted_score"])
+
+    def test_rule_based_behavior_remains_unchanged(self):
+        engine = CriticalityEngine()
+        base = {
+            "entity_id": "rule_check",
+            "severity": "SEVERE",
+            "urgency": 0.70,
+            "safety_risk": 0.80,
+            "traffic_density": 0.60,
+            "speed_class": "HIGH",
+            "deadline": "2026-11-04T12:00:00Z",
+        }
+        rule_result = engine.score(base)
+        explicit_rule = engine.score(base, scoring_mode="RULE_BASED")
+        self.assertEqual(rule_result["score"], explicit_rule["score"])
+        self.assertEqual(rule_result["scoring_mode"], "RULE_BASED")
+
+    def test_model_based_prediction_is_bounded(self):
+        engine = CriticalityEngine()
+        result = engine.score({
+            "entity_id": "model_bounded",
+            "severity": "MODERATE",
+            "urgency": 0.50,
+            "safety_risk": 0.52,
+            "traffic_density": 0.48,
+            "speed_class": "MEDIUM",
+            "deadline": None,
+        }, scoring_mode="MODEL_BASED")
+        self.assertGreaterEqual(result["score"], 0.0)
+        self.assertLessEqual(result["score"], 1.0)
+
+    def test_missing_model_triggers_rule_based_fallback(self):
+        engine = CriticalityEngine()
+        engine.model_path = Path("C:/does/not/exist/gradientboostingregressor_missing.joblib")
+        result = engine.score({
+            "entity_id": "fallback_model",
+            "severity": "CRITICAL",
+            "urgency": 0.90,
+            "safety_risk": 0.90,
+            "traffic_density": 0.80,
+            "speed_class": "EXPRESS",
+            "deadline": None,
+        }, scoring_mode="MODEL_BASED")
+        self.assertEqual(result["scoring_mode"], "RULE_BASED")
+        self.assertIn(result["priority_class"], ("P1", "P2", "P3", "P4"))
+
+    def test_missing_feature_data_triggers_safe_fallback(self):
+        engine = CriticalityEngine()
+        result = engine.score({
+            "entity_id": "fallback_missing_features",
+            "severity": "CRITICAL",
+            "urgency": 0.90,
+        }, scoring_mode="MODEL_BASED")
+        self.assertEqual(result["scoring_mode"], "RULE_BASED")
+        self.assertIn(result["priority_class"], ("P1", "P2", "P3", "P4"))
 
 
 class TestIntegrationWithSyntheticData(unittest.TestCase):

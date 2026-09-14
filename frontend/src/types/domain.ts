@@ -46,7 +46,8 @@ export type TaskType =
 
 export type TrainType = 'PASSENGER' | 'EXPRESS' | 'GOODS' | 'SPECIAL';
 export type SpeedClass = 'LOW' | 'MEDIUM' | 'HIGH' | 'EXPRESS';
-export type PlanningHorizon = 'WEEKLY' | 'MONTHLY';
+export type PlanningHorizon = 'WEEKLY' | 'MONTHLY' | 'STRATEGIC_26_WEEK';
+export type JpoStatus = 'JPO_COMPLIANT' | 'JPO_VIOLATION';
 
 export interface Corridor {
   id: string;

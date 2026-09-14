@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { Play, RefreshCw, CheckCircle, Clock, X, Filter } from 'lucide-react';
 import { getBlocks, runOptimization } from '../../api/client';
 import { SectionHeader } from '../../components/domain/SectionHeader';
@@ -7,6 +7,7 @@ import { BlockDetailDrawer } from './BlockDetailDrawer';
 import { Railway3DViewPlaceholder } from '../../components/domain/Railway3DViewPlaceholder';
 import { Button } from '../../components/common/Button';
 import type { OptimizationResult } from '../../types/api';
+import { DEFAULT_PLANNING_HORIZON_WEEKS, getBlockJpoStatus, getStrategicPlanningWindow } from './jpoPlanning';
 
 export const PlanningSchedulePage: React.FC = () => {
   const [blocks, setBlocks] = useState<any[]>([]);
@@ -45,6 +46,18 @@ export const PlanningSchedulePage: React.FC = () => {
   };
 
   const selectedBlock = blocks.find((b) => b.id === selectedBlockId);
+
+  const jpoSummary = useMemo(() => {
+    const counts = { compliant: 0, violation: 0 };
+    blocks.forEach((block) => {
+      const status = getBlockJpoStatus(block);
+      if (status === 'JPO_VIOLATION') counts.violation += 1;
+      else counts.compliant += 1;
+    });
+    return counts;
+  }, [blocks]);
+
+  const strategicWindow = useMemo(() => getStrategicPlanningWindow(), []);
 
   return (
     <div className="space-y-6">
@@ -161,11 +174,73 @@ export const PlanningSchedulePage: React.FC = () => {
         </div>
       )}
 
+      <div className="grid gap-4 lg:grid-cols-[1.2fr_0.8fr]">
+        <div className="bg-surface border border-border-hairline rounded-md p-4">
+          <div className="flex items-center justify-between gap-3 pb-3 border-b border-border-hairline mb-3">
+            <div>
+              <div className="font-mono text-micro uppercase tracking-wider text-content-tertiary">JPO compliance</div>
+              <div className="font-semibold text-content-primary">Traffic-block advance notice status</div>
+            </div>
+            <div className="flex items-center gap-2 text-small font-mono">
+              <span className="px-2 py-1 rounded-sm bg-status-feasible text-white">{jpoSummary.compliant} compliant</span>
+              <span className="px-2 py-1 rounded-sm bg-crit-p1 text-white">{jpoSummary.violation} violations</span>
+            </div>
+          </div>
+          <div className="text-small font-mono text-content-secondary">
+            JPO rule: a block with <span className="font-semibold text-content-primary">requiresTrafficBlock = true</span> is a violation when it starts within {DEFAULT_PLANNING_HORIZON_WEEKS} weeks ({70} days) of today.
+          </div>
+        </div>
+
+        <div className="bg-surface border border-border-hairline rounded-md p-4">
+          <div className="font-mono text-micro uppercase tracking-wider text-content-tertiary mb-2">Strategic horizon</div>
+          <div className="font-semibold text-content-primary">26-week rolling view</div>
+          <div className="mt-2 text-small font-mono text-content-secondary">Rolling window: {strategicWindow.length} weeks</div>
+        </div>
+      </div>
+
       {/* Flagship Schedule Timeline Canvas */}
       <ScheduleTimelineCanvas
         blocks={blocks}
         onBlockClick={setSelectedBlockId}
       />
+
+      <div className="bg-surface border border-border-hairline rounded-md p-4">
+        <div className="flex items-center justify-between gap-3 pb-3 border-b border-border-hairline mb-3">
+          <div>
+            <div className="font-mono text-micro uppercase tracking-wider text-content-tertiary">Strategic planning view</div>
+            <div className="font-semibold text-content-primary">Rolling 26-week horizon</div>
+          </div>
+          <span className="text-micro font-mono px-2 py-1 rounded-sm bg-accent-500/15 border border-accent-500/30 text-accent-400">
+            {DEFAULT_PLANNING_HORIZON_WEEKS}-week operational focus
+          </span>
+        </div>
+
+        <div className="grid grid-cols-2 md:grid-cols-4 xl:grid-cols-7 gap-2">
+          {strategicWindow.map((week: { label: string; start: Date; end: Date }) => {
+            const weekBlocks = blocks.filter((block) => {
+              if (!block.startAt) return false;
+              const blockDate = new Date(block.startAt);
+              return blockDate >= new Date(week.start) && blockDate <= new Date(week.end);
+            });
+
+            return (
+              <div key={week.label} className="border border-border-hairline rounded-sm bg-surface-sunken p-2 min-h-[120px]">
+                <div className="font-mono text-micro text-content-tertiary uppercase tracking-wider">{week.label}</div>
+                <div className="mt-2 text-micro font-mono text-content-secondary">
+                  {weekBlocks.length ? `${weekBlocks.length} blocks` : 'No blocks'}
+                </div>
+                <div className="mt-2 space-y-1">
+                  {weekBlocks.slice(0, 2).map((block) => (
+                    <div key={block.id} className="text-[10px] font-mono rounded-sm bg-surface px-1.5 py-0.5 truncate text-content-primary">
+                      {block.blockCode}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </div>
 
       {/* Corridor Digital Twin Schematic */}
       <Railway3DViewPlaceholder

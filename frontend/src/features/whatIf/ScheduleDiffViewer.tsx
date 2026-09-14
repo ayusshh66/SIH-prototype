@@ -3,8 +3,9 @@ import { motion } from 'framer-motion';
 import { Card } from '../../components/common/Card';
 import { Badge } from '../../components/common/Badge';
 import { Button } from '../../components/common/Button';
-import { CheckCircle2, AlertTriangle, ArrowUpRight, ArrowDownRight, RefreshCw, Layers, Clock, Zap } from 'lucide-react';
+import { CheckCircle2, AlertTriangle, ArrowUpRight, ArrowDownRight, RefreshCw, Layers, Clock, Zap, TrainFront, MapPinned, MessageSquareText } from 'lucide-react';
 import type { WhatIfResult } from '../../api/client';
+import { buildDisruptionTransparency } from './disruptionTransparency';
 
 interface Props {
   result: WhatIfResult;
@@ -24,6 +25,7 @@ export const ScheduleDiffViewer: React.FC<Props> = ({ result, onReset }) => {
   const changedBlocks = result.changed_blocks ?? [];
   const affectedTrains = result.affected_trains ?? [];
   const affectedTasks = result.affected_tasks ?? [];
+  const disruption = buildDisruptionTransparency(result);
 
   return (
     <Card className="h-full flex flex-col space-y-6">
@@ -161,6 +163,67 @@ export const ScheduleDiffViewer: React.FC<Props> = ({ result, onReset }) => {
             </div>
           ))}
         </div>
+      </div>
+
+      <div className="p-4 bg-surface-sunken border border-border-hairline rounded-sm font-mono text-small">
+        <div className="flex items-center justify-between gap-2 pb-3 border-b border-border-hairline mb-3">
+          <div className="flex items-center gap-2 text-content-primary font-semibold uppercase tracking-wider text-micro">
+            <TrainFront size={14} className="text-accent-400" />
+            Passenger disruption transparency
+          </div>
+          <span className="px-2 py-0.5 rounded-sm bg-accent-500/15 border border-accent-500/30 text-accent-400 text-micro">
+            {disruption.delayLabel}
+          </span>
+        </div>
+
+        {disruption.status === 'unavailable' && (
+          <div className="text-content-secondary">Impact data unavailable</div>
+        )}
+
+        {disruption.status === 'none' && (
+          <div className="space-y-2">
+            <div className="text-content-primary font-semibold">No train disruption detected</div>
+            <div className="text-content-secondary">No affected train movements or delay estimates were reported for this block.</div>
+          </div>
+        )}
+
+        {disruption.status === 'affected' && (
+          <div className="space-y-3">
+            <div className="grid gap-2 md:grid-cols-2">
+              <div className="p-2.5 bg-surface border border-border-hairline rounded-sm">
+                <div className="text-micro text-content-tertiary uppercase mb-1">Maintenance Block</div>
+                <div className="font-semibold text-content-primary">{disruption.blockLabel}</div>
+              </div>
+              <div className="p-2.5 bg-surface border border-border-hairline rounded-sm">
+                <div className="text-micro text-content-tertiary uppercase mb-1">Affected Trains</div>
+                <div className="font-semibold text-content-primary">
+                  {disruption.affectedTrains.length ? disruption.affectedTrains.join(', ') : 'None'}
+                </div>
+              </div>
+              <div className="p-2.5 bg-surface border border-border-hairline rounded-sm">
+                <div className="text-micro text-content-tertiary uppercase mb-1">Estimated Delay</div>
+                <div className="font-semibold text-crit-p2 tabular-nums">{disruption.delayMinutes} minutes</div>
+              </div>
+              <div className="p-2.5 bg-surface border border-border-hairline rounded-sm">
+                <div className="text-micro text-content-tertiary uppercase mb-1">Section / Time</div>
+                <div className="font-semibold text-content-primary">{disruption.sectionLabel} · {disruption.timeLabel}</div>
+              </div>
+            </div>
+
+            <div className="p-3 bg-surface border border-border-hairline rounded-sm">
+              <div className="flex items-center gap-2 text-micro uppercase tracking-wider text-content-tertiary mb-1">
+                <MessageSquareText size={12} />
+                Reason
+              </div>
+              <div className="text-content-secondary leading-relaxed">{disruption.reason}</div>
+            </div>
+
+            <div className="p-3 rounded-sm bg-accent-500/10 border border-accent-500/20 text-content-primary">
+              <div className="text-micro uppercase tracking-wider text-content-tertiary mb-1">NTES-style operational message</div>
+              <div className="text-small leading-relaxed">{disruption.message}</div>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Affected Entities Badges */}

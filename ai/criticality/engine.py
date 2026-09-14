@@ -53,13 +53,20 @@ Usage
 from __future__ import annotations
 
 from datetime import datetime, timezone
+from pathlib import Path
 from typing import Any
+
+import joblib
+
+from ai.criticality.weather_risk import SyntheticWeatherSource, _as_weather_signal
 
 # ──────────────────────────────────────────────────────────────────────
 # Constants
 # ──────────────────────────────────────────────────────────────────────
 
 MODEL_VERSION = "criticality_v1_rule_2026Q4"
+MODEL_BASED_VERSION = "criticality_gbr_v1"
+MODEL_ARTIFACT_PATH = Path(__file__).resolve().parent / "artifacts" / "gradientboostingregressor_criticality_gbr_v1.joblib"
 
 # Weights — sum to 1.0
 # User requirement: NO department factor.  The 6 features from the contract
@@ -122,27 +129,245 @@ class CriticalityEngine:
     traceable to weighted feature values — no LLM or ML model involved.
     """
 
-    def __init__(self, weights: dict[str, float] | None = None):
+    def __init__(self, weights: dict[str, float] | None = None, weather_source: Any | None = None):
         """
         Parameters
         ----------
         weights : dict, optional
             Override the default weight vector.  Keys must match the six
             feature names.  Values should sum to 1.0.
+        weather_source : object, optional
+            Small adapter that resolves the weather_context field without
+            changing the core criticality scoring logic.
         """
         self.weights = dict(WEIGHTS)
         if weights is not None:
             for k in WEIGHTS:
                 if k in weights:
                     self.weights[k] = weights[k]
+        self.model_path = MODEL_ARTIFACT_PATH
+        self._model_cache: Any | None = None
+        self.weather_source = weather_source or SyntheticWeatherSource()
 
     # ── Public API ────────────────────────────────────────────────
+
+    def _resolve_scoring_mode(self, inputs: dict[str, Any], scoring_mode: str | None) -> str:
+        if scoring_mode is not None:
+            return str(scoring_mode).upper()
+        if isinstance(inputs, dict):
+            raw_mode = inputs.get("scoring_mode")
+            if raw_mode is not None:
+                return str(raw_mode).upper()
+        return "RULE_BASED"
+
+    def _load_model(self) -> Any | None:
+        if self._model_cache is not None:
+            return self._model_cache
+        try:
+            if not self.model_path.exists():
+                return None
+            payload = joblib.load(self.model_path)
+            model = payload.get("model") if isinstance(payload, dict) else payload
+            if model is None:
+                return None
+            self._model_cache = model
+            return model
+        except Exception:
+            self._model_cache = None
+            return None
+
+    def _model_feature_vector(self, inputs: dict[str, Any], reference_time: datetime) -> dict[str, Any] | None:
+        if not isinstance(inputs, dict):
+            return None
+        required = ("severity", "urgency", "safety_risk", "traffic_density", "speed_class")
+        if any(key not in inputs or inputs.get(key) is None for key in required):
+            return None
+
+        sev_raw = inputs.get("severity")
+        urg_raw = inputs.get("urgency")
+        saf_raw = inputs.get("safety_risk")
+        trf_raw = inputs.get("traffic_density")
+        spd_raw = inputs.get("speed_class")
+        ddl_raw = inputs.get("deadline")
+
+        sev_num = self._safe_severity(sev_raw)
+        urg_num = self._safe_numeric(urg_raw, default=0.5)
+        saf_num = self._safe_numeric(saf_raw, default=0.5)
+        trf_num = self._safe_numeric(trf_raw, default=0.5)
+        spd_num = self._safe_speed_class(spd_raw)
+        ddl_num = self._safe_deadline_proximity(ddl_raw, reference_time)
+
+        return {
+            "entity_id": str(inputs.get("entity_id", "unknown")),
+            "severity": sev_num,
+            "urgency": urg_num,
+            "safety_risk": saf_num,
+            "traffic_density": trf_num,
+            "speed_class": spd_num,
+            "deadline_proximity": ddl_num,
+            "sev_raw": sev_raw,
+            "spd_raw": spd_raw,
+            "ddl_raw": ddl_raw,
+        }
+
+    def _feature_importance_summary(self, model: Any) -> list[dict[str, Any]]:
+        if model is None:
+            return []
+        try:
+            importances = getattr(model, "feature_importances_", None)
+        except Exception:
+            importances = None
+        if importances is None:
+            return []
+        pairs = [
+            {"feature": name, "importance": float(value)}
+            for name, value in zip(("severity", "urgency", "safety_risk", "traffic_density", "speed_class", "deadline_proximity"), importances)
+        ]
+        return sorted(pairs, key=lambda item: item["importance"], reverse=True)
+
+    def _model_explainability(self, model: Any, *, score: float, priority_class: str) -> dict[str, Any]:
+        if model is None:
+            return {}
+        feature_importance = self._feature_importance_summary(model)
+        top_contributing_features = feature_importance[:3]
+        return {
+            "model_metadata": {
+                "model_name": model.__class__.__name__,
+                "model_version": MODEL_BASED_VERSION,
+                "feature_names": ["severity", "urgency", "safety_risk", "traffic_density", "speed_class", "deadline_proximity"],
+                "predicted_score": float(score),
+                "priority_level": priority_class,
+                "top_contributing_features": top_contributing_features,
+            }
+        }
+
+    def _model_based_score(self, inputs: dict[str, Any], *, reference_time: datetime) -> dict[str, Any] | None:
+        feature_map = self._model_feature_vector(inputs, reference_time)
+        if feature_map is None:
+            return None
+        model = self._load_model()
+        if model is None:
+            return None
+
+        try:
+            feature_vector = [
+                feature_map["severity"],
+                feature_map["urgency"],
+                feature_map["safety_risk"],
+                feature_map["traffic_density"],
+                feature_map["speed_class"],
+                feature_map["deadline_proximity"],
+            ]
+            prediction = float(model.predict([feature_vector])[0])
+            if prediction != prediction:
+                return None
+            score = self._clamp(prediction)
+        except Exception:
+            return None
+
+        sev_raw = feature_map["sev_raw"]
+        spd_raw = feature_map["spd_raw"]
+        ddl_raw = feature_map["ddl_raw"]
+        urg_num = feature_map["urgency"]
+        saf_num = feature_map["safety_risk"]
+        trf_num = feature_map["traffic_density"]
+        ddl_num = feature_map["deadline_proximity"]
+
+        w = self.weights
+        contributions = {
+            "severity": round(w["severity"] * feature_map["severity"], 4),
+            "urgency": round(w["urgency"] * urg_num, 4),
+            "safety_risk": round(w["safety_risk"] * saf_num, 4),
+            "traffic_density": round(w["traffic_density"] * trf_num, 4),
+            "speed_class": round(w["speed_class"] * feature_map["speed_class"], 4),
+            "deadline_proximity": round(w["deadline_proximity"] * ddl_num, 4),
+        }
+        priority_class = self._priority_class(score)
+        risk_level = self._risk_level(score)
+        confidence = self._confidence(inputs)
+        explanation = self._build_explanation(
+            feature_map["entity_id"], score, priority_class, risk_level,
+            contributions, sev_raw, spd_raw, ddl_raw,
+            urg_num, saf_num, trf_num, ddl_num,
+        ) + " Model-based prediction used the trained gradient boosting regressor."
+
+        weather_signal = _as_weather_signal(inputs, self.weather_source)
+        result = {
+            "entity_id": feature_map["entity_id"],
+            "score": score,
+            "priority_class": priority_class,
+            "risk_level": risk_level,
+            "feature_contributions": contributions,
+            "explanation": explanation,
+            "model_version": MODEL_BASED_VERSION,
+            "confidence": confidence,
+            "scoring_mode": "MODEL_BASED",
+            "weather_risk_level": weather_signal["weather_risk_level"],
+            "weather_risk_reason": weather_signal["weather_risk_reason"],
+            "affected_task_types": weather_signal["affected_task_types"],
+        }
+        result.update(self._model_explainability(model, score=score, priority_class=priority_class))
+        return result
+
+    def _rule_based_score(self, inputs: dict[str, Any], *, reference_time: datetime) -> dict[str, Any]:
+        entity_id = str(inputs.get("entity_id", "unknown"))
+
+        sev_raw = inputs.get("severity")
+        urg_raw = inputs.get("urgency")
+        saf_raw = inputs.get("safety_risk")
+        trf_raw = inputs.get("traffic_density")
+        spd_raw = inputs.get("speed_class")
+        ddl_raw = inputs.get("deadline")
+
+        sev_num = self._safe_severity(sev_raw)
+        urg_num = self._safe_numeric(urg_raw, default=0.5)
+        saf_num = self._safe_numeric(saf_raw, default=0.5)
+        trf_num = self._safe_numeric(trf_raw, default=0.5)
+        spd_num = self._safe_speed_class(spd_raw)
+        ddl_num = self._safe_deadline_proximity(ddl_raw, reference_time)
+
+        w = self.weights
+        contributions = {
+            "severity": round(w["severity"] * sev_num, 4),
+            "urgency": round(w["urgency"] * urg_num, 4),
+            "safety_risk": round(w["safety_risk"] * saf_num, 4),
+            "traffic_density": round(w["traffic_density"] * trf_num, 4),
+            "speed_class": round(w["speed_class"] * spd_num, 4),
+            "deadline_proximity": round(w["deadline_proximity"] * ddl_num, 4),
+        }
+        raw_score = sum(contributions.values())
+        score = self._clamp(round(raw_score, 4))
+        priority_class = self._priority_class(score)
+        risk_level = self._risk_level(score)
+        confidence = self._confidence(inputs)
+        explanation = self._build_explanation(
+            entity_id, score, priority_class, risk_level,
+            contributions, sev_raw, spd_raw, ddl_raw,
+            urg_num, saf_num, trf_num, ddl_num,
+        )
+
+        weather_signal = _as_weather_signal(inputs, self.weather_source)
+        return {
+            "entity_id": entity_id,
+            "score": score,
+            "priority_class": priority_class,
+            "risk_level": risk_level,
+            "feature_contributions": contributions,
+            "explanation": explanation,
+            "model_version": MODEL_VERSION,
+            "confidence": confidence,
+            "scoring_mode": "RULE_BASED",
+            "weather_risk_level": weather_signal["weather_risk_level"],
+            "weather_risk_reason": weather_signal["weather_risk_reason"],
+            "affected_task_types": weather_signal["affected_task_types"],
+        }
 
     def score(
         self,
         inputs: dict[str, Any],
         *,
         reference_time: datetime | None = None,
+        scoring_mode: str | None = None,
     ) -> dict[str, Any]:
         """
         Compute a criticality score for a task or defect.
@@ -164,66 +389,24 @@ class CriticalityEngine:
         if reference_time is None:
             reference_time = datetime.now(timezone.utc)
 
-        entity_id = str(inputs.get("entity_id", "unknown"))
+        resolved_mode = self._resolve_scoring_mode(inputs, scoring_mode)
+        if resolved_mode == "MODEL_BASED":
+            model_result = self._model_based_score(inputs, reference_time=reference_time)
+            if model_result is not None:
+                return model_result
+            return self._rule_based_score(inputs, reference_time=reference_time)
 
-        # ── Extract & normalise features ──────────────────────────
-        sev_raw    = inputs.get("severity")
-        urg_raw    = inputs.get("urgency")
-        saf_raw    = inputs.get("safety_risk")
-        trf_raw    = inputs.get("traffic_density")
-        spd_raw    = inputs.get("speed_class")
-        ddl_raw    = inputs.get("deadline")
-
-        sev_num = self._safe_severity(sev_raw)
-        urg_num = self._safe_numeric(urg_raw, default=0.5)
-        saf_num = self._safe_numeric(saf_raw, default=0.5)
-        trf_num = self._safe_numeric(trf_raw, default=0.5)
-        spd_num = self._safe_speed_class(spd_raw)
-        ddl_num = self._safe_deadline_proximity(ddl_raw, reference_time)
-
-        # ── Weighted score ────────────────────────────────────────
-        w = self.weights
-        contributions = {
-            "severity":           round(w["severity"]           * sev_num, 4),
-            "urgency":            round(w["urgency"]            * urg_num, 4),
-            "safety_risk":        round(w["safety_risk"]        * saf_num, 4),
-            "traffic_density":    round(w["traffic_density"]    * trf_num, 4),
-            "speed_class":        round(w["speed_class"]        * spd_num, 4),
-            "deadline_proximity": round(w["deadline_proximity"] * ddl_num, 4),
-        }
-        raw_score = sum(contributions.values())
-        score = self._clamp(round(raw_score, 4))
-
-        # ── Derived fields ────────────────────────────────────────
-        priority_class = self._priority_class(score)
-        risk_level     = self._risk_level(score)
-        confidence     = self._confidence(inputs)
-        explanation    = self._build_explanation(
-            entity_id, score, priority_class, risk_level,
-            contributions, sev_raw, spd_raw, ddl_raw,
-            urg_num, saf_num, trf_num, ddl_num,
-        )
-
-        return {
-            "entity_id":             entity_id,
-            "score":                 score,
-            "priority_class":        priority_class,
-            "risk_level":            risk_level,
-            "feature_contributions": contributions,
-            "explanation":           explanation,
-            "model_version":         MODEL_VERSION,
-            "confidence":            confidence,
-            "scoring_mode":          "RULE_BASED",
-        }
+        return self._rule_based_score(inputs, reference_time=reference_time)
 
     def score_batch(
         self,
         items: list[dict[str, Any]],
         *,
         reference_time: datetime | None = None,
+        scoring_mode: str | None = None,
     ) -> list[dict[str, Any]]:
         """Score a list of inputs. Returns list of CriticalityScore dicts."""
-        return [self.score(item, reference_time=reference_time) for item in items]
+        return [self.score(item, reference_time=reference_time, scoring_mode=scoring_mode) for item in items]
 
     # ── Feature normalisation (safe) ──────────────────────────────
 

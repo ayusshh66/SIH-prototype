@@ -4,7 +4,18 @@ import { Button } from '../../components/common/Button';
 import { Badge } from '../../components/common/Badge';
 import { DepartmentBadge } from '../../components/domain/DepartmentBadge';
 import { Card } from '../../components/common/Card';
-import { ShieldCheck, Truck, Clock, MapPin, CheckCircle, XCircle } from 'lucide-react';
+import { ShieldCheck, Truck, Clock, MapPin, CheckCircle, XCircle, KeyRound } from 'lucide-react';
+import {
+  PTW_HANDSHAKE_STATES,
+  canAdvanceTo,
+  generatePrivateNumber,
+  getInitialHandshakeState,
+  getNextState,
+  getPrivateNumberForState,
+  getStateDisplayName,
+  isTrdWork,
+} from './blockHandshake';
+import { getBlockJpoStatus } from './jpoPlanning';
 
 export const BlockDetailDrawer: React.FC<{
   block: any;
@@ -12,6 +23,32 @@ export const BlockDetailDrawer: React.FC<{
   onClose: () => void;
 }> = ({ block, isOpen, onClose }) => {
   if (!block) return null;
+
+  const isTRD = isTrdWork(block);
+  const [handshakeState, setHandshakeState] = React.useState(() => getInitialHandshakeState(block));
+  const [privateNumber, setPrivateNumber] = React.useState(() => getPrivateNumberForState(block, getInitialHandshakeState(block)));
+
+  React.useEffect(() => {
+    const nextState = getInitialHandshakeState(block);
+    setHandshakeState(nextState);
+    setPrivateNumber(getPrivateNumberForState(block, nextState));
+  }, [block]);
+
+  const currentIndex = PTW_HANDSHAKE_STATES.indexOf(handshakeState);
+  const nextState = getNextState(handshakeState, block);
+  const jpoStatus = getBlockJpoStatus(block);
+  const isJpoViolation = jpoStatus === 'JPO_VIOLATION';
+
+  const handleAdvance = () => {
+    const targetState = nextState;
+    if (!targetState) return;
+    if (!canAdvanceTo(handshakeState, targetState, block)) return;
+    setHandshakeState(targetState);
+    const generatedPrivateNumber = getPrivateNumberForState(block, targetState);
+    if (generatedPrivateNumber) {
+      setPrivateNumber(generatedPrivateNumber);
+    }
+  };
 
   return (
     <Drawer
@@ -28,8 +65,14 @@ export const BlockDetailDrawer: React.FC<{
             <Button variant="secondary" size="sm" onClick={onClose}>
               Close
             </Button>
-            <Button variant="primary" size="sm" icon={<CheckCircle size={14} />}>
-              Approve Block
+            <Button
+              variant="primary"
+              size="sm"
+              icon={<CheckCircle size={14} />}
+              onClick={handleAdvance}
+              disabled={!nextState}
+            >
+              {nextState ? 'Advance Handshake' : 'Handshake Complete'}
             </Button>
           </div>
         </div>
@@ -51,6 +94,65 @@ export const BlockDetailDrawer: React.FC<{
             <span className="text-micro font-mono px-2 py-0.5 rounded-sm bg-safety-restricted text-white uppercase">
               SHADOW COMBO
             </span>
+          )}
+          <span
+            className={`text-micro font-mono px-2 py-0.5 rounded-sm uppercase ${
+              isJpoViolation ? 'bg-crit-p1 text-white' : 'bg-status-feasible text-white'
+            }`}
+          >
+            {jpoStatus}
+          </span>
+        </div>
+
+        <div className="p-3.5 bg-surface-sunken border border-border-hairline rounded-sm space-y-3">
+          <div className="flex items-center gap-2 text-accent-400 text-micro font-mono font-semibold uppercase tracking-wider">
+            <ShieldCheck size={14} />
+            <span>Digital PTW / Safety Handshake</span>
+          </div>
+
+          <div className="space-y-2">
+            {PTW_HANDSHAKE_STATES.map((state, index) => {
+              const isCompleted = index < currentIndex;
+              const isCurrent = state === handshakeState;
+              const isScadaState = state === 'SCADA_DE_ENERGIZATION_VERIFIED';
+
+              return (
+                <div
+                  key={state}
+                  className={[
+                    'flex items-center gap-3 rounded-sm border px-2 py-2 font-mono text-small',
+                    isCompleted ? 'border-status-feasible bg-status-feasible-bg text-content-primary' : '',
+                    isCurrent ? 'border-accent-500 bg-accent-50 text-content-primary' : 'border-border-hairline bg-surface text-content-secondary',
+                  ].join(' ')}
+                >
+                  <span className="inline-flex h-6 w-6 items-center justify-center rounded-full border text-micro font-semibold">
+                    {index + 1}
+                  </span>
+                  <span className="flex-1">
+                    {getStateDisplayName(state, block)}
+                    {isScadaState && !isTRD && <span className="ml-2 text-content-tertiary">(NOT REQUIRED)</span>}
+                  </span>
+                  {isCompleted && <CheckCircle size={14} className="text-status-feasible" />}
+                  {isCurrent && <span className="text-accent-500 text-micro uppercase">current</span>}
+                </div>
+              );
+            })}
+          </div>
+
+          {privateNumber && (
+            <div className="flex items-center justify-between rounded-sm border border-status-feasible/30 bg-status-feasible-bg px-3 py-2 font-mono text-small">
+              <div className="flex items-center gap-2 text-content-primary">
+                <KeyRound size={14} />
+                <span>Private Number</span>
+              </div>
+              <span className="font-semibold text-status-feasible">{privateNumber}</span>
+            </div>
+          )}
+
+          {isTRD && (
+            <div className="text-micro font-mono text-content-secondary">
+              Simulated SCADA de-energization verification required before Permit to Work.
+            </div>
           )}
         </div>
 

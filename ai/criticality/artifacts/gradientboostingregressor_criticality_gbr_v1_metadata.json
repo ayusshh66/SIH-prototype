@@ -1,0 +1,32 @@
+{
+  "model_name": "GradientBoostingRegressor",
+  "model_version": "criticality_gbr_v1",
+  "feature_names": [
+    "severity",
+    "urgency",
+    "safety_risk",
+    "traffic_density",
+    "speed_class",
+    "deadline_proximity"
+  ],
+  "training_seed": 42,
+  "dataset_size": 800,
+  "train_sample_count": 560,
+  "validation_sample_count": 120,
+  "test_sample_count": 120,
+  "validation_metrics": {
+    "mae": 0.005339,
+    "rmse": 0.006679,
+    "r2": 0.989149
+  },
+  "test_metrics": {
+    "mae": 0.004602,
+    "rmse": 0.005832,
+    "r2": 0.987177
+  },
+  "dataset_path": "C:\\Users\\sethk\\SIH-prototype\\ai\\data\\datasets\\criticality_v1_seed42.csv",
+  "clip_bounds": [
+    0.0,
+    1.0
+  ]
+}

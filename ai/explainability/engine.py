@@ -24,6 +24,8 @@ import hashlib
 import json
 from typing import Any, Dict, List, Optional
 
+from ai.explainability.narration import generate_llm_narration
+
 
 class ExplainabilityEngine:
     """
@@ -34,6 +36,31 @@ class ExplainabilityEngine:
 
     def __init__(self) -> None:
         self.generated_by = "EXPLAINABILITY_ENGINE"
+        self.narration_provider = None
+
+    def add_narration(
+        self,
+        explanation: Dict[str, Any],
+        provider: Any | None = None,
+        *,
+        timeout: float = 4.0,
+    ) -> Dict[str, Any]:
+        """Attach optional AI narration without mutating the deterministic explanation."""
+        if not isinstance(explanation, dict):
+            return explanation
+
+        result = dict(explanation)
+        resolved_provider = provider or self.narration_provider
+        narration = generate_llm_narration(result, provider=resolved_provider, timeout=timeout)
+
+        if narration is None:
+            result["ai_narration"] = None
+            result["narration_source"] = "deterministic_only"
+            return result
+
+        result["ai_narration"] = f"AI narration: {narration}"
+        result["narration_source"] = "AI_NARRATION"
+        return result
 
     def _generate_id(
         self,

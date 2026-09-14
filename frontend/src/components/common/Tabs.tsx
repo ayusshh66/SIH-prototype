@@ -21,7 +21,7 @@ export const Tabs: React.FC<TabsProps> = ({
   className = '',
 }) => {
   return (
-    <div className={`tab-list ${className}`} role="tablist">
+    <div className={`flex gap-1 border-b border-white/10 px-2 ${className}`} role="tablist">
       {tabs.map((tab) => {
         const isActive = tab.id === activeTab;
         return (
@@ -29,22 +29,22 @@ export const Tabs: React.FC<TabsProps> = ({
             key={tab.id}
             role="tab"
             aria-selected={isActive}
-            className={`tab-btn ${isActive ? 'active' : ''}`}
+            className={`inline-flex items-center gap-1.5 px-4 py-2 text-sm font-medium border-b-2 transition-all cursor-pointer ${
+              isActive
+                ? 'text-[#F97316] border-[#F97316] font-semibold'
+                : 'text-gray-400 border-transparent hover:text-white'
+            }`}
             onClick={() => onChange(tab.id)}
-            style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}
           >
-            {tab.icon && <span>{tab.icon}</span>}
+            {tab.icon && <span className="inline-flex items-center">{tab.icon}</span>}
             <span>{tab.label}</span>
             {tab.badge !== undefined && (
               <span
-                style={{
-                  fontSize: '11px',
-                  fontFamily: 'var(--font-mono)',
-                  padding: '1px 5px',
-                  borderRadius: 'var(--radius-full)',
-                  background: isActive ? 'var(--ir-blue-bg)' : 'var(--bg-surface-raised)',
-                  color: isActive ? 'var(--ir-blue)' : 'var(--text-muted)',
-                }}
+                className={`text-[11px] font-mono px-1.5 py-px rounded-full ${
+                  isActive
+                    ? 'bg-[#F97316]/15 text-[#F97316]'
+                    : 'bg-white/5 text-gray-500'
+                }`}
               >
                 {tab.badge}
               </span>
@@ -55,3 +55,4 @@ export const Tabs: React.FC<TabsProps> = ({
     </div>
   );
 };
+

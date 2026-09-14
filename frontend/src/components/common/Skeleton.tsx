@@ -17,14 +17,14 @@ export const Skeleton: React.FC<SkeletonProps> = ({
 }) => {
   const borderRadius =
     variant === 'circle'
-      ? 'var(--radius-full)'
+      ? '9999px'
       : variant === 'text'
-      ? 'var(--radius-xs)'
-      : 'var(--radius-sm)';
+      ? '2px'
+      : '4px';
 
   return (
     <div
-      className={`skeleton ${className}`}
+      className={`animate-pulse bg-white/5 ${className}`}
       style={{
         width,
         height,
@@ -35,3 +35,4 @@ export const Skeleton: React.FC<SkeletonProps> = ({
     />
   );
 };
+

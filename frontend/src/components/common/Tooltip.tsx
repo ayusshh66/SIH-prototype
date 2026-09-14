@@ -10,7 +10,7 @@ export const Tooltip: React.FC<TooltipProps> = ({ content, children }) => {
 
   return (
     <div
-      style={{ position: 'relative', display: 'inline-flex' }}
+      className="relative inline-flex"
       onMouseEnter={() => setVisible(true)}
       onMouseLeave={() => setVisible(false)}
       onFocus={() => setVisible(true)}
@@ -20,22 +20,7 @@ export const Tooltip: React.FC<TooltipProps> = ({ content, children }) => {
       {visible && (
         <div
           role="tooltip"
-          style={{
-            position: 'absolute',
-            bottom: 'calc(100% + 6px)',
-            left: '50%',
-            transform: 'translateX(-50%)',
-            backgroundColor: 'var(--bg-surface-raised)',
-            color: 'var(--text-primary)',
-            fontSize: 'var(--text-xs)',
-            padding: '4px 8px',
-            borderRadius: 'var(--radius-sm)',
-            border: '1px solid var(--border-default)',
-            whiteSpace: 'nowrap',
-            boxShadow: 'var(--shadow-panel)',
-            zIndex: 100,
-            pointerEvents: 'none',
-          }}
+          className="absolute bottom-[calc(100%+6px)] left-1/2 -translate-x-1/2 bg-[#18181B] text-white text-[11px] font-mono px-2 py-1 rounded border border-white/10 whitespace-nowrap shadow-lg z-[100] pointer-events-none"
         >
           {content}
         </div>
@@ -43,3 +28,4 @@ export const Tooltip: React.FC<TooltipProps> = ({ content, children }) => {
     </div>
   );
 };
+

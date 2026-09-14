@@ -848,8 +848,22 @@ Takes defect and task characteristics and outputs a deterministic criticality sc
 
 Supported modes:
 
-- MVP rule-based scoring
-- future model-based scoring via XGBoost or similar
+- RULE_BASED scoring
+- MODEL_BASED scoring
+
+The current prototype includes a trained GradientBoostingRegressor criticality model (`criticality_gbr_v2`). It evaluates a 7-feature vector in this exact order:
+
+1. severity
+2. urgency
+3. safety_risk
+4. traffic_density
+5. speed_class
+6. deadline_proximity
+7. text_severity
+
+`text_severity` is derived from the existing inspection-text severity model and is used as an additional bounded feature input to the model-based criticality pipeline. The model-based path remains deterministic and bounded to 0.0â€“1.0 for the final score, while the rule-based path remains available for explicit fallback and compatibility testing.
+
+Architecture principle: ML estimates criticality/risk; deterministic rules control safety/compatibility; the optimizer controls scheduling. The training data used in this prototype is synthetic, domain-informed, and not real Indian Railways historical data.
 
 ### 4. Compatibility engine
 
@@ -3248,6 +3262,13 @@ class AgentOrchestrator:
                 spd = task.get("speed_class", "HIGH")
                 ddl = task.get("deadline")
 
+                remark = (
+                    task.get("inspection_remark")
+                    or task.get("maintenance_remark")
+                    or task.get("remark")
+                    or task.get("inspection_notes")
+                    or task.get("notes")
+                )
                 score_input = {
                     "entity_id": tid,
                     "severity": sev,
@@ -3257,6 +3278,8 @@ class AgentOrchestrator:
                     "speed_class": spd,
                     "deadline": ddl,
                 }
+                if remark is not None:
+                    score_input["inspection_remark"] = remark
                 cs_record = self.criticality_engine.score(score_input, scoring_mode="MODEL_BASED")
                 criticality_scores.append(cs_record)
                 scored_ids.add(tid)
@@ -3678,8 +3701,21 @@ class TestAgentOrchestrator(unittest.TestCase):
             explainability_engine=mock_explain,
         )
 
-        res = orchestrator.orchestrate(self.base_request)
+        req_with_remark = dict(
+            self.base_request,
+            tasks=[
+                {**self.base_request["tasks"][0], "inspection_remark": "Loose rail fastener detected during inspection."},
+                self.base_request["tasks"][1],
+            ],
+        )
+        res = orchestrator.orchestrate(req_with_remark)
         self.assertEqual(res["status"], "SUCCESS")
+        self.assertTrue(
+            any(
+                call.args[0].get("inspection_remark") == "Loose rail fastener detected during inspection."
+                for call in mock_crit.score.call_args_list
+            )
+        )
 
         # 1. Verify exact chronological call sequence
         call_names = [c[0] for c in manager.mock_calls]
@@ -6285,7 +6321,7 @@ class TestModelBasedOutputMetadata(unittest.TestCase):
         result = self.engine.score(self.task, scoring_mode="MODEL_BASED")
         self.assertEqual(result["scoring_mode"], "MODEL_BASED")
         self.assertEqual(result["model_name"], "GradientBoostingRegressor")
-        self.assertEqual(result["model_version"], "criticality_gbr_v1")
+        self.assertEqual(result["model_version"], "criticality_gbr_v2")
         self.assertIn("predicted_criticality", result)
         self.assertIn("priority_level", result)
         self.assertIn("text_severity_used", result)
@@ -6293,13 +6329,15 @@ class TestModelBasedOutputMetadata(unittest.TestCase):
     def test_predicted_criticality_matches_model_output(self):
         result = self.engine.score(self.task, scoring_mode="MODEL_BASED")
         model = self.engine._load_model()
+        feature_map = self.engine._model_feature_vector(self.task, datetime.now(timezone.utc))
         feature_vector = [
-            self.engine._model_feature_vector(self.task, datetime.now(timezone.utc))["severity"],
-            self.engine._model_feature_vector(self.task, datetime.now(timezone.utc))["urgency"],
-            self.engine._model_feature_vector(self.task, datetime.now(timezone.utc))["safety_risk"],
-            self.engine._model_feature_vector(self.task, datetime.now(timezone.utc))["traffic_density"],
-            self.engine._model_feature_vector(self.task, datetime.now(timezone.utc))["speed_class"],
-            self.engine._model_feature_vector(self.task, datetime.now(timezone.utc))["deadline_proximity"],
+            feature_map["severity"],
+            feature_map["urgency"],
+            feature_map["safety_risk"],
+            feature_map["traffic_density"],
+            feature_map["speed_class"],
+            feature_map["deadline_proximity"],
+            feature_map["text_severity"],
         ]
         model_prediction = float(model.predict([feature_vector])[0])
         self.assertEqual(result["predicted_criticality"], float(self.engine._clamp(model_prediction)))
@@ -6535,7 +6573,7 @@ class TestModelBasedIntegration(unittest.TestCase):
             "deadline": "2026-11-03T18:00:00Z",
         }, scoring_mode="MODEL_BASED")
         self.assertIn("model_metadata", result)
-        self.assertEqual(result["model_metadata"]["model_version"], "criticality_gbr_v1")
+        self.assertEqual(result["model_metadata"]["model_version"], "criticality_gbr_v2")
         self.assertIn("top_contributing_features", result["model_metadata"])
 
     def test_model_based_contributing_features_are_valid(self):
@@ -7011,7 +7049,7 @@ class TestCriticalityModelTraining(unittest.TestCase):
             with open(report["metadata_path"], encoding="utf-8") as handle:
                 metadata = json.load(handle)
             self.assertEqual(metadata["model_name"], "GradientBoostingRegressor")
-            self.assertEqual(metadata["model_version"], "criticality_gbr_v1")
+            self.assertEqual(metadata["model_version"], "criticality_gbr_v2")
             self.assertEqual(metadata["training_seed"], 42)
             self.assertEqual(metadata["train_sample_count"], 560)
             self.assertEqual(metadata["validation_sample_count"], 120)

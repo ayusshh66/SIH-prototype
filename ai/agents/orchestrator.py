@@ -193,7 +193,7 @@ class AgentOrchestrator:
                     "speed_class": spd,
                     "deadline": ddl,
                 }
-                cs_record = self.criticality_engine.score(score_input)
+                cs_record = self.criticality_engine.score(score_input, scoring_mode="MODEL_BASED")
                 criticality_scores.append(cs_record)
                 scored_ids.add(tid)
 

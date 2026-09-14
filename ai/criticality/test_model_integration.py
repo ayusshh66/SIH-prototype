@@ -59,18 +59,43 @@ class TestCriticalityModelIntegration(unittest.TestCase):
 
         orchestrated = AgentOrchestrator().orchestrate(request)
         self.assertIn("criticality_scores", orchestrated)
-        self.assertEqual(orchestrated["criticality_scores"][0]["scoring_mode"], "RULE_BASED")
+        self.assertEqual(orchestrated["criticality_scores"][0]["scoring_mode"], "MODEL_BASED")
+        self.assertEqual(orchestrated["criticality_scores"][0]["model_version"], "criticality_gbr_v1")
+        self.assertGreaterEqual(orchestrated["criticality_scores"][0]["score"], 0.0)
+        self.assertLessEqual(orchestrated["criticality_scores"][0]["score"], 1.0)
+        self.assertIn(orchestrated["criticality_scores"][0]["priority_class"], {"P1", "P2", "P3", "P4"})
 
     def test_model_based_unavailable_falls_back_to_rule_based(self) -> None:
-        engine = CriticalityEngine()
-        with patch.object(engine, "_load_model", return_value=None):
-            result = engine.score(self.task, scoring_mode="MODEL_BASED")
+        orchestrator = AgentOrchestrator()
+        with patch.object(orchestrator.criticality_engine, "_load_model", return_value=None):
+            request = {
+                "request_id": "integration_model_based_fallback",
+                "mode": "BALANCED",
+                "tasks": [self.task],
+                "maintenance_windows": [{
+                    "window_id": "win_01",
+                    "section_id": "sec_01",
+                    "start": "2026-11-03T20:00:00Z",
+                    "end": "2026-11-04T04:00:00Z",
+                    "availability": "AVAILABLE",
+                }],
+                "resources": [{
+                    "resource_id": "res_01",
+                    "resource_type": "USFD_VEHICLE",
+                    "department": "ENGINEERING",
+                    "location": "sec_01",
+                    "capacity": 1,
+                    "is_operational": True,
+                }],
+                "train_movements": [],
+            }
+            result = orchestrator.orchestrate(request)
 
-        self.assertEqual(result["scoring_mode"], "RULE_BASED")
-        self.assertIn("priority_class", result)
-        self.assertIn("score", result)
-        self.assertGreaterEqual(result["score"], 0.0)
-        self.assertLessEqual(result["score"], 1.0)
+        self.assertEqual(result["criticality_scores"][0]["scoring_mode"], "RULE_BASED")
+        self.assertIn("priority_class", result["criticality_scores"][0])
+        self.assertIn("score", result["criticality_scores"][0])
+        self.assertGreaterEqual(result["criticality_scores"][0]["score"], 0.0)
+        self.assertLessEqual(result["criticality_scores"][0]["score"], 1.0)
 
 
 if __name__ == "__main__":

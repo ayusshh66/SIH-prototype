@@ -12,7 +12,7 @@ from sklearn.ensemble import GradientBoostingRegressor
 from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score
 
 MODEL_NAME = "GradientBoostingRegressor"
-MODEL_VERSION = "criticality_gbr_v1"
+MODEL_VERSION = "criticality_gbr_v2"
 TRAINING_SEED = 42
 FEATURE_NAMES = [
     "severity",
@@ -21,6 +21,7 @@ FEATURE_NAMES = [
     "traffic_density",
     "speed_class",
     "deadline_proximity",
+    "text_severity",
 ]
 
 SEVERITY_MAP = {

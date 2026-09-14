@@ -20,6 +20,7 @@ FEATURE_COLUMNS = [
     "traffic_density",
     "speed_class",
     "deadline_proximity",
+    "text_severity",
 ]
 TARGET_COLUMN = "criticality_target"
 SPLIT_COLUMN = "split"
@@ -160,6 +161,16 @@ def _generate_seed_rows(seed: int = DEFAULT_SEED, variants_per_defect: int = 10)
                     deadline = adjusted.strftime("%Y-%m-%dT%H:%M:%SZ")
             deadline_proximity = _deadline_proximity(deadline, reference_time=datetime(2026, 11, 3, 12, 0, 0, tzinfo=timezone.utc))
 
+            severity_value = SEVERITY_MAP.get(str(defect.get("severity", "MODERATE")).upper(), 0.45)
+            text_severity = (
+                2.5 * severity_value
+                + 2.5 * urgency
+                + 2.5 * safety_risk
+                + 1.5 * traffic_density
+                + 0.5 * SPEED_CLASS_MAP.get(speed_class, 0.45)
+                + 0.5 * deadline_proximity
+                + rng.uniform(-0.6, 0.6)
+            )
             row = {
                 "entity_id": f"{defect['defect_id']}_v{index}",
                 "severity": str(defect.get("severity", "MODERATE")).upper(),
@@ -168,6 +179,7 @@ def _generate_seed_rows(seed: int = DEFAULT_SEED, variants_per_defect: int = 10)
                 "traffic_density": round(traffic_density, 4),
                 "speed_class": speed_class,
                 "deadline_proximity": round(deadline_proximity, 4),
+                "text_severity": round(_clamp(text_severity, 0.0, 10.0), 4),
             }
             row[TARGET_COLUMN] = _nonlinear_target(row)
             rows.append(row)

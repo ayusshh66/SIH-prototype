@@ -42,10 +42,11 @@ export interface MaintenanceTask {
 export interface CriticalityScoreDetail {
   entity_id: string;
   score: number; // 0.0 - 1.0 internal
-  display_score: number; // 0 - 100
-  priority_class: PriorityClass;
-  risk_level: "LOW" | "MEDIUM" | "HIGH" | "CRITICAL";
-  feature_contributions: {
+  display_score?: number; // 0 - 100
+  priority_class?: PriorityClass;
+  priority_level?: PriorityClass;
+  risk_level?: "LOW" | "MEDIUM" | "HIGH" | "CRITICAL";
+  feature_contributions?: {
     severity: number;
     urgency: number;
     safety_risk: number;
@@ -53,10 +54,13 @@ export interface CriticalityScoreDetail {
     speed_class: number;
     deadline_proximity: number;
   };
-  explanation: string;
-  model_version: string;
+  explanation?: string;
+  model_name?: string;
+  model_version?: string;
+  predicted_criticality?: number;
+  text_severity_used?: number | null;
   confidence?: number;
-  scoring_mode: "RULE_BASED" | "MODEL_BASED";
+  scoring_mode?: "RULE_BASED" | "MODEL_BASED";
 }
 
 export interface ShadowBlockCandidate {

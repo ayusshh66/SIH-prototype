@@ -1,9 +1,13 @@
 from __future__ import annotations
 
 import json
+import logging
 import os
 import re
 from typing import Any, Protocol
+
+logger = logging.getLogger(__name__)
+DEFAULT_LLM_TIMEOUT_SECONDS = 5.0
 
 
 class NarrationProvider(Protocol):
@@ -44,11 +48,12 @@ class HttpNarrationProvider:
         try:
             import requests
         except Exception:
+            logger.warning("LLM narration dependency not available")
             return None
 
         headers = {"Content-Type": "application/json"}
         if self.api_key:
-            headers["Authorization"] = f"Bearer {self.api_key}"
+            headers["Authorization"] = "Bearer <redacted>"
 
         try:
             response = requests.post(
@@ -66,7 +71,17 @@ class HttpNarrationProvider:
                         return value
             if isinstance(data, str):
                 return data
+        except requests.exceptions.Timeout:
+            logger.warning("LLM narration request timed out")
+            return None
+        except requests.exceptions.RequestException as exc:
+            logger.warning("LLM narration request failed: %s", type(exc).__name__)
+            return None
+        except ValueError:
+            logger.warning("LLM narration returned malformed JSON")
+            return None
         except Exception:
+            logger.warning("LLM narration failed unexpectedly", exc_info=True)
             return None
         return None
 
@@ -83,6 +98,40 @@ def _safe_explanation_payload(explanation: dict[str, Any]) -> dict[str, Any]:
         "evidence": explanation.get("evidence", {}),
         "deterministic_inputs": explanation.get("deterministic_inputs", {}),
     }
+
+
+def _coerce_narration_text(raw: Any) -> str | None:
+    if isinstance(raw, str):
+        candidate = raw.strip()
+        if not candidate:
+            return None
+        if candidate.startswith("{") or candidate.startswith("["):
+            try:
+                parsed = json.loads(candidate)
+            except json.JSONDecodeError:
+                logger.warning("LLM narration returned malformed JSON payload")
+                return None
+            if isinstance(parsed, dict):
+                for key in ("text", "content", "output", "message"):
+                    value = parsed.get(key)
+                    if isinstance(value, str) and value.strip():
+                        return value.strip()
+            if isinstance(parsed, list) and parsed:
+                first = parsed[0]
+                if isinstance(first, dict):
+                    for key in ("text", "content", "output", "message"):
+                        value = first.get(key)
+                        if isinstance(value, str) and value.strip():
+                            return value.strip()
+        return candidate
+
+    if isinstance(raw, dict):
+        for key in ("text", "content", "output", "message"):
+            value = raw.get(key)
+            if isinstance(value, str) and value.strip():
+                return value.strip()
+
+    return None
 
 
 def _validate_narration(text: str | None, *, source_explanation: dict[str, Any]) -> str | None:
@@ -123,7 +172,7 @@ def generate_llm_narration(
     explanation: dict[str, Any],
     provider: NarrationProvider | None = None,
     *,
-    timeout: float = 4.0,
+    timeout: float = DEFAULT_LLM_TIMEOUT_SECONDS,
 ) -> str | None:
     """Generate a short planner-facing narration from the deterministic explanation.
 
@@ -150,10 +199,16 @@ def generate_llm_narration(
 
     try:
         raw = provider.generate(payload, timeout=timeout)
+    except TimeoutError:
+        logger.warning("LLM narration timed out after %.1f seconds", timeout)
+        return None
     except Exception:
+        logger.warning("LLM narration provider failed", exc_info=True)
         return None
 
-    if not isinstance(raw, str):
+    text = _coerce_narration_text(raw)
+    if text is None:
+        logger.warning("LLM narration produced no usable text")
         return None
 
-    return _validate_narration(raw, source_explanation=explanation)
+    return _validate_narration(text, source_explanation=explanation)

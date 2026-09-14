@@ -52,6 +52,7 @@ Usage
 
 from __future__ import annotations
 
+import logging
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
@@ -59,6 +60,9 @@ from typing import Any
 import joblib
 
 from ai.criticality.weather_risk import SyntheticWeatherSource, _as_weather_signal
+from ai.nlp.text_severity_model import predict_text_severity
+
+logger = logging.getLogger(__name__)
 
 # ──────────────────────────────────────────────────────────────────────
 # Constants
@@ -165,16 +169,43 @@ class CriticalityEngine:
             return self._model_cache
         try:
             if not self.model_path.exists():
+                logger.warning("Criticality model artifact missing at %s", self.model_path)
                 return None
             payload = joblib.load(self.model_path)
             model = payload.get("model") if isinstance(payload, dict) else payload
             if model is None:
+                logger.warning("Criticality model artifact did not contain a valid model")
                 return None
             self._model_cache = model
             return model
-        except Exception:
+        except FileNotFoundError:
+            logger.warning("Criticality model file not found: %s", self.model_path)
             self._model_cache = None
             return None
+        except Exception:
+            logger.warning("Criticality model load failed; falling back to RULE_BASED", exc_info=True)
+            self._model_cache = None
+            return None
+
+    def _infer_text_severity(self, inputs: dict[str, Any]) -> float:
+        remarks = (
+            inputs.get("inspection_remark")
+            or inputs.get("maintenance_remark")
+            or inputs.get("remark")
+            or inputs.get("inspection_notes")
+            or inputs.get("notes")
+        )
+        if remarks is None:
+            return 0.5
+        if not isinstance(remarks, str) or not remarks.strip():
+            return 0.5
+        try:
+            predicted = predict_text_severity(remarks)
+            raw_value = float(predicted.get("text_severity", 5.0))
+            return self._clamp(raw_value / 10.0)
+        except Exception:
+            logger.warning("NLP text severity failed; using neutral value.", exc_info=True)
+            return 0.5
 
     def _model_feature_vector(self, inputs: dict[str, Any], reference_time: datetime) -> dict[str, Any] | None:
         if not isinstance(inputs, dict):
@@ -196,6 +227,7 @@ class CriticalityEngine:
         trf_num = self._safe_numeric(trf_raw, default=0.5)
         spd_num = self._safe_speed_class(spd_raw)
         ddl_num = self._safe_deadline_proximity(ddl_raw, reference_time)
+        text_severity = self._infer_text_severity(inputs)
 
         return {
             "entity_id": str(inputs.get("entity_id", "unknown")),
@@ -205,6 +237,7 @@ class CriticalityEngine:
             "traffic_density": trf_num,
             "speed_class": spd_num,
             "deadline_proximity": ddl_num,
+            "text_severity": text_severity,
             "sev_raw": sev_raw,
             "spd_raw": spd_raw,
             "ddl_raw": ddl_raw,
@@ -219,9 +252,13 @@ class CriticalityEngine:
             importances = None
         if importances is None:
             return []
+        feature_names = [
+            "severity", "urgency", "safety_risk", "traffic_density", "speed_class",
+            "deadline_proximity", "text_severity",
+        ]
         pairs = [
             {"feature": name, "importance": float(value)}
-            for name, value in zip(("severity", "urgency", "safety_risk", "traffic_density", "speed_class", "deadline_proximity"), importances)
+            for name, value in zip(feature_names, importances)
         ]
         return sorted(pairs, key=lambda item: item["importance"], reverse=True)
 
@@ -234,7 +271,11 @@ class CriticalityEngine:
             "model_metadata": {
                 "model_name": model.__class__.__name__,
                 "model_version": MODEL_BASED_VERSION,
-                "feature_names": ["severity", "urgency", "safety_risk", "traffic_density", "speed_class", "deadline_proximity"],
+                "feature_names": [
+                    "severity", "urgency", "safety_risk", "traffic_density",
+                    "speed_class", "deadline_proximity", "text_severity",
+                ],
+                "nlp_model_version": "inspection_text_severity_v1",
                 "predicted_score": float(score),
                 "priority_level": priority_class,
                 "top_contributing_features": top_contributing_features,
@@ -242,8 +283,12 @@ class CriticalityEngine:
         }
 
     def _model_based_score(self, inputs: dict[str, Any], *, reference_time: datetime) -> dict[str, Any] | None:
+        if not isinstance(inputs, dict):
+            logger.warning("MODEL_BASED criticality received non-dictionary input; falling back to RULE_BASED")
+            return None
         feature_map = self._model_feature_vector(inputs, reference_time)
         if feature_map is None:
+            logger.warning("MODEL_BASED criticality missing required input fields; falling back to RULE_BASED")
             return None
         model = self._load_model()
         if model is None:
@@ -258,11 +303,17 @@ class CriticalityEngine:
                 feature_map["speed_class"],
                 feature_map["deadline_proximity"],
             ]
-            prediction = float(model.predict([feature_vector])[0])
+            raw_prediction = model.predict([feature_vector])[0]
+            prediction = float(raw_prediction)
             if prediction != prediction:
+                logger.warning("MODEL_BASED criticality produced NaN; falling back to RULE_BASED")
+                return None
+            if prediction < -1e9 or prediction > 1e9:
+                logger.warning("MODEL_BASED criticality produced an invalid numeric range; falling back to RULE_BASED")
                 return None
             score = self._clamp(prediction)
         except Exception:
+            logger.warning("MODEL_BASED criticality prediction failed; falling back to RULE_BASED", exc_info=True)
             return None
 
         sev_raw = feature_map["sev_raw"]
@@ -299,13 +350,18 @@ class CriticalityEngine:
             "risk_level": risk_level,
             "feature_contributions": contributions,
             "explanation": explanation,
+            "model_name": model.__class__.__name__,
             "model_version": MODEL_BASED_VERSION,
+            "predicted_criticality": float(score),
+            "priority_level": priority_class,
             "confidence": confidence,
             "scoring_mode": "MODEL_BASED",
             "weather_risk_level": weather_signal["weather_risk_level"],
             "weather_risk_reason": weather_signal["weather_risk_reason"],
             "affected_task_types": weather_signal["affected_task_types"],
         }
+        if "inspection_remark" in inputs or "maintenance_remark" in inputs or "remark" in inputs or "inspection_notes" in inputs or "notes" in inputs:
+            result["text_severity_used"] = float(feature_map["text_severity"])
         result.update(self._model_explainability(model, score=score, priority_class=priority_class))
         return result
 
@@ -389,11 +445,16 @@ class CriticalityEngine:
         if reference_time is None:
             reference_time = datetime.now(timezone.utc)
 
+        if not isinstance(inputs, dict):
+            logger.warning("Criticality score received non-dict input; using safe default values")
+            inputs = {"entity_id": "unknown"}
+
         resolved_mode = self._resolve_scoring_mode(inputs, scoring_mode)
         if resolved_mode == "MODEL_BASED":
             model_result = self._model_based_score(inputs, reference_time=reference_time)
             if model_result is not None:
                 return model_result
+            logger.warning("MODEL_BASED unavailable; using RULE_BASED fallback")
             return self._rule_based_score(inputs, reference_time=reference_time)
 
         return self._rule_based_score(inputs, reference_time=reference_time)

@@ -1,6 +1,9 @@
 from __future__ import annotations
 
+import logging
 from typing import Any, Iterable, Protocol
+
+logger = logging.getLogger(__name__)
 
 
 class WeatherSource(Protocol):
@@ -99,7 +102,13 @@ def evaluate_weather_risk(weather_context: Any, *, task_type: str | None = None)
 
 
 def _as_weather_signal(payload: dict[str, Any], weather_source: WeatherSource | None = None) -> dict[str, Any]:
-    effective_source = weather_source or SyntheticWeatherSource()
-    weather_context = effective_source.resolve_weather_context(payload)
-    task_type = payload.get("task_or_defect_type") or payload.get("taskType") or payload.get("department")
-    return evaluate_weather_risk(weather_context, task_type=str(task_type) if task_type is not None else None)
+    try:
+        if not isinstance(payload, dict):
+            return dict(_WEATHER_RULES["NORMAL"])
+        effective_source = weather_source or SyntheticWeatherSource()
+        weather_context = effective_source.resolve_weather_context(payload)
+        task_type = payload.get("task_or_defect_type") or payload.get("taskType") or payload.get("department")
+        return evaluate_weather_risk(weather_context, task_type=str(task_type) if task_type is not None else None)
+    except Exception:
+        logger.warning("Weather context resolution failed; defaulting to NORMAL risk", exc_info=True)
+        return dict(_WEATHER_RULES["NORMAL"])

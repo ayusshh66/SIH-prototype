@@ -1,0 +1,13 @@
+{
+  "model_name": "Ridge",
+  "model_version": "inspection_text_severity_v1",
+  "dataset_size": 120,
+  "feature_method": "TF-IDF Vectorizer + Ridge Regression",
+  "test_mae": 1.178211,
+  "training_seed": 42,
+  "artifact_path": "C:\\Users\\sethk\\SIH-prototype\\ai\\nlp\\artifacts\\inspection_text_severity_v1.joblib",
+  "clip_bounds": [
+    0.0,
+    10.0
+  ]
+}

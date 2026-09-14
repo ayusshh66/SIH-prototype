@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import logging
 import os
 import random
 import signal
@@ -13,7 +14,10 @@ from urllib import error, request
 
 from ai.data.generator import SyntheticDataGenerator
 
+logger = logging.getLogger(__name__)
+
 DEFAULT_EVENT_INTERVAL_SECONDS = int(os.getenv("EVENT_INTERVAL_SECONDS", "20"))
+DEFAULT_EVENT_TIMEOUT_SECONDS = int(os.getenv("AVIRAT_EVENT_TIMEOUT_SECONDS", "10"))
 DEFAULT_BASE_URL = os.getenv("AVIRAT_EVENT_BASE_URL", "http://localhost:3000")
 EVENT_TYPES = (
     "maintenance_task",
@@ -25,9 +29,17 @@ EVENT_TYPES = (
 class LiveSyntheticEventSimulator:
     """Continuously emits a single synthetic railway event at a time."""
 
-    def __init__(self, *, base_url: str = DEFAULT_BASE_URL, interval_seconds: int = DEFAULT_EVENT_INTERVAL_SECONDS, seed: int = 42):
+    def __init__(
+        self,
+        *,
+        base_url: str = DEFAULT_BASE_URL,
+        interval_seconds: int = DEFAULT_EVENT_INTERVAL_SECONDS,
+        seed: int = 42,
+        request_timeout_seconds: int = DEFAULT_EVENT_TIMEOUT_SECONDS,
+    ):
         self.base_url = base_url.rstrip("/")
         self.interval_seconds = max(1, int(interval_seconds))
+        self.request_timeout_seconds = max(1, int(request_timeout_seconds))
         self.seed = int(seed)
         self.generator = SyntheticDataGenerator(seed=self.seed)
         self.dataset = self.generator.generate()
@@ -97,10 +109,11 @@ class LiveSyntheticEventSimulator:
                 headers={"Content-Type": "application/json"},
                 method="POST",
             )
-            with request.urlopen(req, timeout=10) as response:
+            with request.urlopen(req, timeout=self.request_timeout_seconds) as response:
                 response.read()
             return True
         except Exception:
+            logger.warning("Synthetic event POST failed for %s at %s", event.get("event_id"), event.get("endpoint"), exc_info=True)
             return False
 
     def run_once(self) -> dict[str, Any]:

@@ -1,0 +1,121 @@
+inspection_remark,text_severity,split
+Emergency defect: critical rail and signalling failure zone with immediate safety and service risk. Additional observation: reconfirmed at the signal tower.,10.0,train
+Early-stage wear detected on switch assembly; maintenance follow-up should be scheduled soon. Additional observation: inspected during evening patrol.,3.0,train
+Critical inspection finding: active failure likely if not addressed immediately by specialist crews.,10.0,train
+Low-level concern: minor surface roughness observed during inspection walkdown.,1.0,train
+Routine track inspection shows no visible defects and no urgent maintenance need. Additional observation: inspected during evening patrol.,0.0,train
+"Critical defect detected with strong risk of service disruption, urgent intervention required.",8.0,train
+Safety-sensitive rail and switch condition is deteriorated; repair must be prioritised immediately. Additional observation: reconfirmed at the signal tower.,8.0,train
+Routine track inspection shows no visible defects and no urgent maintenance need.,0.0,train
+Maintenance note flags moderate degradation in signalling support and inspection coverage area. Additional observation: reconfirmed at the signal tower.,5.0,train
+"Minor rail wear noted, but no active defect or operational risk to immediate service.",1.0,train
+Maintenance note flags moderate degradation in signalling support and inspection coverage area.,5.0,train
+Track and signalling assets appear serviceable with no immediate safety concern.,0.0,train
+Slight ballast irregularity on the section; monitor and document during next cycle. Additional observation: reconfirmed at the signal tower.,1.0,train
+Critical inspection finding: active failure likely if not addressed immediately by specialist crews.,10.0,train
+Defect is no longer routine; moderate repair work is now required to sustain safe operations. Additional observation: inspected during evening patrol.,5.0,train
+Track and signalling assets appear serviceable with no immediate safety concern. Additional observation: reconfirmed at the signal tower.,0.0,train
+"Minor rail wear noted, but no active defect or operational risk to immediate service.",1.0,train
+Moderate track condition concern: repair window is needed soon to avoid service disruption.,6.0,train
+Track defect has increased in severity and should be addressed before the next traffic peak.,5.0,train
+Routine inspection identified minor conductor support issue with manageable operational impact.,3.0,train
+Critical inspection finding: active failure likely if not addressed immediately by specialist crews. Additional observation: reported by field crew.,10.0,train
+Major maintenance action required due to severe degradation and rapid worsening trend. Additional observation: seen during routine track walk.,8.0,train
+Moderate track condition concern: repair window is needed soon to avoid service disruption.,6.0,train
+Critical inspection finding: active failure likely if not addressed immediately by specialist crews.,10.0,train
+Asset condition is at maximum risk; urgent emergency repair and track protection are required.,10.0,train
+Routine track inspection shows no visible defects and no urgent maintenance need.,0.0,train
+Maintenance note flags moderate degradation in signalling support and inspection coverage area.,5.0,train
+Routine inspection identified minor conductor support issue with manageable operational impact.,3.0,train
+Track defect has increased in severity and should be addressed before the next traffic peak.,5.0,train
+Inspection reveals recurring defect pattern requiring active maintenance within the next cycle.,6.0,train
+Visible wear on panel and fastener area warrants corrective action within the next maintenance block. Additional observation: reconfirmed at the signal tower.,4.0,train
+Inspection strongly indicates dangerous defect progression; immediate maintenance intervention required.,9.0,train
+Moderate track condition concern: repair window is needed soon to avoid service disruption. Additional observation: reported by field crew.,6.0,train
+Safety-sensitive rail and switch condition is deteriorated; repair must be prioritised immediately. Additional observation: inspected during evening patrol.,8.0,train
+"Minor rail wear noted, but no active defect or operational risk to immediate service.",1.0,train
+Asset condition is at maximum risk; urgent emergency repair and track protection are required.,10.0,train
+Moderate track condition concern: repair window is needed soon to avoid service disruption.,6.0,train
+Inspection notes a high-risk defect requiring immediate repair and operational control.,7.0,train
+"Critical defect detected with strong risk of service disruption, urgent intervention required.",8.0,train
+Low-level concern: minor surface roughness observed during inspection walkdown.,1.0,train
+Train movement stable but inspection notes a recurring defect in the local asset cluster.,4.0,train
+Serviceable but degraded track condition: early maintenance recommended to prevent escalation. Additional observation: inspected during evening patrol.,4.0,train
+Train movement stable but inspection notes a recurring defect in the local asset cluster.,4.0,train
+"Critical defect detected with strong risk of service disruption, urgent intervention required.",8.0,train
+Train movement stable but inspection notes a recurring defect in the local asset cluster.,4.0,train
+Early-stage wear detected on switch assembly; maintenance follow-up should be scheduled soon.,3.0,train
+Track side observation shows slight wear near the sleeper area; low urgency but recorded.,2.0,train
+"Critical defect detected with strong risk of service disruption, urgent intervention required.",8.0,train
+Severe asset deterioration observed on rail and fastening system; risk elevation is clear. Additional observation: reconfirmed at the signal tower.,7.0,train
+Visible wear on panel and fastener area warrants corrective action within the next maintenance block. Additional observation: inspected during evening patrol.,4.0,train
+Low-level concern: minor surface roughness observed during inspection walkdown.,1.0,train
+Low-level concern: minor surface roughness observed during inspection walkdown.,1.0,train
+Track side observation shows slight wear near the sleeper area; low urgency but recorded.,2.0,train
+"Critical defect detected with strong risk of service disruption, urgent intervention required.",8.0,train
+Inspection strongly indicates dangerous defect progression; immediate maintenance intervention required.,9.0,train
+Major maintenance action required due to severe degradation and rapid worsening trend.,8.0,train
+Serviceable but degraded track condition: early maintenance recommended to prevent escalation.,4.0,train
+Asset condition is at maximum risk; urgent emergency repair and track protection are required.,10.0,train
+Safety-sensitive rail and switch condition is deteriorated; repair must be prioritised immediately. Additional observation: reported by field crew.,8.0,train
+Slight ballast irregularity on the section; monitor and document during next cycle. Additional observation: reported by field crew.,1.0,train
+Very high-risk condition observed; severe cracking and support instability call for emergency response. Additional observation: inspected during evening patrol.,9.0,train
+Early-stage wear detected on switch assembly; maintenance follow-up should be scheduled soon.,3.0,train
+Track defect has increased in severity and should be addressed before the next traffic peak.,5.0,train
+Train movement stable but inspection notes a recurring defect in the local asset cluster.,4.0,train
+"Critical defect detected with strong risk of service disruption, urgent intervention required.",8.0,train
+Severe operating risk with potential train conflict; asset already at emergency repair threshold.,9.0,train
+Urgent maintenance required due to significant OHE degradation and safety-sensitive condition. Additional observation: inspected during evening patrol.,7.0,train
+Asset condition is at maximum risk; urgent emergency repair and track protection are required.,10.0,train
+Moderate track condition concern: repair window is needed soon to avoid service disruption.,6.0,train
+Track and signalling assets appear serviceable with no immediate safety concern.,0.0,train
+Emergency defect: critical rail and signalling failure zone with immediate safety and service risk. Additional observation: reconfirmed at the signal tower.,10.0,train
+"Minor rail wear noted, but no active defect or operational risk to immediate service. Additional observation: seen during routine track walk.",1.0,train
+Minor fastening loosening reported; no immediate train restriction but should be monitored. Additional observation: seen during routine track walk.,2.0,train
+Early-stage wear detected on switch assembly; maintenance follow-up should be scheduled soon.,3.0,train
+"Critical defect detected with strong risk of service disruption, urgent intervention required. Additional observation: inspected during evening patrol.",8.0,train
+"Minor rail wear noted, but no active defect or operational risk to immediate service. Additional observation: seen during routine track walk.",1.0,train
+Severe asset deterioration observed on rail and fastening system; risk elevation is clear.,7.0,train
+Routine track inspection shows no visible defects and no urgent maintenance need.,0.0,train
+Moderate track condition concern: repair window is needed soon to avoid service disruption.,6.0,train
+Urgent maintenance required due to significant OHE degradation and safety-sensitive condition.,7.0,train
+Major maintenance action required due to severe degradation and rapid worsening trend.,8.0,train
+Small crack-like indication on rail surface requires close follow-up during next maintenance window.,2.0,train
+Track and signalling assets appear serviceable with no immediate safety concern.,0.0,train
+Track and signalling assets appear serviceable with no immediate safety concern.,0.0,train
+Track and signalling assets appear serviceable with no immediate safety concern.,0.0,train
+"Critical defect detected with strong risk of service disruption, urgent intervention required. Additional observation: inspected during evening patrol.",8.0,train
+Small crack-like indication on rail surface requires close follow-up during next maintenance window.,2.0,train
+Emergency defect: critical rail and signalling failure zone with immediate safety and service risk.,10.0,train
+Very high-risk condition observed; severe cracking and support instability call for emergency response.,9.0,train
+Track and signalling assets appear serviceable with no immediate safety concern. Additional observation: reconfirmed at the signal tower.,0.0,train
+Visible wear on panel and fastener area warrants corrective action within the next maintenance block.,4.0,train
+Track defect has increased in severity and should be addressed before the next traffic peak.,5.0,train
+Track side observation shows slight wear near the sleeper area; low urgency but recorded.,2.0,train
+Urgent maintenance required due to significant OHE degradation and safety-sensitive condition.,7.0,train
+"Minor rail wear noted, but no active defect or operational risk to immediate service.",1.0,train
+Very high-risk condition observed; severe cracking and support instability call for emergency response. Additional observation: reported by field crew.,9.0,train
+Safety-sensitive rail and switch condition is deteriorated; repair must be prioritised immediately. Additional observation: reconfirmed at the signal tower.,8.0,test
+"Minor rail wear noted, but no active defect or operational risk to immediate service.",1.0,test
+Minor fastening loosening reported; no immediate train restriction but should be monitored.,2.0,test
+Train movement stable but inspection notes a recurring defect in the local asset cluster.,4.0,test
+Critical inspection finding: active failure likely if not addressed immediately by specialist crews. Additional observation: reconfirmed at the signal tower.,10.0,test
+Emergency defect: critical rail and signalling failure zone with immediate safety and service risk.,10.0,test
+Minor fastening loosening reported; no immediate train restriction but should be monitored. Additional observation: inspected during evening patrol.,2.0,test
+"Critical defect detected with strong risk of service disruption, urgent intervention required.",8.0,test
+Very high-risk condition observed; severe cracking and support instability call for emergency response.,9.0,test
+Routine inspection identified minor conductor support issue with manageable operational impact.,3.0,test
+Train movement stable but inspection notes a recurring defect in the local asset cluster.,4.0,test
+Routine track inspection shows no visible defects and no urgent maintenance need.,0.0,test
+Visible wear on panel and fastener area warrants corrective action within the next maintenance block. Additional observation: reported by field crew.,4.0,test
+Asset condition is at maximum risk; urgent emergency repair and track protection are required. Additional observation: seen during routine track walk.,10.0,test
+Major maintenance action required due to severe degradation and rapid worsening trend.,8.0,test
+Routine track inspection shows no visible defects and no urgent maintenance need. Additional observation: reported by field crew.,0.0,test
+"Critical defect detected with strong risk of service disruption, urgent intervention required.",8.0,test
+Severe operating risk with potential train conflict; asset already at emergency repair threshold. Additional observation: reported by field crew.,9.0,test
+Normal condition after routine patrol; no surface irregularity or defect noted.,0.0,test
+Normal condition after routine patrol; no surface irregularity or defect noted. Additional observation: reported by field crew.,0.0,test
+Emergency defect: critical rail and signalling failure zone with immediate safety and service risk.,10.0,test
+Safety-sensitive rail and switch condition is deteriorated; repair must be prioritised immediately.,8.0,test
+Small crack-like indication on rail surface requires close follow-up during next maintenance window.,2.0,test
+Minor fastening loosening reported; no immediate train restriction but should be monitored. Additional observation: reconfirmed at the signal tower.,2.0,test

@@ -20,6 +20,7 @@ Run with:
 
 from __future__ import annotations
 
+import json
 import os
 import sys
 import unittest
@@ -235,6 +236,79 @@ class TestInvalidAndMissingInputs(unittest.TestCase):
             "deadline": "not-a-date",
         })
         self.assertEqual(result["feature_contributions"]["deadline_proximity"], 0.0)
+
+
+class TestModelBasedOutputMetadata(unittest.TestCase):
+    """MODEL_BASED results must expose the exact ML score and metadata."""
+
+    def setUp(self):
+        self.engine = CriticalityEngine()
+        self.task = {
+            "entity_id": "model_meta_001",
+            "severity": "CRITICAL",
+            "urgency": 0.90,
+            "safety_risk": 0.88,
+            "traffic_density": 0.82,
+            "speed_class": "EXPRESS",
+            "deadline": "2026-11-03T18:00:00Z",
+            "inspection_remark": "Loose rail fastener, repeated vibration warning.",
+        }
+
+    def test_model_based_output_contains_ml_metadata(self):
+        result = self.engine.score(self.task, scoring_mode="MODEL_BASED")
+        self.assertEqual(result["scoring_mode"], "MODEL_BASED")
+        self.assertEqual(result["model_name"], "GradientBoostingRegressor")
+        self.assertEqual(result["model_version"], "criticality_gbr_v1")
+        self.assertIn("predicted_criticality", result)
+        self.assertIn("priority_level", result)
+        self.assertIn("text_severity_used", result)
+
+    def test_predicted_criticality_matches_model_output(self):
+        result = self.engine.score(self.task, scoring_mode="MODEL_BASED")
+        model = self.engine._load_model()
+        feature_vector = [
+            self.engine._model_feature_vector(self.task, datetime.now(timezone.utc))["severity"],
+            self.engine._model_feature_vector(self.task, datetime.now(timezone.utc))["urgency"],
+            self.engine._model_feature_vector(self.task, datetime.now(timezone.utc))["safety_risk"],
+            self.engine._model_feature_vector(self.task, datetime.now(timezone.utc))["traffic_density"],
+            self.engine._model_feature_vector(self.task, datetime.now(timezone.utc))["speed_class"],
+            self.engine._model_feature_vector(self.task, datetime.now(timezone.utc))["deadline_proximity"],
+        ]
+        model_prediction = float(model.predict([feature_vector])[0])
+        self.assertEqual(result["predicted_criticality"], float(self.engine._clamp(model_prediction)))
+        self.assertEqual(result["score"], result["predicted_criticality"])
+
+    def test_priority_level_matches_existing_thresholds(self):
+        result = self.engine.score(self.task, scoring_mode="MODEL_BASED")
+        self.assertEqual(result["priority_level"], result["priority_class"])
+        if result["score"] >= 0.85:
+            self.assertEqual(result["priority_level"], "P1")
+        elif result["score"] >= 0.70:
+            self.assertEqual(result["priority_level"], "P2")
+        elif result["score"] >= 0.50:
+            self.assertEqual(result["priority_level"], "P3")
+        else:
+            self.assertEqual(result["priority_level"], "P4")
+
+    def test_rule_based_output_still_works(self):
+        result = self.engine.score({
+            "entity_id": "rule_only_001",
+            "severity": "MODERATE",
+            "urgency": 0.50,
+            "safety_risk": 0.45,
+            "traffic_density": 0.55,
+            "speed_class": "MEDIUM",
+            "deadline": None,
+        })
+        self.assertEqual(result["scoring_mode"], "RULE_BASED")
+        self.assertNotIn("predicted_criticality", result)
+        self.assertIsInstance(result["score"], float)
+
+    def test_missing_optional_metadata_does_not_break_serialization(self):
+        result = self.engine.score(self.task, scoring_mode="MODEL_BASED")
+        payload = dict(result)
+        payload.pop("text_severity_used", None)
+        self.assertIsInstance(json.dumps(payload), str)
 
 
 class TestScoreAlwaysInRange(unittest.TestCase):

@@ -29,7 +29,7 @@ class TestCriticalityModelIntegration(unittest.TestCase):
         result = engine.score(self.task, scoring_mode="MODEL_BASED")
 
         self.assertEqual(result["scoring_mode"], "MODEL_BASED")
-        self.assertEqual(result["model_version"], "criticality_gbr_v1")
+        self.assertEqual(result["model_version"], "criticality_gbr_v2")
         self.assertIn("priority_class", result)
         self.assertIsInstance(result["score"], float)
         self.assertGreaterEqual(result["score"], 0.0)
@@ -60,7 +60,7 @@ class TestCriticalityModelIntegration(unittest.TestCase):
         orchestrated = AgentOrchestrator().orchestrate(request)
         self.assertIn("criticality_scores", orchestrated)
         self.assertEqual(orchestrated["criticality_scores"][0]["scoring_mode"], "MODEL_BASED")
-        self.assertEqual(orchestrated["criticality_scores"][0]["model_version"], "criticality_gbr_v1")
+        self.assertEqual(orchestrated["criticality_scores"][0]["model_version"], "criticality_gbr_v2")
         self.assertGreaterEqual(orchestrated["criticality_scores"][0]["score"], 0.0)
         self.assertLessEqual(orchestrated["criticality_scores"][0]["score"], 1.0)
         self.assertIn(orchestrated["criticality_scores"][0]["priority_class"], {"P1", "P2", "P3", "P4"})

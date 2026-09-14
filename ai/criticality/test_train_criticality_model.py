@@ -52,7 +52,7 @@ class TestCriticalityModelTraining(unittest.TestCase):
             with open(report["metadata_path"], encoding="utf-8") as handle:
                 metadata = json.load(handle)
             self.assertEqual(metadata["model_name"], "GradientBoostingRegressor")
-            self.assertEqual(metadata["model_version"], "criticality_gbr_v1")
+            self.assertEqual(metadata["model_version"], "criticality_gbr_v2")
             self.assertEqual(metadata["training_seed"], 42)
             self.assertEqual(metadata["train_sample_count"], 560)
             self.assertEqual(metadata["validation_sample_count"], 120)

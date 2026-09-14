@@ -254,8 +254,21 @@ class TestAgentOrchestrator(unittest.TestCase):
             explainability_engine=mock_explain,
         )
 
-        res = orchestrator.orchestrate(self.base_request)
+        req_with_remark = dict(
+            self.base_request,
+            tasks=[
+                {**self.base_request["tasks"][0], "inspection_remark": "Loose rail fastener detected during inspection."},
+                self.base_request["tasks"][1],
+            ],
+        )
+        res = orchestrator.orchestrate(req_with_remark)
         self.assertEqual(res["status"], "SUCCESS")
+        self.assertTrue(
+            any(
+                call.args[0].get("inspection_remark") == "Loose rail fastener detected during inspection."
+                for call in mock_crit.score.call_args_list
+            )
+        )
 
         # 1. Verify exact chronological call sequence
         call_names = [c[0] for c in manager.mock_calls]

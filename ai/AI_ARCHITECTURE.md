@@ -85,8 +85,22 @@ Takes defect and task characteristics and outputs a deterministic criticality sc
 
 Supported modes:
 
-- MVP rule-based scoring
-- future model-based scoring via XGBoost or similar
+- RULE_BASED scoring
+- MODEL_BASED scoring
+
+The current prototype includes a trained GradientBoostingRegressor criticality model (`criticality_gbr_v2`). It evaluates a 7-feature vector in this exact order:
+
+1. severity
+2. urgency
+3. safety_risk
+4. traffic_density
+5. speed_class
+6. deadline_proximity
+7. text_severity
+
+`text_severity` is derived from the existing inspection-text severity model and is used as an additional bounded feature input to the model-based criticality pipeline. The model-based path remains deterministic and bounded to 0.0–1.0 for the final score, while the rule-based path remains available for explicit fallback and compatibility testing.
+
+Architecture principle: ML estimates criticality/risk; deterministic rules control safety/compatibility; the optimizer controls scheduling. The training data used in this prototype is synthetic, domain-informed, and not real Indian Railways historical data.
 
 ### 4. Compatibility engine
 

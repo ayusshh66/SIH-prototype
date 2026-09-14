@@ -69,8 +69,8 @@ logger = logging.getLogger(__name__)
 # ──────────────────────────────────────────────────────────────────────
 
 MODEL_VERSION = "criticality_v1_rule_2026Q4"
-MODEL_BASED_VERSION = "criticality_gbr_v1"
-MODEL_ARTIFACT_PATH = Path(__file__).resolve().parent / "artifacts" / "gradientboostingregressor_criticality_gbr_v1.joblib"
+MODEL_BASED_VERSION = "criticality_gbr_v2"
+MODEL_ARTIFACT_PATH = Path(__file__).resolve().parent / "artifacts" / "gradientboostingregressor_criticality_gbr_v2.joblib"
 
 # Weights — sum to 1.0
 # User requirement: NO department factor.  The 6 features from the contract
@@ -302,7 +302,11 @@ class CriticalityEngine:
                 feature_map["traffic_density"],
                 feature_map["speed_class"],
                 feature_map["deadline_proximity"],
+                feature_map["text_severity"],
             ]
+            if len(feature_vector) != 7:
+                logger.warning("MODEL_BASED criticality feature vector length mismatch; falling back to RULE_BASED")
+                return None
             raw_prediction = model.predict([feature_vector])[0]
             prediction = float(raw_prediction)
             if prediction != prediction:
@@ -351,7 +355,7 @@ class CriticalityEngine:
             "feature_contributions": contributions,
             "explanation": explanation,
             "model_name": model.__class__.__name__,
-            "model_version": MODEL_BASED_VERSION,
+            "model_version": "criticality_gbr_v2",
             "predicted_criticality": float(score),
             "priority_level": priority_class,
             "confidence": confidence,

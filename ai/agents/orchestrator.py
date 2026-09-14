@@ -184,6 +184,13 @@ class AgentOrchestrator:
                 spd = task.get("speed_class", "HIGH")
                 ddl = task.get("deadline")
 
+                remark = (
+                    task.get("inspection_remark")
+                    or task.get("maintenance_remark")
+                    or task.get("remark")
+                    or task.get("inspection_notes")
+                    or task.get("notes")
+                )
                 score_input = {
                     "entity_id": tid,
                     "severity": sev,
@@ -193,6 +200,8 @@ class AgentOrchestrator:
                     "speed_class": spd,
                     "deadline": ddl,
                 }
+                if remark is not None:
+                    score_input["inspection_remark"] = remark
                 cs_record = self.criticality_engine.score(score_input, scoring_mode="MODEL_BASED")
                 criticality_scores.append(cs_record)
                 scored_ids.add(tid)

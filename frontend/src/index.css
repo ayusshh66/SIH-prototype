@@ -7,38 +7,46 @@
 @tailwind utilities;
 
 @layer base {
-  :root {
-    --bg-obsidian: #0B0F19;
-    --neon-blue: #00F0FF;
-    --alert-orange: #F97316;
-  }
-
   body {
-    @apply font-sans text-white antialiased overflow-hidden;
-    background-color: #0d0d0d !important;
-    /* Dark map/geometric grid representing railway corridors */
+    @apply font-sans antialiased overflow-hidden;
+    background-color: var(--bg-canvas);
+    color: var(--text-primary);
     background-image: 
-      linear-gradient(rgba(255, 255, 255, 0.05) 1px, transparent 1px),
-      linear-gradient(90deg, rgba(255, 255, 255, 0.05) 1px, transparent 1px),
-      radial-gradient(circle at 50% 50%, rgba(249, 115, 22, 0.05) 0%, transparent 60%);
-    background-size: 100px 100px, 100px 100px, 100% 100%;
+      linear-gradient(var(--border-hairline) 1px, transparent 1px),
+      linear-gradient(90deg, var(--border-hairline) 1px, transparent 1px);
+    background-size: 64px 64px, 64px 64px;
     background-position: center center;
-    background-attachment: fixed;
   }
 }
 
-/* Ultra-thin dark scrollbar */
+/* Technical scrollbars */
 .custom-scrollbar::-webkit-scrollbar {
-  width: 4px;
-  height: 4px;
+  width: 5px;
+  height: 5px;
 }
 .custom-scrollbar::-webkit-scrollbar-track {
   background: transparent;
 }
 .custom-scrollbar::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.1);
-  border-radius: 4px;
+  background: var(--border-strong);
+  border-radius: var(--radius-sm);
 }
 .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-  background: rgba(249, 115, 22, 0.5); /* Orange hover */
+  background: var(--accent-500);
+}
+
+/* Monospace alignment helper */
+.tabular-nums {
+  font-variant-numeric: tabular-nums;
+}
+
+/* Hazard diagonal stripe pattern for conflict blocks */
+.hazard-stripes {
+  background-image: repeating-linear-gradient(
+    -45deg,
+    rgba(255, 71, 87, 0.25),
+    rgba(255, 71, 87, 0.25) 10px,
+    rgba(255, 159, 67, 0.25) 10px,
+    rgba(255, 159, 67, 0.25) 20px
+  );
 }

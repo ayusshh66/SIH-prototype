@@ -1,10 +1,13 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { X } from 'lucide-react';
+import { drawerSlide } from '../../lib/motion';
 
 export interface DrawerProps {
   isOpen: boolean;
   onClose: () => void;
   title: React.ReactNode;
+  subtitle?: React.ReactNode;
   children: React.ReactNode;
   footer?: React.ReactNode;
   width?: string;
@@ -14,72 +17,91 @@ export const Drawer: React.FC<DrawerProps> = ({
   isOpen,
   onClose,
   title,
+  subtitle,
   children,
   footer,
   width,
 }) => {
-  const [render, setRender] = useState(isOpen);
-
-  if (isOpen && !render) {
-    setRender(true);
-  }
-
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Escape' && isOpen) {
         onClose();
       }
     };
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
+    if (isOpen) {
+      window.addEventListener('keydown', handleKeyDown);
+      document.body.style.overflow = 'hidden';
+    }
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown);
+      document.body.style.overflow = '';
+    };
   }, [isOpen, onClose]);
 
-  const handleAnimationEnd = () => {
-    if (!isOpen) setRender(false);
-  };
-
-  if (!render) return null;
-
   return (
-    <>
-      <div
-        className={`fixed inset-0 bg-black/60 backdrop-blur-sm z-40 transition-opacity duration-300 ${
-          isOpen ? 'opacity-100' : 'opacity-0'
-        }`}
-        onClick={onClose}
-        role="presentation"
-      />
-      <div
-        className={`fixed inset-y-0 right-0 w-full ${
-          width ? '' : 'md:w-[480px]'
-        } bg-[#18181B]/95 backdrop-blur-xl border-l border-white/10 shadow-2xl z-50 flex flex-col transform transition-transform duration-300 ${
-          isOpen ? 'translate-x-0' : 'translate-x-full'
-        }`}
-        style={width ? { width } : undefined}
-        onTransitionEnd={handleAnimationEnd}
-        role="dialog"
-        aria-modal="true"
-      >
-        <div className="flex items-center justify-between p-4 border-b border-white/10 bg-black/40 shrink-0">
-          <div className="text-lg font-semibold tracking-wide text-white">
-            {title}
-          </div>
-          <button
+    <AnimatePresence>
+      {isOpen && (
+        <>
+          {/* Backdrop */}
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 0.65 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.2 }}
+            className="fixed inset-0 bg-black backdrop-blur-[2px] z-40"
             onClick={onClose}
-            className="p-1 rounded-lg hover:bg-white/5 transition-colors text-gray-400 hover:text-white"
-            aria-label="Close drawer"
+            role="presentation"
+          />
+
+          {/* Drawer Panel */}
+          <motion.div
+            variants={drawerSlide}
+            initial="initial"
+            animate="animate"
+            exit="exit"
+            className={`fixed inset-y-0 right-0 w-full ${
+              width ? '' : 'sm:w-[480px]'
+            } bg-surface-raised border-l border-border-hairline shadow-drawer z-50 flex flex-col`}
+            style={width ? { width } : undefined}
+            role="dialog"
+            aria-modal="true"
           >
-            <X size={20} />
-          </button>
-        </div>
-        <div className="p-6 flex-1 overflow-y-auto custom-scrollbar">{children}</div>
-        {footer && (
-          <div className="p-4 border-t border-white/10 bg-black/40 shrink-0">
-            {footer}
-          </div>
-        )}
-      </div>
-    </>
+            {/* Header */}
+            <div className="flex items-center justify-between px-6 py-4 border-b border-border-hairline bg-surface shrink-0">
+              <div>
+                <div className="text-h3 font-semibold text-content-primary">
+                  {title}
+                </div>
+                {subtitle && (
+                  <div className="text-micro text-content-tertiary font-mono uppercase mt-0.5">
+                    {subtitle}
+                  </div>
+                )}
+              </div>
+              <button
+                onClick={onClose}
+                className="p-1.5 rounded-sm hover:bg-surface-sunken transition-colors text-content-tertiary hover:text-content-primary"
+                aria-label="Close drawer"
+              >
+                <X size={18} />
+              </button>
+            </div>
+
+            {/* Scrollable Body */}
+            <div className="p-6 flex-1 overflow-y-auto custom-scrollbar text-content-primary">
+              {children}
+            </div>
+
+            {/* Sticky Action Footer */}
+            {footer && (
+              <div className="px-6 py-3.5 border-t border-border-hairline bg-surface-sunken/60 shrink-0">
+                {footer}
+              </div>
+            )}
+          </motion.div>
+        </>
+      )}
+    </AnimatePresence>
   );
 };
 

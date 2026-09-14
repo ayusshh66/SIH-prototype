@@ -1,27 +1,32 @@
 import React from 'react';
-import { Button } from '../../components/common/Button';
+import { Tabs, TabItem } from '../../components/common/Tabs';
 
 interface Props {
   activeTab: string;
   onTabChange: (tab: string) => void;
+  counts?: Record<string, number>;
 }
 
-export const ConflictCategoryTabs: React.FC<Props> = ({ activeTab, onTabChange }) => {
-  const tabs = ['ALL', 'TRAIN_CONFLICT', 'RESOURCE_CONFLICT', 'WINDOW_CONFLICT', 'SAFETY_CONFLICT', 'DEADLINE_CONFLICT'];
+export const ConflictCategoryTabs: React.FC<Props> = ({ activeTab, onTabChange, counts = {} }) => {
+  const tabs: TabItem[] = [
+    { id: 'ALL', label: 'All Conflicts', badge: counts['ALL'] },
+    { id: 'TRAIN_CONFLICT', label: 'Train Overlaps', badge: counts['TRAIN_CONFLICT'] },
+    { id: 'RESOURCE_CONFLICT', label: 'Resource Contention', badge: counts['RESOURCE_CONFLICT'] },
+    { id: 'WINDOW_CONFLICT', label: 'Time Window', badge: counts['WINDOW_CONFLICT'] },
+    { id: 'SAFETY_CONFLICT', label: 'Safety Violations', badge: counts['SAFETY_CONFLICT'] },
+    { id: 'DEADLINE_CONFLICT', label: 'Overdue Work', badge: counts['DEADLINE_CONFLICT'] },
+  ];
 
   return (
-    <div className="flex gap-2 flex-wrap bg-black/20 backdrop-blur-md p-4 border border-white/5 rounded-2xl shadow-xl relative overflow-hidden group">
-      <div className="absolute inset-0 bg-gradient-to-r from-white/[0.02] to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none" />
-      {tabs.map(tab => (
-        <Button 
-          key={tab} 
-          variant={activeTab === tab ? 'primary' : 'secondary'} 
-          onClick={() => onTabChange(tab)}
-          className="text-[10px] uppercase tracking-wider py-1.5 px-3"
-        >
-          {tab.replace('_', ' ')}
-        </Button>
-      ))}
+    <div className="bg-surface border border-border-hairline rounded-md overflow-x-auto custom-scrollbar">
+      <Tabs
+        tabs={tabs}
+        activeTab={activeTab}
+        onChange={onTabChange}
+        layoutId="conflict-active-tab"
+      />
     </div>
   );
 };
+
+export default ConflictCategoryTabs;

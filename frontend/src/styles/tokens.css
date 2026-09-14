@@ -1,131 +1,169 @@
 /**
- * Indian Railways Automatic Block Planning System
- * Design System Tokens — Professional Control Room Theme
+ * Rail Control Console Design System Tokens
+ * Mission-critical industrial-technical theme with light mode support
  */
 
 :root {
-  /* Color Palette - Operations Surfaces */
-  --bg-canvas: #080C14;
-  --bg-surface: #0E1526;
-  --bg-surface-raised: #151F36;
-  --bg-surface-hover: #1D2A47;
-  --bg-surface-active: #24355A;
+  /* 2.1 Base Surfaces (Dark Mode Default) */
+  --bg-canvas: #0A0D12;
+  --bg-surface: #12161D;
+  --bg-surface-raised: #171C25;
+  --bg-surface-sunken: #0D1015;
+  --border-hairline: #232933;
+  --border-strong: #323A48;
+  --border-subtle: #1A1F28;
 
-  /* Borders & Dividers */
-  --border-subtle: #182238;
-  --border-default: #233252;
-  --border-strong: #364C78;
-  --border-highlight: #38BDF8;
+  /* 2.2 Text */
+  --text-primary: #E8ECF2;
+  --text-secondary: #9AA5B4;
+  --text-tertiary: #616B7A;
+  --text-disabled: #3E4653;
+  --text-inverse: #0A0D12;
 
-  /* Typography Colors */
-  --text-primary: #F8FAFC;
-  --text-secondary: #94A3B8;
-  --text-muted: #64748B;
-  --text-inverse: #080C14;
-  --text-cyan: #38BDF8;
+  /* 2.3 Brand / Accent (Operational Blue) */
+  --accent-50: #EAF2FF;
+  --accent-400: #4F8DFF;
+  --accent-500: #2F6FEE;
+  --accent-600: #1E55C7;
+  --accent-glow: rgba(47, 111, 238, 0.35);
 
-  /* Brand Accents - Indian Railways Operations */
-  --ir-blue: #2563EB;
-  --ir-blue-hover: #1D4ED8;
-  --ir-blue-bg: rgba(37, 99, 235, 0.12);
-  --ir-blue-border: rgba(37, 99, 235, 0.35);
+  /* 2.4 Domain-Semantic Colors */
+  /* Criticality / Priority (P1–P4) */
+  --crit-p1: #FF4757;
+  --crit-p1-bg: rgba(255, 71, 87, 0.14);
+  --crit-p1-border: rgba(255, 71, 87, 0.35);
 
-  /* Railway Departments */
-  --dept-eng: #3B82F6;
-  --dept-eng-bg: rgba(59, 130, 246, 0.12);
-  --dept-eng-border: rgba(59, 130, 246, 0.35);
+  --crit-p2: #FF9F43;
+  --crit-p2-bg: rgba(255, 159, 67, 0.14);
+  --crit-p2-border: rgba(255, 159, 67, 0.35);
 
-  --dept-trd: #F59E0B;
-  --dept-trd-bg: rgba(245, 158, 11, 0.12);
-  --dept-trd-border: rgba(245, 158, 11, 0.35);
+  --crit-p3: #FFD43B;
+  --crit-p3-bg: rgba(255, 212, 59, 0.14);
+  --crit-p3-border: rgba(255, 212, 59, 0.35);
 
-  --dept-snt: #10B981;
-  --dept-snt-bg: rgba(16, 185, 129, 0.12);
-  --dept-snt-border: rgba(16, 185, 129, 0.35);
+  --crit-p4: #4ADE80;
+  --crit-p4-bg: rgba(74, 222, 128, 0.14);
+  --crit-p4-border: rgba(74, 222, 128, 0.35);
 
-  /* Operational Priorities */
-  --priority-critical: #EF4444;
-  --priority-critical-bg: rgba(239, 68, 68, 0.12);
-  --priority-critical-border: rgba(239, 68, 68, 0.35);
+  /* Status / Conflict */
+  --status-feasible: #4ADE80;
+  --status-feasible-bg: rgba(74, 222, 128, 0.14);
+  --status-partial: #FFD43B;
+  --status-partial-bg: rgba(255, 212, 59, 0.14);
+  --status-conflict: #FF9F43;
+  --status-conflict-bg: rgba(255, 159, 67, 0.14);
+  --status-rejected: #FF4757;
+  --status-rejected-bg: rgba(255, 71, 87, 0.14);
+  --status-neutral: #6B7684;
+  --status-neutral-bg: rgba(107, 118, 132, 0.14);
 
-  --priority-high: #F97316;
-  --priority-high-bg: rgba(249, 115, 22, 0.12);
-  --priority-high-border: rgba(249, 115, 22, 0.35);
+  /* Safety Class */
+  --safety-normal: #4F8DFF;
+  --safety-normal-bg: rgba(79, 141, 255, 0.14);
+  --safety-restricted: #A78BFA;
+  --safety-restricted-bg: rgba(167, 139, 250, 0.14);
+  --safety-interlocking: #F97316;
+  --safety-interlocking-bg: rgba(249, 115, 22, 0.14);
+  --safety-high: #FF4757;
+  --safety-high-bg: rgba(255, 71, 87, 0.14);
 
-  --priority-medium: #FBBF24;
-  --priority-medium-bg: rgba(251, 191, 36, 0.12);
-  --priority-medium-border: rgba(251, 191, 36, 0.35);
+  /* Department Color-Coding */
+  --dept-engineering: #4F8DFF;
+  --dept-engineering-bg: rgba(79, 141, 255, 0.14);
+  --dept-pway: #38BDF8;
+  --dept-pway-bg: rgba(56, 189, 248, 0.14);
+  --dept-trd: #A78BFA;
+  --dept-trd-bg: rgba(167, 139, 250, 0.14);
+  --dept-snt: #F472B6;
+  --dept-snt-bg: rgba(244, 114, 182, 0.14);
+  --dept-signaling: #FB923C;
+  --dept-signaling-bg: rgba(251, 146, 60, 0.14);
+  --dept-traction: #FBBF24;
+  --dept-traction-bg: rgba(251, 191, 36, 0.14);
+  --dept-other: #6B7684;
+  --dept-other-bg: rgba(107, 118, 132, 0.14);
 
-  --priority-low: #94A3B8;
-  --priority-low-bg: rgba(148, 163, 184, 0.10);
-  --priority-low-border: rgba(148, 163, 184, 0.25);
-
-  /* Optimization Statuses */
-  --status-optimal: #10B981;
-  --status-optimal-bg: rgba(16, 185, 129, 0.12);
-  --status-optimal-border: rgba(16, 185, 129, 0.35);
-
-  --status-feasible: #3B82F6;
-  --status-feasible-bg: rgba(59, 130, 246, 0.12);
-  --status-feasible-border: rgba(59, 130, 246, 0.35);
-
-  --status-partial: #F59E0B;
-  --status-partial-bg: rgba(245, 158, 11, 0.12);
-  --status-partial-border: rgba(245, 158, 11, 0.35);
-
-  --status-infeasible: #EF4444;
-  --status-infeasible-bg: rgba(239, 68, 68, 0.12);
-  --status-infeasible-border: rgba(239, 68, 68, 0.35);
-
-  --status-failed: #DC2626;
-  --status-failed-bg: rgba(220, 38, 38, 0.15);
-  --status-failed-border: rgba(220, 38, 38, 0.40);
-
-  /* Conflicts */
-  --conflict-train: #EF4444;
-  --conflict-resource: #F59E0B;
-  --conflict-window: #3B82F6;
-  --conflict-safety: #DC2626;
-  --conflict-deadline: #A855F7;
+  /* Backward-compatible Aliases */
+  --dept-eng: var(--dept-engineering);
+  --priority-critical: var(--crit-p1);
+  --priority-high: var(--crit-p2);
+  --priority-medium: var(--crit-p3);
+  --priority-low: var(--crit-p4);
+  --status-optimal: var(--status-feasible);
 
   /* Typography */
-  --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-  --font-mono: 'JetBrains Mono', 'SF Mono', 'Roboto Mono', Menlo, Consolas, monospace;
+  --font-ui: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  --font-mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
 
-  /* Font Sizes */
-  --text-xs: 0.725rem;   /* 11.6px */
-  --text-sm: 0.8125rem;  /* 13px */
-  --text-base: 0.875rem; /* 14px */
-  --text-md: 0.9375rem;  /* 15px */
-  --text-lg: 1.125rem;   /* 18px */
-  --text-xl: 1.25rem;    /* 20px */
-  --text-2xl: 1.5rem;    /* 24px */
-  --text-3xl: 1.875rem;  /* 30px */
-
-  /* Spacing Scale */
-  --space-1: 0.25rem;  /* 4px */
-  --space-2: 0.5rem;   /* 8px */
-  --space-3: 0.75rem;  /* 12px */
-  --space-4: 1rem;     /* 16px */
-  --space-5: 1.25rem;  /* 20px */
-  --space-6: 1.5rem;   /* 24px */
-  --space-8: 2rem;     /* 32px */
-  --space-10: 2.5rem;  /* 40px */
-
-  /* Radii */
-  --radius-xs: 2px;
-  --radius-sm: 4px;
-  --radius-md: 6px;
-  --radius-lg: 8px;
+  /* Corner Radii */
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-lg: 14px;
   --radius-full: 9999px;
 
-  /* Focus & Elevation */
-  --focus-ring: 0 0 0 2px var(--bg-canvas), 0 0 0 4px var(--ir-blue);
-  --shadow-panel: 0 4px 16px -2px rgba(0, 0, 0, 0.45);
-  --shadow-drawer: -4px 0 24px 0 rgba(0, 0, 0, 0.65);
+  /* Shadows (Tight & Low-opacity for floating elements) */
+  --shadow-floating: 0 8px 24px -4px rgba(0, 0, 0, 0.45);
+  --shadow-drawer: -8px 0 32px 0 rgba(0, 0, 0, 0.65);
+}
 
-  /* Layout dimensions */
-  --sidebar-width: 250px;
-  --sidebar-collapsed-width: 68px;
-  --header-height: 56px;
+/* Light Mode Overrides */
+html.light, .light {
+  --bg-canvas: #F7F8FA;
+  --bg-surface: #FFFFFF;
+  --bg-surface-raised: #FFFFFF;
+  --bg-surface-sunken: #EEF1F5;
+  --border-hairline: #E2E6ED;
+  --border-strong: #CBD2DE;
+  --border-subtle: #ECEFF4;
+
+  --text-primary: #0F1115;
+  --text-secondary: #475467;
+  --text-tertiary: #667085;
+  --text-disabled: #98A2B3;
+  --text-inverse: #FFFFFF;
+
+  --accent-50: #EAF2FF;
+  --accent-400: #3B7BF4;
+  --accent-500: #1D5ED8;
+  --accent-600: #1345A6;
+  --accent-glow: rgba(29, 94, 216, 0.25);
+
+  --crit-p1: #E02E3F;
+  --crit-p1-bg: rgba(224, 46, 63, 0.10);
+  --crit-p1-border: rgba(224, 46, 63, 0.30);
+
+  --crit-p2: #D97706;
+  --crit-p2-bg: rgba(217, 119, 6, 0.10);
+  --crit-p2-border: rgba(217, 119, 6, 0.30);
+
+  --crit-p3: #CA8A04;
+  --crit-p3-bg: rgba(202, 138, 4, 0.10);
+  --crit-p3-border: rgba(202, 138, 4, 0.30);
+
+  --crit-p4: #16A34A;
+  --crit-p4-bg: rgba(22, 163, 74, 0.10);
+  --crit-p4-border: rgba(22, 163, 74, 0.30);
+
+  --status-feasible: #16A34A;
+  --status-feasible-bg: rgba(22, 163, 74, 0.10);
+  --status-partial: #CA8A04;
+  --status-partial-bg: rgba(202, 138, 4, 0.10);
+  --status-conflict: #D97706;
+  --status-conflict-bg: rgba(217, 119, 6, 0.10);
+  --status-rejected: #E02E3F;
+  --status-rejected-bg: rgba(224, 46, 63, 0.10);
+  --status-neutral: #64748B;
+  --status-neutral-bg: rgba(100, 116, 139, 0.10);
+
+  --safety-normal: #2563EB;
+  --safety-normal-bg: rgba(37, 99, 235, 0.10);
+  --safety-restricted: #7C3AED;
+  --safety-restricted-bg: rgba(124, 58, 237, 0.10);
+  --safety-interlocking: #EA580C;
+  --safety-interlocking-bg: rgba(234, 88, 12, 0.10);
+  --safety-high: #DC2626;
+  --safety-high-bg: rgba(220, 38, 38, 0.10);
+
+  --shadow-floating: 0 8px 24px -4px rgba(0, 0, 0, 0.08);
+  --shadow-drawer: -8px 0 32px 0 rgba(0, 0, 0, 0.12);
 }

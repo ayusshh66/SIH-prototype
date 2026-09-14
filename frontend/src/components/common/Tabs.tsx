@@ -1,4 +1,5 @@
 import React from 'react';
+import { motion } from 'framer-motion';
 
 export interface TabItem {
   id: string;
@@ -12,6 +13,7 @@ export interface TabsProps {
   activeTab: string;
   onChange: (tabId: string) => void;
   className?: string;
+  layoutId?: string;
 }
 
 export const Tabs: React.FC<TabsProps> = ({
@@ -19,9 +21,13 @@ export const Tabs: React.FC<TabsProps> = ({
   activeTab,
   onChange,
   className = '',
+  layoutId = 'tab-active-indicator',
 }) => {
   return (
-    <div className={`flex gap-1 border-b border-white/10 px-2 ${className}`} role="tablist">
+    <div
+      className={`flex items-center gap-2 border-b border-border-hairline px-2 ${className}`}
+      role="tablist"
+    >
       {tabs.map((tab) => {
         const isActive = tab.id === activeTab;
         return (
@@ -29,10 +35,8 @@ export const Tabs: React.FC<TabsProps> = ({
             key={tab.id}
             role="tab"
             aria-selected={isActive}
-            className={`inline-flex items-center gap-1.5 px-4 py-2 text-sm font-medium border-b-2 transition-all cursor-pointer ${
-              isActive
-                ? 'text-[#F97316] border-[#F97316] font-semibold'
-                : 'text-gray-400 border-transparent hover:text-white'
+            className={`relative inline-flex items-center gap-2 px-3.5 py-2.5 text-small font-medium transition-colors cursor-pointer select-none ${
+              isActive ? 'text-content-primary' : 'text-content-tertiary hover:text-content-secondary'
             }`}
             onClick={() => onChange(tab.id)}
           >
@@ -40,14 +44,21 @@ export const Tabs: React.FC<TabsProps> = ({
             <span>{tab.label}</span>
             {tab.badge !== undefined && (
               <span
-                className={`text-[11px] font-mono px-1.5 py-px rounded-full ${
+                className={`text-micro font-mono px-1.5 py-0.5 rounded-sm tabular-nums ${
                   isActive
-                    ? 'bg-[#F97316]/15 text-[#F97316]'
-                    : 'bg-white/5 text-gray-500'
+                    ? 'bg-accent-500/15 text-accent-400'
+                    : 'bg-surface-sunken text-content-tertiary'
                 }`}
               >
                 {tab.badge}
               </span>
+            )}
+            {isActive && (
+              <motion.div
+                layoutId={layoutId}
+                className="absolute bottom-0 left-0 right-0 h-[2px] bg-accent-500 shadow-sm"
+                transition={{ type: 'spring', stiffness: 500, damping: 35 }}
+              />
             )}
           </button>
         );
@@ -56,3 +67,4 @@ export const Tabs: React.FC<TabsProps> = ({
   );
 };
 
+export default Tabs;

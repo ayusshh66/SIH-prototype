@@ -1,50 +1,107 @@
-import React from 'react';
+import React, { useState } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { Card } from '../../components/common/Card';
 import { Badge } from '../../components/common/Badge';
-import { Conflict } from '../../types/api';
+import { AlertTriangle, ChevronDown, ChevronUp, Clock, TrainTrack, ShieldAlert } from 'lucide-react';
+import { criticalConflictPulse, collapseHeight } from '../../lib/motion';
+import type { Conflict } from '../../types/api';
 
 export const ConflictAlertCard: React.FC<{ conflict: Conflict }> = ({ conflict }) => {
+  const [expanded, setExpanded] = useState(true);
   const isCritical = conflict.severity === 'CRITICAL';
-  
+  const isHigh = (conflict.severity as string) === 'MEDIUM' || (conflict.severity as string) === 'HIGH';
+
+  const borderClass = isCritical
+    ? 'border-l-4 border-l-crit-p1'
+    : isHigh
+    ? 'border-l-4 border-l-crit-p2'
+    : 'border-l-4 border-l-status-partial';
+
   return (
-    <Card className={`flex flex-col h-full border-l-4 !border-l-[4px] relative overflow-hidden group ${isCritical ? 'border-l-[#EF4444] shadow-[0_0_15px_rgba(239,68,68,0.1)]' : 'border-l-[#F59E0B] shadow-[0_0_15px_rgba(245,158,11,0.1)]'}`}>
-      <div className={`absolute inset-0 bg-gradient-to-r opacity-5 pointer-events-none ${isCritical ? 'from-[#EF4444]' : 'from-[#F59E0B]'} to-transparent`} />
-      
-      <div className="flex justify-between items-start mb-4 relative z-10">
-        <div>
-          <h3 className="text-lg font-bold font-mono text-white tracking-wide">{conflict.conflict_id}</h3>
-          <p className="text-[10px] text-gray-500 font-mono uppercase tracking-widest mt-1">
-            Section: <span className="text-gray-300">{conflict.section_id}</span>
-          </p>
-        </div>
-        <Badge variant={isCritical ? 'critical' : 'warning'}>
-           {conflict.conflict_type}
-        </Badge>
-      </div>
+    <Card className={`flex flex-col h-full ${borderClass} transition-colors`}>
+      <div className="p-5 space-y-3">
+        {/* Header */}
+        <div className="flex items-start justify-between gap-3">
+          <div className="flex items-center gap-2.5">
+            <motion.div
+              animate={isCritical ? criticalConflictPulse.animate : undefined}
+              transition={isCritical ? criticalConflictPulse.transition : undefined}
+              className={isCritical ? 'text-crit-p1' : isHigh ? 'text-crit-p2' : 'text-status-partial'}
+            >
+              <AlertTriangle size={18} strokeWidth={2} />
+            </motion.div>
+            <div>
+              <span className="text-h3 font-mono font-semibold text-content-primary">
+                {conflict.conflict_id}
+              </span>
+              <span className="text-micro font-mono text-content-tertiary block">
+                SECTION: {conflict.section_id}
+              </span>
+            </div>
+          </div>
 
-      <div className="flex-1 space-y-4 relative z-10">
-        <div>
-          <p className="font-mono text-sm leading-relaxed text-gray-300">
-            {conflict.description}
-          </p>
-        </div>
-
-        <div>
-          <h4 className="text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-2">Affected Entities</h4>
-          <div className="flex flex-wrap gap-2">
-            {conflict.entity_ids.map(id => (
-               <span key={id} className="bg-black/50 border border-white/10 px-2 py-1 rounded font-mono text-xs text-gray-400">
-                 {id}
-               </span>
-            ))}
+          <div className="flex items-center gap-2">
+            <Badge
+              tone={isCritical ? 'crit-p1' : isHigh ? 'crit-p2' : 'status-partial'}
+              showDot
+            >
+              {conflict.severity}
+            </Badge>
+            <button
+              onClick={() => setExpanded(!expanded)}
+              className="p-1 rounded-sm text-content-tertiary hover:text-content-primary hover:bg-surface-sunken transition-colors"
+              aria-label="Toggle details"
+            >
+              {expanded ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
+            </button>
           </div>
         </div>
-      </div>
 
-      <div className="mt-6 pt-4 border-t border-white/10 flex justify-between items-center text-xs font-mono relative z-10">
-        <span className="text-gray-500 tracking-wider">Detected: {conflict.start.split('T')[1].slice(0,5)}</span>
-        <button className="text-white hover:text-gray-300 transition-colors font-bold uppercase tracking-wider text-[10px]">Dismiss Alert</button>
+        {/* Description */}
+        <p className="text-small text-content-secondary leading-relaxed font-sans">
+          {conflict.description}
+        </p>
+
+        {/* Expandable Entity Details */}
+        <AnimatePresence>
+          {expanded && (
+            <motion.div
+              variants={collapseHeight}
+              initial="initial"
+              animate="animate"
+              exit="exit"
+              className="space-y-3 pt-2 overflow-hidden"
+            >
+              <div>
+                <h4 className="text-micro font-mono uppercase tracking-wider text-content-tertiary mb-1.5">
+                  Affected Entities ({conflict.entity_ids?.length || 0})
+                </h4>
+                <div className="flex flex-wrap gap-1.5">
+                  {conflict.entity_ids?.map((id) => (
+                    <span
+                      key={id}
+                      className="px-2 py-0.5 rounded-sm bg-surface-sunken border border-border-hairline font-mono text-micro text-content-primary"
+                    >
+                      {id}
+                    </span>
+                  ))}
+                </div>
+              </div>
+
+              <div className="pt-2 border-t border-border-subtle flex items-center justify-between text-micro font-mono text-content-tertiary">
+                <span className="flex items-center gap-1">
+                  <Clock size={11} /> Detected: {conflict.start ? conflict.start.replace('T', ' ') : 'Live Telemetry'}
+                </span>
+                <span className="text-accent-400 font-semibold cursor-pointer hover:underline">
+                  Auto-Resolve via Solver →
+                </span>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
       </div>
     </Card>
   );
 };
+
+export default ConflictAlertCard;

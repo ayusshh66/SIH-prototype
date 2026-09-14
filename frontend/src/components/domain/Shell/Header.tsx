@@ -1,49 +1,106 @@
-import React, { useState, useEffect } from 'react';
-import { Bell, SunMoon, User, Calendar } from 'lucide-react';
+import React from 'react';
+import { useLocation } from 'react-router-dom';
 import { motion } from 'framer-motion';
+import { Bell, Sun, Moon, Search, User, ChevronRight, CheckCircle2 } from 'lucide-react';
+import { useTheme } from '../../../context/ThemeContext';
+
+const routeNameMap: Record<string, string> = {
+  '': 'Dashboard',
+  planning: 'Schedule Gantt',
+  tasks: 'Maintenance Tasks',
+  'shadow-blocks': 'Shadow Blocks',
+  trains: 'Train Operations',
+  conflicts: 'Conflicts & Alerts',
+  'what-if': 'What-If Scenarios',
+  emergency: 'Emergency Block',
+  explain: 'Decision Audit',
+  system: 'Engine Health',
+};
 
 export const Header: React.FC = () => {
-  const [time, setTime] = useState(new Date());
+  const { theme, toggleTheme } = useTheme();
+  const location = useLocation();
 
-  useEffect(() => {
-    const timer = setInterval(() => setTime(new Date()), 1000);
-    return () => clearInterval(timer);
-  }, []);
+  const pathSegments = location.pathname.split('/').filter(Boolean);
+  const currentTitle = pathSegments.length > 0 ? routeNameMap[pathSegments[0]] || pathSegments[0] : 'Dashboard';
 
   return (
-    <motion.header 
-      initial={{ y: -50, opacity: 0 }}
-      animate={{ y: 0, opacity: 1 }}
-      className="fixed top-4 right-4 h-12 bg-[#18181B]/90 backdrop-blur-xl border border-white/10 rounded-full flex items-center justify-end px-2 z-50 shadow-[0_4px_24px_rgba(0,0,0,0.5)]"
-    >
-      <div className="flex items-center gap-1">
-        <div className="flex items-center gap-2 px-3 py-1 text-gray-300 font-mono text-xs">
-          <Calendar size={14} className="text-gray-500" />
-          <span>Mon | {time.toLocaleDateString('en-GB')}</span>
-        </div>
+    <header className="h-14 bg-canvas/85 backdrop-blur-md border-b border-border-hairline sticky top-0 z-20 flex items-center justify-between px-6 select-none">
+      {/* Left: Breadcrumb */}
+      <div className="flex items-center gap-2 text-small">
+        <span className="text-content-tertiary font-mono uppercase text-micro tracking-wider">
+          IR_NORTHERN // AGRA
+        </span>
+        <ChevronRight size={14} className="text-content-disabled" />
+        <span className="font-semibold text-content-primary">
+          {currentTitle}
+        </span>
+      </div>
 
-        <div className="w-px h-5 bg-white/10 mx-1" />
-
-        <div className="flex items-center gap-2 px-3 py-1 text-gray-300 font-mono text-xs w-24 justify-center">
-          {time.toLocaleTimeString('en-US', { hour12: false, hour: '2-digit', minute:'2-digit', second:'2-digit' })}
-        </div>
-
-        <div className="w-px h-5 bg-white/10 mx-1" />
-
-        <button className="p-2 text-gray-400 hover:text-white transition-colors rounded-full hover:bg-white/5">
-          <SunMoon size={16} />
+      {/* Right Controls */}
+      <div className="flex items-center gap-3">
+        {/* Search / Command palette pill */}
+        <button
+          className="hidden md:flex items-center gap-2 px-3 py-1.5 rounded-sm bg-surface border border-border-hairline text-content-tertiary hover:border-border-strong hover:text-content-secondary transition-colors text-small"
+          onClick={() => {}}
+        >
+          <Search size={14} />
+          <span>Quick search corridor...</span>
+          <kbd className="font-mono text-micro bg-surface-sunken px-1.5 py-0.5 rounded border border-border-hairline text-content-tertiary">
+            ⌘K
+          </kbd>
         </button>
 
-        <button className="relative p-2 text-gray-400 hover:text-white transition-colors rounded-full hover:bg-white/5">
-          <Bell size={16} />
-          <span className="absolute top-2 right-2 w-1.5 h-1.5 bg-[#F97316] rounded-full shadow-[0_0_8px_#F97316]"></span>
+        {/* Solver status indicator */}
+        <div className="hidden sm:flex items-center gap-1.5 px-2.5 py-1 rounded-sm bg-status-feasible-bg text-status-feasible border border-status-feasible/30 text-micro font-mono">
+          <CheckCircle2 size={12} />
+          <span>SOLVER ONLINE</span>
+        </div>
+
+        {/* Dark/Light Theme Toggle */}
+        <button
+          onClick={toggleTheme}
+          className="p-2 rounded-sm text-content-secondary hover:text-content-primary hover:bg-surface-raised transition-colors cursor-pointer"
+          title={`Switch to ${theme === 'dark' ? 'light' : 'dark'} mode`}
+          aria-label="Toggle theme"
+        >
+          <motion.div
+            key={theme}
+            initial={{ rotate: -90, opacity: 0 }}
+            animate={{ rotate: 0, opacity: 1 }}
+            exit={{ rotate: 90, opacity: 0 }}
+            transition={{ duration: 0.15 }}
+          >
+            {theme === 'dark' ? <Sun size={17} /> : <Moon size={17} />}
+          </motion.div>
         </button>
 
-        <div className="ml-1 w-8 h-8 rounded-full bg-gradient-to-tr from-gray-700 to-gray-500 border border-white/20 overflow-hidden flex items-center justify-center">
-          <User size={16} className="text-white" />
+        {/* Notifications Bell */}
+        <button
+          className="relative p-2 rounded-sm text-content-secondary hover:text-content-primary hover:bg-surface-raised transition-colors cursor-pointer"
+          title="Operational alerts"
+          aria-label="Notifications"
+        >
+          <Bell size={17} />
+          <span className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-crit-p1 animate-pulse" />
+        </button>
+
+        {/* User Profile Avatar */}
+        <div className="flex items-center gap-2 pl-2 border-l border-border-hairline">
+          <div className="w-8 h-8 rounded-sm bg-surface-raised border border-border-hairline flex items-center justify-center text-content-secondary font-mono text-micro font-semibold">
+            <User size={15} className="text-content-primary" />
+          </div>
+          <div className="hidden lg:flex flex-col text-left">
+            <span className="text-micro font-semibold text-content-primary leading-tight">
+              A. SHARMA
+            </span>
+            <span className="text-[10px] font-mono text-content-tertiary leading-tight">
+              SR_DOM / CONTROLLER
+            </span>
+          </div>
         </div>
       </div>
-    </motion.header>
+    </header>
   );
 };
 

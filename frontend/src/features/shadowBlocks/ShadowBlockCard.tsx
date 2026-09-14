@@ -2,77 +2,127 @@ import React from 'react';
 import { Card } from '../../components/common/Card';
 import { Badge } from '../../components/common/Badge';
 import { Button } from '../../components/common/Button';
-import { ShadowBlockCandidate } from '../../types/api';
+import { DepartmentBadge } from '../../components/domain/DepartmentBadge';
+import { ShieldAlert, CheckCircle2, Clock, Zap } from 'lucide-react';
+import type { ShadowBlockCandidate } from '../../types/api';
 
 export const ShadowBlockCard: React.FC<{ candidate: ShadowBlockCandidate }> = ({ candidate }) => {
   const isRejected = candidate.conflict_status === 'REJECTED';
-  
+  const isFeasible = (candidate.conflict_status as string) !== 'REJECTED' && (candidate.conflict_status as string) !== 'CONFLICT';
+
   return (
-    <Card className={`flex flex-col h-full relative ${isRejected ? '!border-[#EF4444]/50 opacity-90' : 'border-white/10'}`}>
-      <div className="flex justify-between items-start mb-4">
-        <div>
-          <h3 className="text-lg font-bold font-mono text-white">{candidate.shadow_block_id}</h3>
-          <p className="text-xs text-gray-500 font-mono uppercase mt-1 tracking-widest">
-            Section: <span className="text-gray-300">{candidate.sections.join(', ')}</span>
-          </p>
-        </div>
-        <Badge variant={isRejected ? 'critical' : 'optimal'}>
-           {candidate.conflict_status}
-        </Badge>
-      </div>
+    <Card
+      className={`flex flex-col h-full relative transition-colors ${
+        isRejected ? 'border-crit-p1/40' : 'border-status-feasible/40'
+      }`}
+    >
+      {/* Top Header Strip with Hazard Pattern if rejected */}
+      {isRejected && (
+        <div className="hazard-stripes h-2.5 w-full border-b border-crit-p1/30" />
+      )}
 
-      <div className="flex-1 space-y-4">
-        <div className="flex flex-wrap gap-2">
-           {candidate.departments.map(dept => (
-              <Badge key={dept} variant={dept as any}>{dept}</Badge>
-           ))}
-        </div>
-
-        <div className="grid grid-cols-2 gap-4 border-y border-white/10 py-4">
+      <div className="p-5 flex-1 flex flex-col justify-between space-y-4">
+        {/* Title & Status */}
+        <div className="flex justify-between items-start gap-2">
           <div>
-            <span className="block text-[10px] text-gray-500 font-mono uppercase tracking-widest">Benefit Score</span>
-            <span className="text-xl font-bold font-mono text-white">{candidate.shadow_benefit_score}</span>
+            <span className="text-micro font-mono uppercase tracking-wider text-content-tertiary">
+              {candidate.sections.join(' · ')}
+            </span>
+            <h3 className="text-h3 font-mono font-semibold text-content-primary">
+              {candidate.shadow_block_id}
+            </h3>
           </div>
-          <div>
-            <span className="block text-[10px] text-gray-500 font-mono uppercase tracking-widest">Time Saved</span>
-            <span className={`text-xl font-bold font-mono ${isRejected ? 'text-gray-500' : 'text-[#8B5CF6]'}`}>
-              {candidate.potential_time_saving_minutes}m
+
+          <Badge
+            tone={isRejected ? 'crit-p1' : 'status-feasible'}
+            showDot
+          >
+            {candidate.conflict_status}
+          </Badge>
+        </div>
+
+        {/* Department chips */}
+        <div className="flex flex-wrap gap-1.5">
+          {candidate.departments.map((dept) => (
+            <DepartmentBadge key={dept} department={dept} />
+          ))}
+        </div>
+
+        {/* Metrics Row */}
+        <div className="grid grid-cols-2 gap-3 py-3 border-y border-border-hairline font-mono">
+          <div className="p-2.5 bg-surface-sunken rounded-sm">
+            <span className="text-micro text-content-tertiary block uppercase">Benefit Score</span>
+            <span className="text-h2 font-semibold text-content-primary tabular-nums">
+              {candidate.shadow_benefit_score}
+            </span>
+          </div>
+
+          <div
+            className={`p-2.5 rounded-sm ${
+              isFeasible ? 'bg-status-feasible-bg text-status-feasible' : 'bg-surface-sunken text-content-tertiary'
+            }`}
+          >
+            <span className="text-micro block uppercase flex items-center gap-1">
+              <Clock size={11} /> Time Saved
+            </span>
+            <span className="text-h2 font-semibold tabular-nums">
+              +{candidate.potential_time_saving_minutes}m
             </span>
           </div>
         </div>
 
-        <div>
-          <h4 className="text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-2">Primary Task</h4>
-          <div className="font-mono text-sm bg-black/50 border border-white/10 p-2 rounded text-gray-300">
-            {candidate.primary_task_id}
+        {/* Primary & Participating Work Orders */}
+        <div className="space-y-2 font-mono text-small">
+          <div>
+            <span className="text-micro text-content-tertiary uppercase block mb-1">Anchor Possession:</span>
+            <div className="p-2 bg-surface-sunken border border-border-hairline rounded-sm font-semibold text-content-primary">
+              {candidate.primary_task_id}
+            </div>
+          </div>
+
+          <div>
+            <span className="text-micro text-content-tertiary uppercase block mb-1">
+              Piggyback Tasks ({candidate.participating_task_ids.length}):
+            </span>
+            <div className="space-y-1">
+              {candidate.participating_task_ids.map((id) => (
+                <div
+                  key={id}
+                  className="p-1.5 pl-3 border-l-2 border-accent-500 bg-surface-sunken/40 rounded-r-sm text-micro text-content-secondary"
+                >
+                  ↳ {id}
+                </div>
+              ))}
+            </div>
           </div>
         </div>
 
-        <div>
-          <h4 className="text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-2">Secondary Tasks</h4>
-          <ul className="space-y-1 font-mono text-sm">
-            {candidate.participating_task_ids.map(id => (
-               <li key={id} className="text-gray-300 pl-3 border-l-2 border-white/10">↳ {id}</li>
-            ))}
-          </ul>
-        </div>
-        
+        {/* Rejected Safety Evidence Quote */}
         {isRejected && candidate.reasons && (
-          <div className="mt-4 p-4 bg-black/40 border border-[#EF4444]/50 rounded-xl shadow-[0_0_15px_rgba(239,68,68,0.1)]">
-            <h4 className="text-[10px] font-bold text-[#EF4444] uppercase tracking-widest flex items-center gap-2 mb-2">
-              Rejection Reason
-            </h4>
-            <p className="font-mono text-xs text-gray-400 leading-relaxed">
-              {candidate.reasons[0]}
+          <div className="p-3 bg-crit-p1-bg border border-crit-p1/30 rounded-sm font-mono text-micro space-y-1">
+            <span className="text-crit-p1 font-semibold flex items-center gap-1 uppercase">
+              <ShieldAlert size={12} /> Safety Incompatibility Evidence:
+            </span>
+            <p className="text-content-secondary leading-snug">
+              "{candidate.reasons[0]}"
             </p>
           </div>
         )}
-      </div>
 
-      <div className="mt-6 pt-4 border-t border-white/10 flex gap-3 mt-auto">
-        {!isRejected && <Button variant="primary" className="flex-1 py-3">Approve</Button>}
-        <Button variant="secondary" className="flex-1 py-3">View Proof</Button>
+        {/* Action Footer */}
+        <div className="pt-3 border-t border-border-hairline flex gap-2 mt-auto">
+          {isFeasible && (
+            <Button variant="primary" size="sm" className="flex-1" icon={<Zap size={13} />}>
+              Approve Combo
+            </Button>
+          )}
+          <Button variant="secondary" size="sm" className="flex-1">
+            Audit Feasibility
+          </Button>
+        </div>
       </div>
     </Card>
   );
 };
+
+export default ShadowBlockCard;

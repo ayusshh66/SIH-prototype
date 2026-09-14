@@ -1,5 +1,6 @@
 /** @type {import('tailwindcss').Config} */
 export default {
+  darkMode: 'class',
   content: [
     "./index.html",
     "./src/**/*.{js,ts,jsx,tsx}",
@@ -7,34 +8,105 @@ export default {
   theme: {
     extend: {
       colors: {
-        background: {
-          main: '#0B0F19',
-        },
+        canvas: 'var(--bg-canvas)',
         surface: {
-          card: '#111827',
-          border: '#1F2937',
+          DEFAULT: 'var(--bg-surface)',
+          raised: 'var(--bg-surface-raised)',
+          sunken: 'var(--bg-surface-sunken)',
         },
-        text: {
-          primary: '#F9FAFB',
-          muted: '#9CA3AF',
+        border: {
+          hairline: 'var(--border-hairline)',
+          strong: 'var(--border-strong)',
+          subtle: 'var(--border-subtle)',
         },
-        department: {
-          eng: '#3B82F6',
-          trd: '#F59E0B',
-          snt: '#10B981',
+        content: {
+          primary: 'var(--text-primary)',
+          secondary: 'var(--text-secondary)',
+          tertiary: 'var(--text-tertiary)',
+          disabled: 'var(--text-disabled)',
+          inverse: 'var(--text-inverse)',
+        },
+        accent: {
+          50: 'var(--accent-50)',
+          400: 'var(--accent-400)',
+          500: 'var(--accent-500)',
+          600: 'var(--accent-600)',
+          glow: 'var(--accent-glow)',
+        },
+        crit: {
+          p1: 'var(--crit-p1)',
+          'p1-bg': 'var(--crit-p1-bg)',
+          p2: 'var(--crit-p2)',
+          'p2-bg': 'var(--crit-p2-bg)',
+          p3: 'var(--crit-p3)',
+          'p3-bg': 'var(--crit-p3-bg)',
+          p4: 'var(--crit-p4)',
+          'p4-bg': 'var(--crit-p4-bg)',
         },
         status: {
-          optimal: '#10B981',
-          warning: '#F59E0B',
-          critical: '#EF4444',
-          shadow: '#8B5CF6',
+          feasible: 'var(--status-feasible)',
+          'feasible-bg': 'var(--status-feasible-bg)',
+          partial: 'var(--status-partial)',
+          'partial-bg': 'var(--status-partial-bg)',
+          conflict: 'var(--status-conflict)',
+          'conflict-bg': 'var(--status-conflict-bg)',
+          rejected: 'var(--status-rejected)',
+          'rejected-bg': 'var(--status-rejected-bg)',
+          neutral: 'var(--status-neutral)',
+          'neutral-bg': 'var(--status-neutral-bg)',
+        },
+        safety: {
+          normal: 'var(--safety-normal)',
+          'normal-bg': 'var(--safety-normal-bg)',
+          restricted: 'var(--safety-restricted)',
+          'restricted-bg': 'var(--safety-restricted-bg)',
+          interlocking: 'var(--safety-interlocking)',
+          'interlocking-bg': 'var(--safety-interlocking-bg)',
+          high: 'var(--safety-high)',
+          'high-bg': 'var(--safety-high-bg)',
+        },
+        dept: {
+          engineering: 'var(--dept-engineering)',
+          'engineering-bg': 'var(--dept-engineering-bg)',
+          pway: 'var(--dept-pway)',
+          'pway-bg': 'var(--dept-pway-bg)',
+          trd: 'var(--dept-trd)',
+          'trd-bg': 'var(--dept-trd-bg)',
+          snt: 'var(--dept-snt)',
+          'snt-bg': 'var(--dept-snt-bg)',
+          signaling: 'var(--dept-signaling)',
+          'signaling-bg': 'var(--dept-signaling-bg)',
+          traction: 'var(--dept-traction)',
+          'traction-bg': 'var(--dept-traction-bg)',
+          other: 'var(--dept-other)',
+          'other-bg': 'var(--dept-other-bg)',
         }
       },
+      borderRadius: {
+        sm: '6px',
+        md: '10px',
+        lg: '14px',
+      },
       fontFamily: {
-        sans: ['Inter', 'system-ui', 'sans-serif'],
-        mono: ['JetBrains Mono', 'Courier New', 'monospace'],
+        sans: ['Inter', 'system-ui', '-apple-system', 'BlinkMacSystemFont', 'sans-serif'],
+        mono: ['JetBrains Mono', 'ui-monospace', 'SFMono-Regular', 'Menlo', 'monospace'],
+      },
+      fontSize: {
+        display: ['2.5rem', { lineHeight: '1.1', fontWeight: '600' }],
+        h1: ['1.75rem', { lineHeight: '1.2', fontWeight: '600' }],
+        h2: ['1.25rem', { lineHeight: '1.3', fontWeight: '600' }],
+        h3: ['1rem', { lineHeight: '1.4', fontWeight: '600' }],
+        body: ['0.875rem', { lineHeight: '1.5', fontWeight: '400' }],
+        small: ['0.8125rem', { lineHeight: '1.4', fontWeight: '400' }],
+        micro: ['0.6875rem', { lineHeight: '1.3', letterSpacing: '0.04em', fontWeight: '500' }],
+        'mono-lg': ['1rem', { lineHeight: '1.4', fontWeight: '500' }],
+        'mono-sm': ['0.8125rem', { lineHeight: '1.4', fontWeight: '400' }],
+      },
+      boxShadow: {
+        floating: 'var(--shadow-floating)',
+        drawer: 'var(--shadow-drawer)',
       }
     },
   },
   plugins: [],
-}
+};

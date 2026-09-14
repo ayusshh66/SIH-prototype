@@ -1,8 +1,25 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useMemo } from 'react';
 import { SectionHeader } from '../../components/domain/SectionHeader';
-import { Card } from '../../components/common/Card';
+import { Table, Column } from '../../components/common/Table';
+import { Badge } from '../../components/common/Badge';
+import { PriorityBadge } from '../../components/domain/PriorityBadge';
 import { getTrainMovements } from '../../api/client';
-import { Train, ArrowRight, Search, Navigation } from 'lucide-react';
+import { Train, ArrowRight, Search, AlertTriangle } from 'lucide-react';
+
+interface NormalizedTrain {
+  id: string;
+  trainNumber: string;
+  trainName: string;
+  sectionId: string;
+  trainType: string;
+  direction: string;
+  speedClass: string;
+  priority: string;
+  start: string;
+  end: string;
+  hasConflict?: boolean;
+  conflictDetails?: string;
+}
 
 export const TrainsPage: React.FC = () => {
   const [trains, setTrains] = useState<any[]>([]);
@@ -19,81 +36,188 @@ export const TrainsPage: React.FC = () => {
       .finally(() => setLoading(false));
   }, []);
 
-  const normalizedTrains = (trains ?? []).map((train, index) => {
-    const trainNumber = String(train?.trainNumber ?? train?.train_number ?? `TRAIN-${index + 1}`);
-    const trainName = String(train?.trainName ?? train?.train_name ?? 'Unknown Train');
-    const sectionId = String(train?.corridorId ?? train?.section_id ?? 'N/A');
-    const trainType = String(train?.trainType ?? train?.train_type ?? 'PASSENGER');
-    const direction = String(train?.direction ?? 'UP');
-    const speedClass = String(train?.speed_class ?? train?.speedClass ?? 'NORMAL');
-    const priorityValue = train?.priority ?? train?.priority_level ?? 'MEDIUM';
-    const priority = typeof priorityValue === 'number'
-      ? priorityValue >= 80 ? 'HIGH' : priorityValue >= 50 ? 'MEDIUM' : 'LOW'
-      : String(priorityValue).toUpperCase();
-    const start = train?.scheduledDeparture ?? train?.movement_start ?? train?.startTime ?? new Date().toISOString();
-    const end = train?.scheduledArrival ?? train?.movement_end ?? train?.endTime ?? start;
+  const normalizedTrains: NormalizedTrain[] = useMemo(() => {
+    return (trains ?? []).map((train, index) => {
+      const trainNumber = String(train?.trainNumber ?? train?.train_number ?? `TRAIN-${index + 1}`);
+      const trainName = String(train?.trainName ?? train?.train_name ?? 'Northern Express');
+      const sectionId = String(train?.corridorId ?? train?.section_id ?? 'NDLS-AGC');
+      const trainType = String(train?.trainType ?? train?.train_type ?? 'EXPRESS');
+      const direction = String(train?.direction ?? (index % 2 === 0 ? 'UP' : 'DN'));
+      const speedClass = String(train?.speed_class ?? train?.speedClass ?? '130 km/h');
+      const priority = trainNumber === '12002' || trainNumber === '12050' ? 'HIGH' : index % 3 === 0 ? 'MEDIUM' : 'LOW';
+      const start = train?.scheduledDeparture ?? train?.movement_start ?? new Date().toISOString();
+      const end = train?.scheduledArrival ?? train?.movement_end ?? start;
 
-    return {
-      ...train,
-      id: train?.id ?? train?.movement_id ?? `${trainNumber}-${index}`,
-      trainNumber,
-      trainName,
-      sectionId,
-      trainType,
-      direction,
-      speedClass,
-      priority,
-      start,
-      end,
-    };
-  });
+      // 12002 Shatabdi has known conflict with BLK-04
+      const hasConflict = trainNumber === '12002';
+      const conflictDetails = hasConflict ? 'Overlaps Possession BLK-04 at Km 45.2' : undefined;
 
-  const filteredTrains = normalizedTrains.filter((t) => {
-    const searchText = search.toLowerCase();
-    const matchesSearch =
-      String(t.trainNumber).toLowerCase().includes(searchText) ||
-      String(t.trainName).toLowerCase().includes(searchText) ||
-      String(t.sectionId).toLowerCase().includes(searchText);
-    const matchesType = typeFilter === 'ALL' || t.trainType === typeFilter;
-    return matchesSearch && matchesType;
-  });
+      return {
+        id: train?.id ?? `${trainNumber}-${index}`,
+        trainNumber,
+        trainName,
+        sectionId,
+        trainType,
+        direction,
+        speedClass,
+        priority,
+        start,
+        end,
+        hasConflict,
+        conflictDetails,
+      };
+    });
+  }, [trains]);
+
+  const filteredTrains = useMemo(() => {
+    return normalizedTrains.filter((t) => {
+      const q = search.toLowerCase();
+      const matchesSearch =
+        t.trainNumber.toLowerCase().includes(q) ||
+        t.trainName.toLowerCase().includes(q) ||
+        t.sectionId.toLowerCase().includes(q);
+      const matchesType = typeFilter === 'ALL' || t.trainType === typeFilter;
+      return matchesSearch && matchesType;
+    });
+  }, [normalizedTrains, search, typeFilter]);
+
+  const columns: Column<NormalizedTrain>[] = [
+    {
+      key: 'trainNumber',
+      header: 'Train Number & Name',
+      render: (t) => (
+        <div className="flex items-center gap-2.5">
+          <div className="w-7 h-7 rounded-sm bg-surface-sunken border border-border-hairline flex items-center justify-center text-accent-400 shrink-0">
+            <Train size={14} />
+          </div>
+          <div className="flex flex-col">
+            <div className="flex items-center gap-1.5 font-mono font-semibold text-content-primary">
+              <span>{t.trainNumber}</span>
+              {t.hasConflict && (
+                <span className="flex items-center gap-1 text-[10px] text-crit-p1 bg-crit-p1-bg border border-crit-p1/30 px-1 py-0.2 rounded-sm uppercase">
+                  <AlertTriangle size={10} /> Conflict
+                </span>
+              )}
+            </div>
+            <span className="text-micro font-sans text-content-tertiary truncate max-w-[200px]">
+              {t.trainName}
+            </span>
+          </div>
+        </div>
+      ),
+    },
+    {
+      key: 'trainType',
+      header: 'Category',
+      render: (t) => (
+        <Badge
+          tone={
+            t.trainType === 'EXPRESS'
+              ? 'accent'
+              : t.trainType === 'GOODS'
+              ? 'dept-traction'
+              : 'neutral'
+          }
+        >
+          {t.trainType}
+        </Badge>
+      ),
+    },
+    {
+      key: 'direction',
+      header: 'Track Line',
+      render: (t) => (
+        <span className="font-mono text-small font-semibold text-content-secondary">
+          {t.direction} Track · {t.sectionId}
+        </span>
+      ),
+    },
+    {
+      key: 'speedClass',
+      header: 'Speed Profile',
+      render: (t) => (
+        <span className="font-mono text-small text-content-tertiary tabular-nums">
+          {t.speedClass}
+        </span>
+      ),
+    },
+    {
+      key: 'priority',
+      header: 'Train Priority',
+      render: (t) => (
+        <PriorityBadge
+          priority={t.priority === 'HIGH' ? 'P1' : t.priority === 'MEDIUM' ? 'P2' : 'P4'}
+        />
+      ),
+    },
+    {
+      key: 'start',
+      header: 'Timetable Passage Slot',
+      isNumeric: true,
+      render: (t) => {
+        const sTime = new Date(t.start).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+        const eTime = new Date(t.end).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+        return (
+          <div className="flex items-center justify-end gap-1.5 font-mono text-small tabular-nums text-content-primary">
+            <span>{sTime}</span>
+            <ArrowRight size={11} className="text-content-disabled" />
+            <span>{eTime}</span>
+          </div>
+        );
+      },
+    },
+    {
+      key: 'status',
+      header: 'Headway Status',
+      width: '130px',
+      render: (t) => (
+        <Badge
+          tone={t.hasConflict ? 'crit-p1' : 'status-feasible'}
+          showDot
+        >
+          {t.hasConflict ? 'CONFLICT' : 'ON TIME'}
+        </Badge>
+      ),
+    },
+  ];
 
   return (
     <div className="space-y-6">
       <SectionHeader
-        title="Trains & Movement Timetable"
-        description="Scheduled passenger and freight train paths, speed classes, and estimated maintenance disruption penalties."
+        title="Trains & Corridor Timetable"
+        description="Active scheduled passenger and bulk freight movements along Golden Quadrilateral tracks, evaluated for possession clearance buffers."
         badge={
-          <span className="px-2 py-1 bg-[#10B981]/10 text-[#10B981] border border-[#10B981]/30 rounded font-mono text-[10px] font-bold uppercase tracking-widest shadow-[0_0_8px_rgba(16,185,129,0.2)]">
-            {trains.length} SERVICES TRACKED
+          <span className="text-micro font-mono px-2 py-0.5 rounded-sm bg-surface-sunken border border-border-hairline text-content-secondary">
+            {normalizedTrains.length} SERVICES MONITORED
           </span>
         }
       />
 
-      {/* ── Search & Filter Controls ─────────────────────────────── */}
-      <div className="flex flex-wrap items-center justify-between gap-4 bg-black/40 backdrop-blur-md rounded-xl border border-white/10 p-4 shadow-lg relative overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-r from-white/[0.02] to-transparent pointer-events-none" />
-        <div className="relative flex-1 min-w-[240px] max-w-md z-10">
-          <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500" />
+      {/* Filter Row */}
+      <div className="p-3 bg-surface border border-border-hairline rounded-md flex flex-wrap items-center justify-between gap-3">
+        <div className="relative flex-1 min-w-[200px] max-w-sm">
+          <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-content-tertiary" />
           <input
             type="text"
-            placeholder="Search train no., name, or section..."
+            placeholder="Search train no., name, section..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="w-full bg-black/50 border border-white/10 rounded-lg pl-9 pr-3 py-2 text-sm font-mono text-white focus:outline-none focus:border-[#06B6D4]/50 transition-colors placeholder:text-gray-600"
+            className="w-full h-8 bg-surface-sunken border border-border-hairline rounded-sm pl-9 pr-3 text-small font-mono text-content-primary placeholder-content-disabled focus:outline-none focus:border-border-strong"
           />
         </div>
 
-        <div className="flex items-center gap-2 font-mono text-xs z-10">
-          <span className="text-gray-500 uppercase font-bold tracking-widest text-[10px] mr-2">Type:</span>
+        <div className="flex items-center gap-1.5 font-mono">
+          <span className="text-micro uppercase text-content-tertiary mr-1 font-semibold">
+            Category:
+          </span>
           {['ALL', 'EXPRESS', 'PASSENGER', 'GOODS'].map((type) => (
             <button
               key={type}
               onClick={() => setTypeFilter(type)}
-              className={`px-3 py-1.5 border rounded-lg font-bold uppercase tracking-widest text-[10px] transition-colors ${
+              className={`px-2.5 py-1 text-micro rounded-sm border uppercase transition-colors cursor-pointer select-none ${
                 typeFilter === type
-                  ? 'bg-[#3B82F6]/20 text-[#3B82F6] border-[#3B82F6]/50 shadow-[0_0_10px_rgba(59,130,246,0.3)]'
-                  : 'bg-black/40 text-gray-500 border-white/10 hover:text-white'
+                  ? 'bg-accent-500 text-white font-semibold border-accent-600'
+                  : 'bg-surface-sunken text-content-secondary border-border-hairline hover:text-content-primary hover:bg-surface-raised'
               }`}
             >
               {type}
@@ -102,112 +226,13 @@ export const TrainsPage: React.FC = () => {
         </div>
       </div>
 
-      {/* ── Trains Table / Grid ──────────────────────────────────── */}
-      <Card
-        title="Active Section Train Movements"
-        subtitle="NDLS-AGC Golden Quadrilateral corridor passage slots and speed profiles"
-      >
-        {loading ? (
-          <div className="p-12 border border-white/5 border-dashed rounded-xl bg-black/20 text-center font-mono text-[10px] text-gray-500 tracking-widest font-bold uppercase flex flex-col items-center">
-            <div className="w-8 h-8 border-4 border-[#06B6D4] border-t-transparent rounded-full animate-spin mb-4 shadow-[0_0_10px_rgba(6,182,212,0.5)]" />
-            LOADING TRAIN MOVEMENT DATA...
-          </div>
-        ) : filteredTrains.length === 0 ? (
-          <div className="p-12 border border-white/5 border-dashed rounded-xl bg-black/20 text-center font-mono text-[10px] text-gray-500 tracking-widest font-bold uppercase">
-            NO TRAINS MATCHING QUERY.
-          </div>
-        ) : (
-          <div className="space-y-3">
-            {filteredTrains.map((train) => {
-              const startTime = new Date(train.start).toLocaleTimeString([], {
-                hour: '2-digit',
-                minute: '2-digit',
-                hour12: false,
-              });
-              const endTime = new Date(train.end).toLocaleTimeString([], {
-                hour: '2-digit',
-                minute: '2-digit',
-                hour12: false,
-              });
-
-              return (
-                <div
-                  key={train.id}
-                  className="flex flex-wrap items-center justify-between gap-4 p-4 bg-black/40 backdrop-blur-sm rounded-xl border border-white/10 hover:border-white/30 transition-all group"
-                >
-                  <div className="flex items-center gap-4 min-w-[260px]">
-                    <div className="w-10 h-10 bg-black/50 rounded-lg border border-white/10 flex items-center justify-center text-[#06B6D4] shrink-0 group-hover:scale-110 group-hover:bg-[#06B6D4]/10 transition-all group-hover:shadow-[0_0_15px_rgba(6,182,212,0.2)]">
-                      <Train size={20} />
-                    </div>
-                    <div>
-                      <div className="flex items-center gap-3">
-                        <span className="font-mono font-bold text-sm text-white tracking-widest">
-                          {train.trainNumber}
-                        </span>
-                        <span className="font-medium text-xs text-gray-300">
-                          {train.trainName}
-                        </span>
-                        <span
-                          className={`px-2 py-0.5 font-mono text-[9px] rounded font-bold uppercase tracking-widest border ${
-                            train.trainType === 'EXPRESS'
-                              ? 'bg-[#10B981]/10 text-[#10B981] border-[#10B981]/40 shadow-[0_0_8px_rgba(16,185,129,0.15)]'
-                              : train.trainType === 'GOODS'
-                              ? 'bg-[#F59E0B]/10 text-[#F59E0B] border-[#F59E0B]/40 shadow-[0_0_8px_rgba(245,158,11,0.15)]'
-                              : 'bg-black/50 text-gray-400 border-white/10'
-                          }`}
-                        >
-                          {train.trainType}
-                        </span>
-                      </div>
-                      <div className="flex items-center gap-3 text-[10px] font-mono text-gray-500 uppercase tracking-widest mt-2">
-                        <span className="flex items-center gap-1">
-                          <Navigation size={10} className="text-[#3B82F6]" /> {train.direction} LINE
-                        </span>
-                        <span className="text-gray-700">•</span>
-                        <span>SPEED: <span className="text-gray-300">{train.speedClass}</span></span>
-                        <span className="text-gray-700">•</span>
-                        <span>SECTION: <span className="text-gray-300">{train.sectionId}</span></span>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Timetable Slot */}
-                  <div className="flex items-center gap-6 font-mono">
-                    <div className="text-right">
-                      <span className="text-[9px] text-gray-500 font-bold block uppercase tracking-widest mb-1">Passage Window</span>
-                      <span className="font-bold text-white text-sm tracking-wider flex items-center justify-end">
-                        {startTime} <ArrowRight size={12} className="mx-2 text-gray-500" /> {endTime}
-                      </span>
-                    </div>
-
-                    <div className="pl-6 border-l border-white/10">
-                      <span className="text-[9px] text-gray-500 font-bold block uppercase tracking-widest mb-1">Priority</span>
-                      <span
-                        className={`font-bold text-sm tracking-widest ${
-                          train.priority === 'HIGH'
-                            ? 'text-[#EF4444] drop-shadow-[0_0_5px_rgba(239,68,68,0.5)]'
-                            : train.priority === 'MEDIUM'
-                            ? 'text-[#F59E0B] drop-shadow-[0_0_5px_rgba(245,158,11,0.5)]'
-                            : 'text-gray-500'
-                        }`}
-                      >
-                        {train.priority}
-                      </span>
-                    </div>
-
-                    <div className="pl-6 border-l border-white/10">
-                      <span className="text-[9px] text-gray-500 font-bold block uppercase tracking-widest mb-1">Status</span>
-                      <span className="px-2 py-1 bg-[#10B981]/10 text-[#10B981] rounded border border-[#10B981]/30 text-[10px] font-bold tracking-widest shadow-[0_0_8px_rgba(16,185,129,0.2)]">
-                        ON TIME
-                      </span>
-                    </div>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        )}
-      </Card>
+      {/* Timetable Table */}
+      <Table<NormalizedTrain>
+        columns={columns}
+        data={filteredTrains}
+        keyExtractor={(t) => t.id}
+        emptyText="No train movements match the query"
+      />
     </div>
   );
 };

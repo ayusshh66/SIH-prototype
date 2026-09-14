@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Card } from '../../components/common/Card';
 import { Button } from '../../components/common/Button';
+import { Play, Train, Clock, Wrench, AlertTriangle } from 'lucide-react';
 import type { WhatIfScenarioPayload } from '../../api/client';
 
 interface Props {
@@ -8,8 +9,17 @@ interface Props {
   isSimulating: boolean;
 }
 
+type ScenarioType = 'TRAIN_DELAY' | 'BLOCK_UNAVAILABLE' | 'RESOURCE_UNAVAILABLE' | 'TASK_DURATION_CHANGED';
+
+const SCENARIO_TABS: { id: ScenarioType; label: string; icon: React.ElementType }[] = [
+  { id: 'TRAIN_DELAY', label: 'Train Delay', icon: Train },
+  { id: 'BLOCK_UNAVAILABLE', label: 'Window Curtail', icon: Clock },
+  { id: 'RESOURCE_UNAVAILABLE', label: 'Machine Down', icon: Wrench },
+  { id: 'TASK_DURATION_CHANGED', label: 'Task Overrun', icon: AlertTriangle },
+];
+
 export const ScenarioConfigForm: React.FC<Props> = ({ onSimulate, isSimulating }) => {
-  const [scenarioType, setScenarioType] = useState<'TRAIN_DELAY' | 'BLOCK_UNAVAILABLE' | 'RESOURCE_UNAVAILABLE' | 'TASK_DURATION_CHANGED'>('TRAIN_DELAY');
+  const [scenarioType, setScenarioType] = useState<ScenarioType>('TRAIN_DELAY');
   const [affectedTrain, setAffectedTrain] = useState('12002');
   const [delayMinutes, setDelayMinutes] = useState(45);
   const [affectedBlock, setAffectedBlock] = useState('blk_55a1');
@@ -72,48 +82,62 @@ export const ScenarioConfigForm: React.FC<Props> = ({ onSimulate, isSimulating }
   };
 
   return (
-    <Card title="Scenario Configuration" className="h-full">
+    <Card
+      title="Disruption Configuration"
+      eyebrow="Simulation Parameters"
+      className="h-full"
+    >
       <form onSubmit={handleSubmit} className="flex flex-col h-full space-y-5">
-        <div className="space-y-2">
-          <label className="text-[10px] font-bold text-gray-500 uppercase tracking-widest font-mono block">
-            Incident / Disruption Type
+        {/* Segmented Control for Scenario Type */}
+        <div className="space-y-1.5">
+          <label className="text-micro font-mono uppercase tracking-wider text-content-tertiary block font-medium">
+            Disruption Scenario Category
           </label>
-          <select
-            value={scenarioType}
-            onChange={(e) => setScenarioType(e.target.value as any)}
-            className="w-full bg-black/50 border border-white/10 rounded-lg p-3 font-mono text-sm focus:border-[#F97316]/50 focus:outline-none text-white transition-colors"
-          >
-            <option value="TRAIN_DELAY">Train Delay / Late Running</option>
-            <option value="BLOCK_UNAVAILABLE">Possession Window Curtailed</option>
-            <option value="RESOURCE_UNAVAILABLE">Machinery / Resource Breakdown</option>
-            <option value="TASK_DURATION_CHANGED">Maintenance Task Overrun</option>
-          </select>
+          <div className="grid grid-cols-2 gap-1.5 p-1 bg-surface-sunken border border-border-hairline rounded-sm">
+            {SCENARIO_TABS.map((tab) => {
+              const active = scenarioType === tab.id;
+              const Icon = tab.icon;
+              return (
+                <button
+                  key={tab.id}
+                  type="button"
+                  onClick={() => setScenarioType(tab.id)}
+                  className={`flex items-center justify-center gap-1.5 py-1.5 px-2 rounded-sm text-micro font-mono transition-colors cursor-pointer select-none ${
+                    active
+                      ? 'bg-accent-500 text-white font-semibold shadow-sm'
+                      : 'text-content-secondary hover:text-content-primary hover:bg-surface-raised'
+                  }`}
+                >
+                  <Icon size={12} />
+                  <span>{tab.label}</span>
+                </button>
+              );
+            })}
+          </div>
         </div>
 
         {scenarioType === 'TRAIN_DELAY' && (
-          <>
-            <div className="space-y-2">
-              <label className="text-[10px] font-bold text-gray-500 uppercase tracking-widest font-mono block">
-                Affected Train Movement
+          <div className="space-y-4">
+            <div className="space-y-1.5">
+              <label className="text-micro font-mono uppercase tracking-wider text-content-tertiary block font-medium">
+                Delayed Train Rake
               </label>
               <select
                 value={affectedTrain}
                 onChange={(e) => setAffectedTrain(e.target.value)}
-                className="w-full bg-black/50 border border-white/10 rounded-lg p-3 font-mono text-sm focus:border-[#F97316]/50 focus:outline-none text-white transition-colors"
+                className="w-full bg-surface-sunken border border-border-hairline rounded-sm px-3 py-2 font-mono text-small text-content-primary focus:outline-none focus:border-border-strong cursor-pointer"
               >
-                <option value="12002">12002 Bhopal Shatabdi Exp (Priority: High)</option>
-                <option value="12050">12050 Gatimaan Express (Priority: High)</option>
-                <option value="BOXN-402">BOXN-402 Freight Rake (Priority: Low)</option>
-                <option value="14512">14512 Nauchandi Express (Priority: Med)</option>
+                <option value="12002">12002 New Delhi - Bhopal Shatabdi (P1)</option>
+                <option value="12050">12050 Gatimaan Express (P1)</option>
+                <option value="12952">12952 Mumbai Central Rajdhani (P1)</option>
+                <option value="BOXN-402">BOXN-402 Bulk Freight (P4)</option>
               </select>
             </div>
 
-            <div className="space-y-3 pt-1">
-              <div className="flex justify-between items-center font-mono">
-                <span className="text-[10px] font-bold text-gray-500 uppercase tracking-widest">
-                  Delay Incurred
-                </span>
-                <span className="text-[#F59E0B] font-bold text-sm bg-[#F59E0B]/10 rounded px-2 py-0.5 border border-[#F59E0B]/40">
+            <div className="space-y-2 font-mono">
+              <div className="flex justify-between items-center text-small">
+                <span className="text-micro text-content-tertiary uppercase">Incurred Delay</span>
+                <span className="font-semibold text-crit-p2 bg-crit-p2-bg border border-crit-p2/30 px-2 py-0.5 rounded-sm tabular-nums">
                   +{delayMinutes} mins
                 </span>
               </div>
@@ -124,40 +148,38 @@ export const ScenarioConfigForm: React.FC<Props> = ({ onSimulate, isSimulating }
                 step="15"
                 value={delayMinutes}
                 onChange={(e) => setDelayMinutes(Number(e.target.value))}
-                className="w-full h-2 bg-white/10 rounded-full appearance-none cursor-pointer accent-[#F59E0B]"
+                className="w-full h-1.5 bg-surface-sunken rounded-full appearance-none cursor-pointer accent-accent-500"
               />
-              <div className="flex justify-between text-[10px] font-mono text-gray-500">
-                <span>15 min</span>
-                <span>60 min</span>
-                <span>120 min</span>
-                <span>180 min</span>
+              <div className="flex justify-between text-[10px] text-content-tertiary">
+                <span>15m</span>
+                <span>60m</span>
+                <span>120m</span>
+                <span>180m</span>
               </div>
             </div>
-          </>
+          </div>
         )}
 
         {scenarioType === 'BLOCK_UNAVAILABLE' && (
-          <>
-            <div className="space-y-2">
-              <label className="text-[10px] font-bold text-gray-500 uppercase tracking-widest font-mono block">
-                Curtailed Block Possession
+          <div className="space-y-4">
+            <div className="space-y-1.5">
+              <label className="text-micro font-mono uppercase tracking-wider text-content-tertiary block font-medium">
+                Curtailed Possession Window
               </label>
               <select
                 value={affectedBlock}
                 onChange={(e) => setAffectedBlock(e.target.value)}
-                className="w-full bg-black/50 border border-white/10 rounded-lg p-3 font-mono text-sm focus:border-[#EF4444]/50 focus:outline-none text-white transition-colors"
+                className="w-full bg-surface-sunken border border-border-hairline rounded-sm px-3 py-2 font-mono text-small text-content-primary focus:outline-none focus:border-border-strong cursor-pointer"
               >
-                <option value="blk_55a1">BLK-NDLS-01 (NDLS-AGC Main Track)</option>
-                <option value="blk_shifted_01">BLK-AGC-02 (Palwal Yard Siding)</option>
+                <option value="blk_55a1">BLK-NDLS-01 (NDLS-TKD Track 1)</option>
+                <option value="blk_shifted_01">BLK-AGC-02 (Palwal Yard Crossover)</option>
               </select>
             </div>
 
-            <div className="space-y-3 pt-1">
-              <div className="flex justify-between items-center font-mono">
-                <span className="text-[10px] font-bold text-gray-500 uppercase tracking-widest">
-                  Window Reduction
-                </span>
-                <span className="text-[#EF4444] font-bold text-sm bg-[#EF4444]/10 rounded px-2 py-0.5 border border-[#EF4444]/40">
+            <div className="space-y-2 font-mono">
+              <div className="flex justify-between items-center text-small">
+                <span className="text-micro text-content-tertiary uppercase">Curtailed Duration</span>
+                <span className="font-semibold text-crit-p1 bg-crit-p1-bg border border-crit-p1/30 px-2 py-0.5 rounded-sm tabular-nums">
                   -{curtailMinutes} mins
                 </span>
               </div>
@@ -168,54 +190,49 @@ export const ScenarioConfigForm: React.FC<Props> = ({ onSimulate, isSimulating }
                 step="15"
                 value={curtailMinutes}
                 onChange={(e) => setCurtailMinutes(Number(e.target.value))}
-                className="w-full h-2 bg-white/10 rounded-full appearance-none cursor-pointer accent-[#EF4444]"
+                className="w-full h-1.5 bg-surface-sunken rounded-full appearance-none cursor-pointer accent-crit-p1"
               />
             </div>
-          </>
+          </div>
         )}
 
         {scenarioType === 'RESOURCE_UNAVAILABLE' && (
           <div className="space-y-2">
-            <label className="text-[10px] font-bold text-gray-500 uppercase tracking-widest font-mono block">
-              Failed Asset / Crew Resource
+            <label className="text-micro font-mono uppercase tracking-wider text-content-tertiary block font-medium">
+              Defective Heavy Machinery / Crew
             </label>
             <select
               value={unavailableResource}
               onChange={(e) => setUnavailableResource(e.target.value)}
-              className="w-full bg-black/50 border border-white/10 rounded-lg p-3 font-mono text-sm focus:border-[#F59E0B]/50 focus:outline-none text-white transition-colors"
+              className="w-full bg-surface-sunken border border-border-hairline rounded-sm px-3 py-2 font-mono text-small text-content-primary focus:outline-none focus:border-border-strong cursor-pointer"
             >
-              <option value="track_machine">Track Machine (CSM/Tamping Machine 01)</option>
-              <option value="tower_wagon">OHE Tower Wagon (TRD Depot NDLS)</option>
-              <option value="USFD_VEHICLE">USFD Ultrasonic Flaw Tester Rake</option>
+              <option value="track_machine">Continuous Tamping Machine CSM-01</option>
+              <option value="tower_wagon">TRD 4-Wheeler Tower Wagon (NDLS Depot)</option>
+              <option value="USFD_VEHICLE">USFD Ultrasonic Rail Scanning Rake</option>
             </select>
-            <p className="text-[10px] font-mono text-gray-500 mt-1">
-              Simulates immediate unavailability requiring asset substitution or reschedule.
-            </p>
           </div>
         )}
 
         {scenarioType === 'TASK_DURATION_CHANGED' && (
-          <>
-            <div className="space-y-2">
-              <label className="text-[10px] font-bold text-gray-500 uppercase tracking-widest font-mono block">
-                Target Maintenance Work Order
+          <div className="space-y-4">
+            <div className="space-y-1.5">
+              <label className="text-micro font-mono uppercase tracking-wider text-content-tertiary block font-medium">
+                Overrunning Task
               </label>
               <select
                 value={affectedTask}
                 onChange={(e) => setAffectedTask(e.target.value)}
-                className="w-full bg-black/50 border border-white/10 rounded-lg p-3 font-mono text-sm focus:border-[#F59E0B]/50 focus:outline-none text-white transition-colors"
+                className="w-full bg-surface-sunken border border-border-hairline rounded-sm px-3 py-2 font-mono text-small text-content-primary focus:outline-none focus:border-border-strong cursor-pointer"
               >
-                <option value="TSK-ENG-NDLS-045-01">TSK-ENG-045-01: Rail Grinding & Deep Screening</option>
-                <option value="TSK-TRD-NDLS-046-02">TSK-TRD-046-02: OHE Tensioning & Insulator Wash</option>
+                <option value="TSK-ENG-NDLS-045-01">TSK-ENG-045-01: Ultrasonic Rail Defect Scan</option>
+                <option value="TSK-TRD-NDLS-046-02">TSK-TRD-046-02: OHE Contact Wire Tensioning</option>
               </select>
             </div>
 
-            <div className="space-y-3 pt-1">
-              <div className="flex justify-between items-center font-mono">
-                <span className="text-[10px] font-bold text-gray-500 uppercase tracking-widest">
-                  Overrun Duration
-                </span>
-                <span className="text-[#F59E0B] font-bold text-sm bg-[#F59E0B]/10 rounded px-2 py-0.5 border border-[#F59E0B]/40">
+            <div className="space-y-2 font-mono">
+              <div className="flex justify-between items-center text-small">
+                <span className="text-micro text-content-tertiary uppercase">Overrun Added</span>
+                <span className="font-semibold text-crit-p2 bg-crit-p2-bg border border-crit-p2/30 px-2 py-0.5 rounded-sm tabular-nums">
                   +{extraDuration} mins
                 </span>
               </div>
@@ -226,33 +243,39 @@ export const ScenarioConfigForm: React.FC<Props> = ({ onSimulate, isSimulating }
                 step="15"
                 value={extraDuration}
                 onChange={(e) => setExtraDuration(Number(e.target.value))}
-                className="w-full h-2 bg-white/10 rounded-full appearance-none cursor-pointer accent-[#F59E0B]"
+                className="w-full h-1.5 bg-surface-sunken rounded-full appearance-none cursor-pointer accent-accent-500"
               />
             </div>
-          </>
+          </div>
         )}
 
-        <div className="border-t border-white/10 pt-4 mt-auto">
-          <div className="text-[10px] font-mono text-gray-500 mb-3 flex items-center justify-between">
-            <label htmlFor="baseScheduleId" className="font-bold uppercase tracking-widest">
-              Base Schedule
+        <div className="pt-4 border-t border-border-hairline mt-auto space-y-3 font-mono">
+          <div className="flex items-center justify-between text-micro text-content-tertiary">
+            <label htmlFor="baseScheduleId" className="font-semibold uppercase">
+              Baseline Target
             </label>
             <input
               id="baseScheduleId"
               value={baseScheduleId}
               onChange={(e) => setBaseScheduleId(e.target.value)}
-              className="w-40 bg-black/50 border border-white/10 rounded px-2 py-1 text-white font-bold focus:border-white/30 focus:outline-none transition-colors"
+              className="w-32 bg-surface-sunken border border-border-hairline rounded-sm px-2 py-1 text-content-primary text-small focus:outline-none focus:border-border-strong"
             />
           </div>
+
           <Button
             type="submit"
-            disabled={isSimulating}
-            className="w-full py-3.5 text-white bg-[#F97316] border border-[#F97316] hover:bg-[#EA580C] font-bold uppercase tracking-widest disabled:opacity-50"
+            variant="primary"
+            size="md"
+            loading={isSimulating}
+            className="w-full"
+            icon={<Play size={14} />}
           >
-            {isSimulating ? 'Simulating AI Solver...' : 'Execute What-If Re-Optimization'}
+            Execute What-If Re-Optimization
           </Button>
         </div>
       </form>
     </Card>
   );
 };
+
+export default ScenarioConfigForm;

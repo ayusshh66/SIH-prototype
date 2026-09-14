@@ -17,48 +17,28 @@ export const SectionHeader: React.FC<SectionHeaderProps> = ({
 }) => {
   return (
     <div
-      className={`section-header ${className}`}
-      style={{
-        display: 'flex',
-        alignItems: 'flex-start',
-        justifyContent: 'space-between',
-        marginBottom: 'var(--space-5)',
-        gap: 'var(--space-4)',
-        flexWrap: 'wrap',
-      }}
+      className={`pb-5 mb-6 border-b border-border-hairline flex items-start justify-between gap-4 flex-wrap ${className}`}
     >
-      <div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-3)' }}>
-          <h1
-            style={{
-              fontSize: 'var(--text-xl)',
-              fontWeight: 700,
-              color: 'var(--text-primary)',
-              letterSpacing: '-0.02em',
-            }}
-          >
+      <div className="space-y-1">
+        <div className="flex items-center gap-3">
+          <h1 className="text-h1 font-semibold text-content-primary tracking-tight">
             {title}
           </h1>
           {badge}
         </div>
         {description && (
-          <p
-            style={{
-              fontSize: 'var(--text-sm)',
-              color: 'var(--text-secondary)',
-              marginTop: '4px',
-              maxWidth: '780px',
-            }}
-          >
+          <p className="text-small text-content-secondary max-w-3xl leading-relaxed">
             {description}
           </p>
         )}
       </div>
       {actions && (
-        <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)' }}>
+        <div className="flex items-center gap-2.5 shrink-0 pt-0.5">
           {actions}
         </div>
       )}
     </div>
   );
 };
+
+export default SectionHeader;

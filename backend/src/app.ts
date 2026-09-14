@@ -13,9 +13,27 @@ import integrationRoutes from "./modules/integration/routes";
 
 const app = express();
 
+const allowedOrigins = [
+  "http://localhost:5173",
+  "http://localhost:5174",
+  "http://localhost:5175",
+  "http://localhost:3000",
+  ...(process.env.CORS_ORIGIN ? process.env.CORS_ORIGIN.split(",") : [])
+];
+
 app.use(helmet());
 app.use(cors({
-  origin: "http://localhost:5173",
+  origin: (origin, callback) => {
+    // Allow requests with no origin (such as mobile apps, curl, server-to-server)
+    if (!origin) return callback(null, true);
+    if (
+      allowedOrigins.includes(origin) ||
+      /^http:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/.test(origin)
+    ) {
+      return callback(null, true);
+    }
+    return callback(new Error(`Origin ${origin} not allowed by CORS`));
+  },
   credentials: true
 }));
 app.use(express.json());

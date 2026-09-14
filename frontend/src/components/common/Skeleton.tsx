@@ -17,22 +17,24 @@ export const Skeleton: React.FC<SkeletonProps> = ({
 }) => {
   const borderRadius =
     variant === 'circle'
-      ? '9999px'
+      ? 'rounded-full'
       : variant === 'text'
-      ? '2px'
-      : '4px';
+      ? 'rounded-sm'
+      : 'rounded-md';
 
   return (
     <div
-      className={`animate-pulse bg-white/5 ${className}`}
+      className={`relative overflow-hidden bg-surface-raised border border-border-hairline/40 ${borderRadius} ${className}`}
       style={{
         width,
         height,
-        borderRadius,
         ...style,
       }}
       aria-hidden="true"
-    />
+    >
+      <div className="absolute inset-0 -translate-x-full animate-[shimmer_1.8s_infinite] bg-gradient-to-r from-transparent via-white/[0.06] to-transparent" />
+    </div>
   );
 };
 
+export default Skeleton;

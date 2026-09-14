@@ -1,5 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { ThemeProvider } from './context/ThemeContext';
 import { Shell } from './components/domain/Shell/Shell';
 import { LoadingIntro } from './components/domain/Shell/LoadingIntro';
 import { DashboardPage } from './features/dashboard/DashboardPage';
@@ -14,11 +15,22 @@ import { ExplainPage } from './features/explain/ExplainPage';
 import { SystemPage } from './features/system/SystemPage';
 
 export const App: React.FC = () => {
-  const [showIntro, setShowIntro] = useState(true);
+  const [showBootIntro, setShowBootIntro] = useState(() => {
+    if (typeof window !== 'undefined') {
+      const hasBooted = sessionStorage.getItem('rail_booted');
+      return !hasBooted;
+    }
+    return false;
+  });
+
+  const handleBootComplete = () => {
+    sessionStorage.setItem('rail_booted', 'true');
+    setShowBootIntro(false);
+  };
 
   return (
-    <>
-      {showIntro && <LoadingIntro onComplete={() => setShowIntro(false)} />}
+    <ThemeProvider>
+      {showBootIntro && <LoadingIntro onComplete={handleBootComplete} />}
       <BrowserRouter>
         <Routes>
           <Route path="/" element={<Shell />}>
@@ -36,7 +48,7 @@ export const App: React.FC = () => {
           </Route>
         </Routes>
       </BrowserRouter>
-    </>
+    </ThemeProvider>
   );
 };
 

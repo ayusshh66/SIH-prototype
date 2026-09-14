@@ -1,48 +1,88 @@
-import React, { useEffect, useState } from 'react';
-import { ErrorState } from '../../components/common/ErrorState';
+import React, { useEffect, useState, useMemo } from 'react';
 import { getConflicts } from '../../api/client';
-import { Conflict } from '../../types/api';
-import { ConflictAlertCard } from './ConflictAlertCard';
+import { SectionHeader } from '../../components/domain/SectionHeader';
 import { ConflictCategoryTabs } from './ConflictCategoryTabs';
+import { ConflictAlertCard } from './ConflictAlertCard';
+import { ErrorState } from '../../components/common/ErrorState';
+import { EmptyState } from '../../components/common/EmptyState';
+import { Skeleton } from '../../components/common/Skeleton';
+import { ShieldCheck } from 'lucide-react';
+import type { Conflict } from '../../types/api';
 
 export const ConflictsAlertsPage: React.FC = () => {
   const [filter, setFilter] = useState<string>('ALL');
   const [conflicts, setConflicts] = useState<Conflict[]>([]);
+  const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     getConflicts()
       .then((res) => setConflicts(res.data))
-      .catch((err: unknown) => setError(err instanceof Error ? err.message : String(err)));
+      .catch((err: unknown) => setError(err instanceof Error ? err.message : String(err)))
+      .finally(() => setLoading(false));
   }, []);
 
-  const filteredConflicts = conflicts.filter((c) => filter === 'ALL' || c.conflict_type === filter);
+  const counts = useMemo(() => {
+    const c: Record<string, number> = { ALL: conflicts.length };
+    conflicts.forEach((item) => {
+      c[item.conflict_type] = (c[item.conflict_type] || 0) + 1;
+    });
+    return c;
+  }, [conflicts]);
+
+  const filteredConflicts = conflicts.filter(
+    (c) => filter === 'ALL' || c.conflict_type === filter
+  );
+
+  const criticalCount = conflicts.filter((c) => c.severity === 'CRITICAL').length;
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h2 className="text-2xl font-bold uppercase tracking-widest text-white drop-shadow-md">Conflicts & Alerts</h2>
-          <p className="text-gray-400 font-mono text-xs mt-1 tracking-wider">UNIFIED OPERATIONAL VIOLATIONS</p>
-        </div>
-      </div>
+      <SectionHeader
+        title="Operational Conflicts & Safety Alerts"
+        description="Active timetable overlaps, resource contentions, and safety isolation buffer violations detected across corridor possession schedules."
+        badge={
+          criticalCount > 0 ? (
+            <span className="text-micro font-mono px-2 py-0.5 rounded-sm bg-crit-p1-bg border border-crit-p1/30 text-crit-p1 font-semibold animate-pulse">
+              {criticalCount} CRITICAL CONFLICTS
+            </span>
+          ) : (
+            <span className="text-micro font-mono px-2 py-0.5 rounded-sm bg-status-feasible-bg border border-status-feasible/30 text-status-feasible">
+              CORRIDOR FEASIBLE
+            </span>
+          )
+        }
+      />
 
-      <ConflictCategoryTabs activeTab={filter} onTabChange={setFilter} />
+      <ConflictCategoryTabs
+        activeTab={filter}
+        onTabChange={setFilter}
+        counts={counts}
+      />
 
       {error && <ErrorState title="Conflict Feed Failed" message={error} />}
 
-      <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
-        {filteredConflicts.map((conflict) => (
-          <ConflictAlertCard key={conflict.conflict_id} conflict={conflict} />
-        ))}
-        {!error && filteredConflicts.length === 0 && (
-          <div className="col-span-full p-8 border border-white/10 rounded-2xl text-center font-mono text-[#10B981] bg-black/20 backdrop-blur-md shadow-xl flex items-center justify-center">
-            <span className="bg-[#10B981]/10 px-4 py-2 rounded border border-[#10B981]/30 tracking-widest uppercase text-xs shadow-[0_0_10px_rgba(16,185,129,0.2)]">
-              CLEAR SECTION: ZERO ACTIVE CONFLICTS RETURNED BY BACKEND AI DATA.
-            </span>
-          </div>
-        )}
-      </div>
+      {loading ? (
+        <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
+          {Array.from({ length: 4 }).map((_, i) => (
+            <Skeleton key={i} height={200} />
+          ))}
+        </div>
+      ) : filteredConflicts.length === 0 && !error ? (
+        <EmptyState
+          icon={<ShieldCheck size={40} className="text-status-feasible" />}
+          title="Zero Conflicts in Category"
+          description="All track possessions in this category comply with safety separation rules and timetable headway."
+        />
+      ) : (
+        <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
+          {filteredConflicts.map((conflict) => (
+            <ConflictAlertCard key={conflict.conflict_id} conflict={conflict} />
+          ))}
+        </div>
+      )}
     </div>
   );
 };
+
+export default ConflictsAlertsPage;

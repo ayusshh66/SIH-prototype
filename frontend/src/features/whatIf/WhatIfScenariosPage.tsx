@@ -1,8 +1,11 @@
 import React, { useState } from 'react';
+import { SectionHeader } from '../../components/domain/SectionHeader';
 import { ScenarioConfigForm } from './ScenarioConfigForm';
 import { ScheduleDiffViewer } from './ScheduleDiffViewer';
+import { Button } from '../../components/common/Button';
+import { EmptyState } from '../../components/common/EmptyState';
 import { runWhatIfScenario, type WhatIfResult, type WhatIfScenarioPayload } from '../../api/client';
-import { AlertTriangle, Sparkles } from 'lucide-react';
+import { Sparkles, GitBranch, AlertTriangle } from 'lucide-react';
 
 export const WhatIfScenariosPage: React.FC = () => {
   const [isSimulating, setIsSimulating] = useState(false);
@@ -64,87 +67,89 @@ export const WhatIfScenariosPage: React.FC = () => {
   };
 
   return (
-    <div className="space-y-6 h-full flex flex-col">
-      {/* ── Page Header ─────────────────────────────────────────── */}
-      <div className="flex flex-wrap items-center justify-between gap-4 shrink-0">
-        <div>
-          <h2 className="text-2xl font-bold uppercase tracking-widest text-white drop-shadow-md">
-            What-If Scenarios
-          </h2>
-          <p className="text-gray-400 font-mono text-xs mt-1 tracking-wider">
-            OPERATIONAL DISRUPTION SIMULATION SANDBOX & SCHEDULE DIFFS
-          </p>
-        </div>
-
-        {/* Quick Presets for Demo */}
-        <div className="flex items-center gap-2 bg-black/20 backdrop-blur-md border border-white/5 p-2 rounded-xl shadow-lg">
-          <span className="text-xs font-mono text-gray-500 uppercase flex items-center gap-1 tracking-wider mr-2">
-            <Sparkles size={13} className="text-[#F59E0B]" /> Quick Presets:
+    <div className="space-y-6">
+      <SectionHeader
+        title="What-If Disruption Sandbox"
+        description="Simulate real-time operational failures, late running express trains, and machinery breakdowns to evaluate CP-SAT re-optimization schedule shifts."
+        badge={
+          <span className="text-micro font-mono px-2 py-0.5 rounded-sm bg-accent-500/15 border border-accent-500/30 text-accent-400">
+            SANDBOX MODE
           </span>
-          <button
-            onClick={() => handleQuickPreset('shatabdi_delay')}
-            disabled={isSimulating}
-            className="px-2.5 py-1 text-xs font-mono font-bold bg-black/40 border border-white/10 hover:border-[#F59E0B] rounded text-white hover:text-[#F59E0B] transition-colors disabled:opacity-50"
-          >
-            Shatabdi +45m
-          </button>
-          <button
-            onClick={() => handleQuickPreset('tower_wagon_down')}
-            disabled={isSimulating}
-            className="px-2.5 py-1 text-xs font-mono font-bold bg-black/40 border border-white/10 hover:border-[#F59E0B] rounded text-white hover:text-[#F59E0B] transition-colors disabled:opacity-50"
-          >
-            Tower Wagon Down
-          </button>
-          <button
-            onClick={() => handleQuickPreset('window_cut')}
-            disabled={isSimulating}
-            className="px-2.5 py-1 text-xs font-mono font-bold bg-black/40 border border-white/10 hover:border-[#F59E0B] rounded text-white hover:text-[#F59E0B] transition-colors disabled:opacity-50"
-          >
-            -60m Window
-          </button>
-        </div>
-      </div>
+        }
+        actions={
+          <div className="flex items-center gap-1.5 flex-wrap">
+            <span className="text-micro font-mono text-content-tertiary uppercase mr-1 hidden sm:inline flex items-center gap-1">
+              <Sparkles size={12} className="text-accent-400" /> Presets:
+            </span>
+            <Button
+              variant="outline"
+              size="sm"
+              disabled={isSimulating}
+              onClick={() => handleQuickPreset('shatabdi_delay')}
+            >
+              Shatabdi +45m
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              disabled={isSimulating}
+              onClick={() => handleQuickPreset('tower_wagon_down')}
+            >
+              Tower Wagon Defect
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              disabled={isSimulating}
+              onClick={() => handleQuickPreset('window_cut')}
+            >
+              Curtail Window 60m
+            </Button>
+          </div>
+        }
+      />
 
       {error && (
-        <div className="p-3 bg-[#EF4444]/10 border border-[#EF4444]/50 rounded-lg text-[#EF4444] shadow-[0_0_15px_rgba(239,68,68,0.2)] font-mono text-xs flex items-center gap-2">
+        <div className="p-3 bg-crit-p1-bg border border-crit-p1/40 rounded-sm text-crit-p1 font-mono text-small flex items-center gap-2">
           <AlertTriangle size={15} />
           <span>{error}</span>
         </div>
       )}
 
-      {/* ── Layout Grid ─────────────────────────────────────────── */}
-      <div className="flex-1 grid grid-cols-1 lg:grid-cols-3 gap-6 overflow-hidden">
-        <div className="lg:col-span-1 overflow-y-auto custom-scrollbar">
+      {/* 2-Column Grid Layout */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+        {/* Left: Config Form (4 cols) */}
+        <div className="lg:col-span-5 xl:col-span-4">
           <ScenarioConfigForm onSimulate={handleSimulate} isSimulating={isSimulating} />
         </div>
 
-        <div className="lg:col-span-2 overflow-y-auto custom-scrollbar">
+        {/* Right: Diff Viewer (8 cols) */}
+        <div className="lg:col-span-7 xl:col-span-8 min-h-[500px]">
           {isSimulating ? (
-            <div className="h-full flex items-center justify-center border border-white/10 border-dashed rounded-2xl bg-black/20 backdrop-blur-md min-h-[450px]">
-              <div className="font-mono text-[#F59E0B] flex flex-col items-center">
-                <div className="w-10 h-10 border-4 border-[#F59E0B] border-t-transparent rounded-full animate-spin mb-4" />
-                <span className="font-bold tracking-wider text-sm shadow-[0_0_15px_rgba(245,158,11,0.5)]">RUNNING MULTI-OBJECTIVE SOLVER...</span>
-                <span className="text-xs text-gray-400 mt-2">
-                  OR-Tools CP-SAT re-evaluating possession windows and train timetables
+            <div className="h-full flex flex-col items-center justify-center p-12 border border-border-hairline rounded-md bg-surface text-center space-y-4 min-h-[480px]">
+              <div className="w-10 h-10 border-2 border-accent-500 border-t-transparent rounded-full animate-spin" />
+              <div className="space-y-1">
+                <span className="text-h3 font-mono font-semibold text-content-primary block">
+                  OR-Tools CP-SAT Re-Optimization...
                 </span>
+                <p className="text-small font-mono text-content-tertiary max-w-sm">
+                  Simulating secondary delays, rolling stock turns, and work crew reallocations.
+                </p>
               </div>
             </div>
           ) : result ? (
             <ScheduleDiffViewer result={result} onReset={() => setResult(null)} />
           ) : (
-            <div className="h-full flex items-center justify-center border border-white/10 border-dashed rounded-2xl bg-black/20 backdrop-blur-md min-h-[450px] p-6 text-center shadow-inner">
-              <div className="max-w-md space-y-3">
-                <span className="font-mono text-gray-500 tracking-widest uppercase text-[10px] block font-bold">
-                  SELECT SCENARIO AND DISRUPTION PARAMETERS TO BEGIN
-                </span>
-                <p className="text-xs font-mono text-gray-600 leading-relaxed">
-                  Simulate train delays, machine breakdowns, or possession window curtails to evaluate schedule shifts and train delay penalties without impacting live operations.
-                </p>
-              </div>
-            </div>
+            <EmptyState
+              icon={<GitBranch size={40} className="text-content-tertiary" />}
+              title="No Active Scenario Simulation"
+              description="Configure parameters on the left or select a quick preset above to evaluate timetable impact."
+            />
           )}
         </div>
       </div>
     </div>
   );
 };
+
+export default WhatIfScenariosPage;

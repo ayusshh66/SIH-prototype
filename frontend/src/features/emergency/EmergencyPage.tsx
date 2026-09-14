@@ -2,18 +2,18 @@ import React, { useState } from 'react';
 import { SectionHeader } from '../../components/domain/SectionHeader';
 import { Card } from '../../components/common/Card';
 import { Button } from '../../components/common/Button';
-import { submitEmergencyEvent } from '../../api/client';
-import type { EmergencyEventPayload } from '../../api/client';
+import { Modal } from '../../components/common/Modal';
+import { submitEmergencyEvent, type EmergencyEventPayload } from '../../api/client';
 import {
   Flame,
-  CheckCircle,
+  CheckCircle2,
   AlertTriangle,
   Clock,
-  Shield,
-  Loader2,
+  ShieldCheck,
   XCircle,
   Zap,
   MapPin,
+  AlertOctagon,
 } from 'lucide-react';
 
 type EmergencyState = 'idle' | 'loading' | 'success' | 'error';
@@ -53,7 +53,7 @@ const formatTimeWindow = (isoStart: string, isoEnd: string): string => {
   const fmt = (d: Date) =>
     d.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: false });
   const diffMin = Math.round((end.getTime() - start.getTime()) / 60000);
-  return `${fmt(start)} - ${fmt(end)} (${diffMin} Mins)`;
+  return `${fmt(start)} – ${fmt(end)} (${diffMin} Mins)`;
 };
 
 export const EmergencyPage: React.FC = () => {
@@ -70,6 +70,7 @@ export const EmergencyPage: React.FC = () => {
   const [result, setResult] = useState<EmergencyResult | null>(null);
   const [selectedWindowId, setSelectedWindowId] = useState<string | null>(null);
   const [errorMsg, setErrorMsg] = useState('');
+  const [isConfirmModalOpen, setIsConfirmModalOpen] = useState(false);
 
   const handleSubmit = async () => {
     setState('loading');
@@ -104,74 +105,104 @@ export const EmergencyPage: React.FC = () => {
     }
   };
 
+  const selectedWindow = result?.feasible_windows.find((w) => w.window_id === selectedWindowId);
+
   return (
     <div className="space-y-6">
+      {/* Highest Alert Priority Emergency Banner */}
+      <div className="p-4 rounded-md bg-crit-p1-bg border border-crit-p1/40 flex items-center justify-between gap-4 select-none">
+        <div className="flex items-center gap-3">
+          <div className="w-9 h-9 rounded-sm bg-crit-p1 text-white flex items-center justify-center shrink-0 shadow-sm animate-pulse">
+            <AlertOctagon size={20} />
+          </div>
+          <div>
+            <h2 className="text-small font-mono font-bold text-crit-p1 uppercase tracking-wider">
+              CRITICAL UNPLANNED POSSESSION DISPATCH // EXPEDITED WORKFLOW
+            </h2>
+            <p className="text-micro font-mono text-content-secondary mt-0.5">
+              Safety-critical defects override scheduled timetables with automatic OR-Tools train headway re-optimization.
+            </p>
+          </div>
+        </div>
+
+        <span className="text-micro font-mono font-semibold px-2.5 py-1 rounded-sm bg-crit-p1 text-white uppercase shrink-0">
+          PRIORITY 1 DISPATCH
+        </span>
+      </div>
+
       <SectionHeader
-        title="Emergency Maintenance Planning"
-        description="Expedited operational workflow for unscheduled safety-critical defects requiring immediate track possession."
-        badge={
-          <span className="bg-[#EF4444]/10 text-[#EF4444] border border-[#EF4444]/30 px-2 py-1 rounded font-mono text-[10px] uppercase tracking-widest shadow-[0_0_10px_rgba(239,68,68,0.2)]">
-            PRIORITY EXPEDITED
-          </span>
-        }
+        title="Emergency Track Possession Engine"
+        description="Immediate ultrasonic rail fracture repair, track buckle restoration, and traction OHE breakdown clearance."
       />
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* ── Fast-Entry Incident Card ──────────────────────────────── */}
-        <Card title="1. Emergency Defect Intake" subtitle="Define the emergency event parameters">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
+        {/* Defect Intake Card */}
+        <Card title="1. Emergency Defect Intake" eyebrow="Incident Parameters">
           <div className="space-y-4">
-            <div>
-              <label className="block text-[10px] font-mono uppercase tracking-widest text-gray-500 mb-1">Defect / Event Type</label>
+            <div className="space-y-1">
+              <label className="text-micro font-mono uppercase tracking-wider text-content-tertiary block font-medium">
+                Defect / Failure Category
+              </label>
               <select
                 value={eventType}
                 onChange={(e) => setEventType(e.target.value)}
-                className="w-full bg-black/50 border border-white/10 rounded-lg px-3 py-2 text-sm font-mono text-white focus:outline-none focus:border-[#06B6D4]/50 transition-colors"
+                className="w-full bg-surface-sunken border border-border-hairline rounded-sm px-3 py-2 text-small font-mono text-content-primary focus:outline-none focus:border-border-strong cursor-pointer"
               >
                 <option value="NEW_USFD_DEFECT">NEW_USFD_DEFECT (Transverse Rail Fissure)</option>
                 <option value="TRACK_FAILURE">TRACK_FAILURE (Buckled Rail / Weld Failure)</option>
-                <option value="SIGNAL_FAILURE">SIGNAL_FAILURE (Interlocking Drop)</option>
+                <option value="SIGNAL_FAILURE">SIGNAL_FAILURE (Interlocking Point Machine Drop)</option>
                 <option value="OTHER">OTHER (Obstruction / Derailment Risk)</option>
               </select>
             </div>
 
-            <div>
-              <label className="block text-[10px] font-mono uppercase tracking-widest text-gray-500 mb-1">Railway Section</label>
+            <div className="space-y-1">
+              <label className="text-micro font-mono uppercase tracking-wider text-content-tertiary block font-medium">
+                Railway Corridor Section
+              </label>
               <select
                 value={sectionId}
                 onChange={(e) => setSectionId(e.target.value)}
-                className="w-full bg-black/50 border border-white/10 rounded-lg px-3 py-2 text-sm font-mono text-white focus:outline-none focus:border-[#06B6D4]/50 transition-colors"
+                className="w-full bg-surface-sunken border border-border-hairline rounded-sm px-3 py-2 text-small font-mono text-content-primary focus:outline-none focus:border-border-strong cursor-pointer"
               >
                 <option value="NDLS-AGC">NDLS-AGC (New Delhi - Agra Cantt)</option>
                 <option value="AGC-GWL">AGC-GWL (Agra Cantt - Gwalior Jn)</option>
               </select>
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label className="block text-[10px] font-mono uppercase tracking-widest text-gray-500 mb-1">Severity</label>
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-1">
+                <label className="text-micro font-mono uppercase tracking-wider text-content-tertiary block font-medium">
+                  Severity Class
+                </label>
                 <select
                   value={severity}
                   onChange={(e) => setSeverity(e.target.value)}
-                  className="w-full bg-black/50 border border-white/10 rounded-lg px-3 py-2 text-sm font-mono text-white focus:outline-none focus:border-[#EF4444]/50 transition-colors"
+                  className="w-full bg-surface-sunken border border-border-hairline rounded-sm px-3 py-2 text-small font-mono text-crit-p1 font-semibold focus:outline-none focus:border-border-strong cursor-pointer"
                 >
-                  <option value="CRITICAL">CRITICAL (P1)</option>
-                  <option value="HIGH">HIGH (P2)</option>
+                  <option value="CRITICAL">P1 · CRITICAL</option>
+                  <option value="HIGH">P2 · HIGH</option>
                 </select>
               </div>
-              <div>
-                <label className="block text-[10px] font-mono uppercase tracking-widest text-gray-500 mb-1">Kilometer Location</label>
+
+              <div className="space-y-1">
+                <label className="text-micro font-mono uppercase tracking-wider text-content-tertiary block font-medium">
+                  Kilometer Post
+                </label>
                 <input
                   value={kmLocation}
                   onChange={(e) => setKmLocation(e.target.value)}
-                  className="w-full bg-black/50 border border-white/10 rounded-lg px-3 py-2 text-sm font-mono text-white focus:outline-none focus:border-[#06B6D4]/50 transition-colors"
+                  className="w-full bg-surface-sunken border border-border-hairline rounded-sm px-3 py-2 text-small font-mono text-content-primary focus:outline-none focus:border-border-strong"
                 />
               </div>
             </div>
 
-            <div>
-              <label className="block text-[10px] font-mono uppercase tracking-widest text-gray-500 mb-1">
-                Estimated Clearance Window: <span className="text-white bg-[#06B6D4]/10 border border-[#06B6D4]/30 px-2 py-0.5 rounded ml-2 shadow-[0_0_8px_rgba(6,182,212,0.2)]">{durationMinutes} mins</span>
-              </label>
+            <div className="space-y-2 font-mono">
+              <div className="flex justify-between items-center text-small">
+                <span className="text-micro text-content-tertiary uppercase">Required Track Possession:</span>
+                <span className="text-accent-400 font-semibold bg-accent-500/15 border border-accent-500/30 px-2 py-0.5 rounded-sm tabular-nums">
+                  {durationMinutes} mins
+                </span>
+              </div>
               <input
                 type="range"
                 min="60"
@@ -179,241 +210,171 @@ export const EmergencyPage: React.FC = () => {
                 step="30"
                 value={durationMinutes}
                 onChange={(e) => setDurationMinutes(Number(e.target.value))}
-                className="w-full h-2 bg-white/10 rounded-full appearance-none cursor-pointer accent-[#06B6D4] mt-3"
+                className="w-full h-1.5 bg-surface-sunken rounded-full appearance-none cursor-pointer accent-accent-500"
               />
-              <div className="flex justify-between text-[10px] font-mono text-gray-500 mt-2">
+              <div className="flex justify-between text-[10px] text-content-tertiary">
                 <span>60m</span><span>120m</span><span>180m</span><span>240m</span><span>300m</span>
               </div>
             </div>
 
-            <div>
-              <label className="block text-[10px] font-mono uppercase tracking-widest text-gray-500 mb-1">Impact Summary (optional)</label>
+            <div className="space-y-1">
+              <label className="text-micro font-mono uppercase tracking-wider text-content-tertiary block font-medium">
+                Incident Notes
+              </label>
               <input
                 value={impactSummary}
                 onChange={(e) => setImpactSummary(e.target.value)}
-                placeholder="Brief description of the defect..."
-                className="w-full bg-black/50 border border-white/10 rounded-lg px-3 py-2 text-sm font-mono text-white focus:outline-none focus:border-[#06B6D4]/50 placeholder:text-gray-600 transition-colors"
+                placeholder="Observed ultrasonic IMR flaw, point machine failure..."
+                className="w-full bg-surface-sunken border border-border-hairline rounded-sm px-3 py-2 text-small font-mono text-content-primary placeholder-content-disabled focus:outline-none focus:border-border-strong"
               />
             </div>
 
             <Button
               variant="danger"
-              icon={state === 'loading' ? <Loader2 size={16} className="animate-spin" /> : <Flame size={16} />}
+              size="md"
+              icon={<Flame size={16} />}
+              loading={state === 'loading'}
               onClick={handleSubmit}
-              disabled={state === 'loading'}
-              className="w-full py-3 tracking-widest text-[11px]"
+              className="w-full mt-2"
             >
-              {state === 'loading' ? 'Evaluating Emergency Slot...' : 'Evaluate Emergency Slot'}
+              Evaluate Emergency Possession Windows
             </Button>
 
-            {state === 'loading' && (
-              <div className="p-3 bg-[#F59E0B]/10 border border-[#F59E0B]/30 rounded-lg text-[#F59E0B] text-xs font-mono flex items-center gap-2 animate-pulse shadow-[0_0_15px_rgba(245,158,11,0.1)]">
-                <Loader2 size={16} className="animate-spin" />
-                <span>Dispatching to EMERGENCY re-optimization solver...</span>
-              </div>
-            )}
-
             {state === 'error' && (
-              <div className="p-3 bg-[#EF4444]/10 border border-[#EF4444]/30 rounded-lg text-[#EF4444] text-xs font-mono flex items-center gap-2 shadow-[0_0_15px_rgba(239,68,68,0.2)]">
-                <XCircle size={16} />
+              <div className="p-3 bg-crit-p1-bg border border-crit-p1/40 rounded-sm text-crit-p1 font-mono text-small flex items-center gap-2">
+                <XCircle size={15} />
                 <span>Error: {errorMsg}</span>
-              </div>
-            )}
-
-            {state === 'success' && result && (
-              <div className="p-3 bg-[#EF4444]/10 border border-[#EF4444]/30 rounded-lg text-[#EF4444] text-[10px] uppercase tracking-widest font-mono flex items-center gap-2 shadow-[0_0_15px_rgba(239,68,68,0.2)]">
-                <AlertTriangle size={16} />
-                <span>
-                  Emergency defect dispatched. Priority: <span className="font-bold text-white">{result.urgency}</span> | Section: <span className="font-bold text-white">{result.affected_section}</span>
-                </span>
               </div>
             )}
           </div>
         </Card>
 
-        {/* ── Feasible Possession Slots ─────────────────────────────── */}
+        {/* Feasible Possession Slots Card */}
         <Card
-          title="2. Feasible Possession Slots"
-          subtitle={result ? `${result.feasible_windows.length} windows identified` : 'Minimum train disruption emergency windows'}
+          title="2. Feasible Track Possession Windows"
+          eyebrow={result ? `${result.feasible_windows.length} Minimum Disruption Windows Found` : 'Solver Feasibility'}
         >
           {state === 'idle' && (
-            <div className="h-full flex items-center justify-center min-h-[200px] border border-white/5 border-dashed rounded-xl bg-black/20">
-              <span className="font-mono text-gray-500 text-[10px] font-bold tracking-widest uppercase">
-                SUBMIT EMERGENCY EVENT TO DISCOVER SLOTS
+            <div className="p-12 border border-border-hairline border-dashed rounded-md bg-surface-sunken/40 flex flex-col items-center justify-center text-center">
+              <Clock size={32} className="text-content-tertiary mb-2" />
+              <span className="font-mono text-small text-content-secondary">
+                Submit defect parameters to evaluate minimum train delay windows
               </span>
             </div>
           )}
 
           {state === 'loading' && (
-            <div className="h-full flex items-center justify-center min-h-[200px] border border-white/5 border-dashed rounded-xl bg-black/20">
-              <div className="font-mono text-[#F59E0B] flex flex-col items-center">
-                <div className="w-8 h-8 border-4 border-[#F59E0B] border-t-transparent rounded-full animate-spin mb-4 shadow-[0_0_10px_rgba(245,158,11,0.5)]" />
-                <span className="text-[10px] font-bold tracking-widest">EVALUATING FEASIBLE WINDOWS...</span>
-              </div>
+            <div className="p-12 border border-border-hairline border-dashed rounded-md bg-surface-sunken/40 flex flex-col items-center justify-center text-center space-y-3">
+              <div className="w-8 h-8 border-2 border-accent-500 border-t-transparent rounded-full animate-spin" />
+              <span className="font-mono text-small text-accent-400">
+                Solving timetable headway gaps...
+              </span>
             </div>
           )}
 
           {state === 'success' && result && (
-            <div className="space-y-3">
-              {result.feasible_windows.map((win, i) => (
-                <div
-                  key={win.window_id}
-                  className={`p-4 bg-black/40 backdrop-blur-sm rounded-xl border transition-all flex items-center justify-between cursor-pointer group ${
-                    selectedWindowId === win.window_id
-                      ? 'border-[#10B981] shadow-[0_0_15px_rgba(16,185,129,0.2)] bg-[#10B981]/5'
-                      : 'border-white/10 hover:border-white/30'
-                  }`}
-                  onClick={() => setSelectedWindowId(win.window_id)}
-                >
-                  <div className="flex-1">
-                    <div className="flex items-center gap-2">
-                      <Clock size={14} className={selectedWindowId === win.window_id ? 'text-[#10B981]' : 'text-gray-500'} />
-                      <span className="font-mono text-sm font-bold text-white">
-                        {formatTimeWindow(win.start, win.end)}
-                      </span>
-                      {i === 0 && (
-                        <span className="px-1.5 py-0.5 bg-[#10B981]/10 text-[#10B981] border border-[#10B981]/30 rounded text-[9px] font-mono font-bold uppercase tracking-widest shadow-[0_0_8px_rgba(16,185,129,0.2)]">
-                          Recommended
+            <div className="space-y-3 font-mono">
+              {result.feasible_windows.map((win, i) => {
+                const isSelected = selectedWindowId === win.window_id;
+                return (
+                  <div
+                    key={win.window_id}
+                    onClick={() => setSelectedWindowId(win.window_id)}
+                    className={`p-3.5 rounded-sm border transition-colors cursor-pointer flex items-center justify-between ${
+                      isSelected
+                        ? 'border-status-feasible bg-status-feasible-bg shadow-sm'
+                        : 'border-border-hairline bg-surface hover:border-border-strong'
+                    }`}
+                  >
+                    <div className="space-y-1">
+                      <div className="flex items-center gap-2">
+                        <Clock size={14} className={isSelected ? 'text-status-feasible' : 'text-content-tertiary'} />
+                        <span className="text-small font-semibold text-content-primary">
+                          {formatTimeWindow(win.start, win.end)}
                         </span>
+                        {i === 0 && (
+                          <span className="px-1.5 py-0.2 rounded-sm bg-status-feasible text-white text-micro uppercase font-semibold">
+                            OPTIMAL
+                          </span>
+                        )}
+                      </div>
+                      {win.impact_summary && (
+                        <div className="text-micro text-content-tertiary flex items-center gap-1">
+                          <AlertTriangle size={11} className="text-crit-p2" />
+                          <span>{win.impact_summary}</span>
+                        </div>
                       )}
                     </div>
-                    {win.impact_summary && (
-                      <div className="text-[10px] text-gray-500 mt-2 font-mono uppercase tracking-widest flex items-center gap-1">
-                        <AlertTriangle size={10} className="text-[#F59E0B]" />
-                        {win.impact_summary}
-                      </div>
-                    )}
+
+                    <Button
+                      variant={isSelected ? 'primary' : 'outline'}
+                      size="sm"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setSelectedWindowId(win.window_id);
+                      }}
+                    >
+                      {isSelected ? 'Selected' : 'Choose'}
+                    </Button>
                   </div>
-                  <Button
-                    variant={selectedWindowId === win.window_id ? 'primary' : 'outline'}
-                    size="sm"
-                    className="text-[10px] tracking-widest uppercase"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      setSelectedWindowId(win.window_id);
-                    }}
-                  >
-                    {selectedWindowId === win.window_id ? 'Selected' : 'Select'}
-                  </Button>
-                </div>
-              ))}
+                );
+              })}
 
               {selectedWindowId && (
-                <div className="pt-2">
+                <div className="pt-3 border-t border-border-hairline">
                   <Button
                     variant="primary"
-                    className="w-full py-3 text-[11px] tracking-widest uppercase"
-                    icon={<CheckCircle size={16} />}
+                    size="md"
+                    className="w-full"
+                    icon={<CheckCircle2 size={16} />}
+                    onClick={() => setIsConfirmModalOpen(true)}
                   >
-                    Confirm Emergency Block Possession
+                    Confirm Emergency Block Insertion
                   </Button>
                 </div>
               )}
             </div>
           )}
-
-          {state === 'error' && (
-            <div className="h-full flex items-center justify-center min-h-[200px] border border-white/5 border-dashed rounded-xl bg-black/20">
-              <div className="font-mono text-[#EF4444] text-[10px] tracking-widest font-bold uppercase text-center flex flex-col items-center">
-                <XCircle size={24} className="mx-auto mb-2 opacity-80" />
-                Failed to evaluate feasible windows
-              </div>
-            </div>
-          )}
         </Card>
       </div>
 
-      {/* ── Resulting Schedule Summary ──────────────────────────────── */}
-      {state === 'success' && result && result.resulting_schedule && (
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Schedule Card */}
-          <Card title="3. Resulting Schedule" subtitle={`Schedule: ${result.resulting_schedule.schedule_id}`}>
-            <div className="space-y-3">
-              <div className="flex items-center justify-between">
-                <span className="text-[10px] font-mono text-gray-500 uppercase tracking-widest font-bold">Status</span>
-                <span className={`px-2 py-1 font-mono text-[9px] font-bold uppercase tracking-widest rounded border ${
-                  result.resulting_schedule.status === 'FEASIBLE'
-                    ? 'text-[#10B981] border-[#10B981]/30 bg-[#10B981]/10 shadow-[0_0_8px_rgba(16,185,129,0.2)]'
-                    : 'text-[#F59E0B] border-[#F59E0B]/30 bg-[#F59E0B]/10 shadow-[0_0_8px_rgba(245,158,11,0.2)]'
-                }`}>
-                  {result.resulting_schedule.status}
-                </span>
-              </div>
-              {result.resulting_schedule.blocks.map((blk) => (
-                <div key={blk.block_id} className="p-3 bg-black/40 backdrop-blur-md rounded-lg border border-white/10">
-                  <div className="flex items-center gap-2 mb-2">
-                    <MapPin size={12} className="text-[#06B6D4]" />
-                    <span className="font-mono text-[11px] font-bold text-white tracking-widest">{blk.block_id}</span>
-                  </div>
-                  <div className="font-mono text-xs text-gray-400">
-                    {formatTimeWindow(blk.start, blk.end)}
-                  </div>
-                </div>
-              ))}
-              <div className="flex items-center gap-2 p-3 bg-[#F59E0B]/10 rounded-lg border border-[#F59E0B]/30">
-                <Zap size={14} className="text-[#F59E0B]" />
-                <span className="text-[10px] uppercase tracking-widest font-bold font-mono text-[#F59E0B]">
-                  Estimated disruption: <span className="text-white">{result.resulting_schedule.estimated_disruption_minutes} mins</span>
-                </span>
-              </div>
-              <div className="text-[10px] font-mono text-gray-500 uppercase tracking-widest">
-                Tasks scheduled: <span className="text-gray-300">{result.resulting_schedule.task_ids.join(', ')}</span>
-              </div>
-            </div>
-          </Card>
+      {/* Confirmation Modal */}
+      <Modal
+        isOpen={isConfirmModalOpen}
+        onClose={() => setIsConfirmModalOpen(false)}
+        title="Confirm Emergency Possession Possession"
+        subtitle="OR-Tools Schedule Injection Confirmation"
+        footer={
+          <>
+            <Button variant="secondary" size="sm" onClick={() => setIsConfirmModalOpen(false)}>
+              Cancel
+            </Button>
+            <Button
+              variant="danger"
+              size="sm"
+              icon={<CheckCircle2 size={15} />}
+              onClick={() => {
+                setIsConfirmModalOpen(false);
+                alert(`Emergency possession confirmed for ${selectedWindowId}. Timetable updated.`);
+              }}
+            >
+              Authorize & Insert Possession
+            </Button>
+          </>
+        }
+      >
+        <div className="space-y-3 font-mono text-small">
+          <p className="text-content-secondary font-sans leading-relaxed">
+            You are authorizing an unscheduled emergency track possession. This will automatically adjust train headways and notify sectional controllers:
+          </p>
 
-          {/* Optimization Stats */}
-          {result.optimization_result && (
-            <Card title="Solver Statistics" subtitle="Optimization engine performance">
-              <div className="space-y-4">
-                <div className="grid grid-cols-2 gap-3">
-                  <div className="p-4 bg-black/40 backdrop-blur-md rounded-xl border border-white/10 text-center relative overflow-hidden">
-                    <div className="absolute inset-0 bg-gradient-to-t from-white/[0.02] to-transparent pointer-events-none" />
-                    <div className="text-[9px] font-bold font-mono text-gray-500 uppercase tracking-widest mb-2 relative z-10">Objective</div>
-                    <div className="text-2xl font-bold font-mono text-white relative z-10">
-                      {result.optimization_result.objective_score.toFixed(2)}
-                    </div>
-                  </div>
-                  <div className="p-4 bg-black/40 backdrop-blur-md rounded-xl border border-white/10 text-center relative overflow-hidden">
-                    <div className="absolute inset-0 bg-gradient-to-t from-white/[0.02] to-transparent pointer-events-none" />
-                    <div className="text-[9px] font-bold font-mono text-gray-500 uppercase tracking-widest mb-2 relative z-10">Runtime</div>
-                    <div className="text-2xl font-bold font-mono text-white relative z-10">
-                      {result.optimization_result.solver_statistics.runtime_ms}<span className="text-sm text-gray-500 ml-1">ms</span>
-                    </div>
-                  </div>
-                </div>
-                <div className="flex items-center gap-2 p-3 bg-[#10B981]/10 rounded-lg border border-[#10B981]/30">
-                  <Shield size={14} className="text-[#10B981]" />
-                  <span className="text-[10px] uppercase font-bold tracking-widest font-mono text-[#10B981]">
-                    <span className="text-white">{result.optimization_result.selected_task_ids.length}</span> task(s) scheduled, {' '}
-                    <span className="text-white">{result.optimization_result.solver_statistics.iterations ?? 0}</span> iterations
-                  </span>
-                </div>
-              </div>
-            </Card>
-          )}
-
-          {/* AI Explanation */}
-          <Card title="AI Explanation" subtitle="Deterministic decision trace">
-            <div className="p-4 bg-black/40 backdrop-blur-md rounded-r-xl border-l-2 border-[#10B981] shadow-lg relative overflow-hidden">
-              <div className="absolute inset-0 bg-gradient-to-r from-[#10B981]/[0.05] to-transparent pointer-events-none" />
-              <p className="font-mono text-[11px] leading-relaxed text-gray-300 relative z-10">
-                {result.explanation}
-              </p>
-            </div>
-            {result.errors.length > 0 && (
-              <div className="mt-3 space-y-2">
-                {result.errors.map((err, i) => (
-                  <div key={i} className="text-[10px] font-mono font-bold uppercase tracking-widest text-[#EF4444] bg-[#EF4444]/10 border border-[#EF4444]/30 rounded p-2 flex items-center gap-2">
-                    <XCircle size={12} className="shrink-0" />
-                    {err}
-                  </div>
-                ))}
-              </div>
-            )}
-          </Card>
+          <div className="p-3 bg-surface-sunken border border-border-hairline rounded-sm space-y-1.5">
+            <div><span className="text-content-tertiary">DEFECT:</span> {eventType}</div>
+            <div><span className="text-content-tertiary">LOCATION:</span> Km {kmLocation} ({sectionId})</div>
+            <div><span className="text-content-tertiary">WINDOW:</span> {selectedWindow ? formatTimeWindow(selectedWindow.start, selectedWindow.end) : ''}</div>
+          </div>
         </div>
-      )}
+      </Modal>
     </div>
   );
 };

@@ -2,9 +2,11 @@ import React from 'react';
 import { Drawer } from '../../components/common/Drawer';
 import { Button } from '../../components/common/Button';
 import { Badge } from '../../components/common/Badge';
-import { Card } from '../../components/common/Card';
-import { MaintenanceTask } from '../../types/api';
+import { DepartmentBadge } from '../../components/domain/DepartmentBadge';
+import { PriorityBadge } from '../../components/domain/PriorityBadge';
 import { CriticalityFactorBars } from './CriticalityFactorBars';
+import { ShieldCheck, Calendar, MapPin, Clock, Wrench } from 'lucide-react';
+import type { MaintenanceTask } from '../../types/api';
 
 interface Props {
   task: MaintenanceTask | null;
@@ -13,7 +15,7 @@ interface Props {
 }
 
 export const TaskDetailSheet: React.FC<Props> = ({ task, isOpen, onClose }) => {
-  if (!task) return <Drawer isOpen={isOpen} onClose={onClose} title="Task Detail"><></></Drawer>;
+  if (!task) return null;
 
   const mockFactors = {
     severity: 0.28,
@@ -21,53 +23,109 @@ export const TaskDetailSheet: React.FC<Props> = ({ task, isOpen, onClose }) => {
     safety_risk: 0.20,
     traffic_density: 0.09,
     speed_class: 0.07,
-    deadline_proximity: 0.08
+    deadline_proximity: 0.08,
   };
 
-  const priorityBadge = task.criticalityScore >= 85 ? 'p1' : task.criticalityScore >= 70 ? 'p2' : 'p3';
-
   return (
-    <Drawer isOpen={isOpen} onClose={onClose} title={`Task: ${task.taskCode}`}>
+    <Drawer
+      isOpen={isOpen}
+      onClose={onClose}
+      title={
+        <div className="flex items-center gap-2">
+          <Wrench size={16} className="text-accent-400" />
+          <span>{task.taskCode}</span>
+        </div>
+      }
+      subtitle={`DEPT: ${task.departmentId} // ASSET: ${task.assetId}`}
+      footer={
+        <div className="flex items-center justify-end gap-3">
+          <Button variant="secondary" size="sm" onClick={onClose}>
+            Dismiss
+          </Button>
+          <Button variant="primary" size="sm" onClick={() => {}}>
+            Assign to Schedule
+          </Button>
+        </div>
+      }
+    >
       <div className="space-y-6">
-        <div className="flex gap-2 flex-wrap">
-           <Badge variant={priorityBadge as any}>P{priorityBadge === 'p1' ? 1 : priorityBadge === 'p2' ? 2 : 3}</Badge>
-           <Badge variant={task.departmentId as any}>{task.departmentId}</Badge>
-           <Badge>{task.taskType}</Badge>
+        {/* Badges strip */}
+        <div className="flex items-center gap-2 flex-wrap">
+          <PriorityBadge
+            priority={task.criticalityScore >= 80 ? 'P1' : task.criticalityScore >= 60 ? 'P2' : 'P3'}
+            score={task.criticalityScore}
+          />
+          <DepartmentBadge department={task.departmentId} />
+          <Badge tone={task.status === 'SCHEDULED' ? 'status-feasible' : 'neutral'}>
+            {task.status}
+          </Badge>
         </div>
 
-        <Card className="shadow-none !bg-black/30">
-          <p className="font-mono text-sm leading-relaxed text-gray-300">{task.description}</p>
-          <div className="mt-4 pt-4 border-t border-white/10 grid grid-cols-2 gap-4 font-mono text-xs text-gray-500">
+        {/* Task Description */}
+        <div className="p-4 bg-surface border border-border-hairline rounded-md space-y-3">
+          <p className="text-small text-content-primary leading-relaxed font-sans">
+            {task.description || 'Routine maintenance inspection and safety ultrasonic defect scan along corridor segment.'}
+          </p>
+
+          {/* 2-column mono metadata grid */}
+          <div className="pt-3 border-t border-border-subtle grid grid-cols-2 gap-3 text-micro font-mono">
             <div>
-               <span className="block uppercase text-[10px] tracking-widest">Asset</span>
-               <span className="text-white font-bold text-sm">{task.assetId}</span>
+              <span className="text-content-tertiary block flex items-center gap-1">
+                <MapPin size={11} /> LOCATION
+              </span>
+              <span className="text-content-primary font-semibold">
+                Km {Number(task.locationStartKm).toFixed(1)} – {Number(task.locationEndKm).toFixed(1)}
+              </span>
             </div>
+
             <div>
-               <span className="block uppercase text-[10px] tracking-widest">Location</span>
-               <span className="text-white font-bold text-sm">Km {task.locationStartKm} - {task.locationEndKm}</span>
+              <span className="text-content-tertiary block flex items-center gap-1">
+                <Clock size={11} /> EST DURATION
+              </span>
+              <span className="text-content-primary font-semibold">
+                {task.estimatedDurationMinutes} mins
+              </span>
             </div>
+
             <div>
-               <span className="block uppercase text-[10px] tracking-widest">Est. Duration</span>
-               <span className="text-white font-bold text-sm">{task.estimatedDurationMinutes}m</span>
+              <span className="text-content-tertiary block flex items-center gap-1">
+                <Calendar size={11} /> DUE DATE
+              </span>
+              <span className="text-content-primary font-semibold">
+                {task.dueAt?.split('T')[0] || 'Next Block Window'}
+              </span>
+            </div>
+
+            <div>
+              <span className="text-content-tertiary block">OVERDUE STATE</span>
+              <span className={`font-semibold ${task.overdueDays > 0 ? 'text-crit-p1' : 'text-status-feasible'}`}>
+                {task.overdueDays > 0 ? `+${task.overdueDays} days late` : 'Within Horizon'}
+              </span>
             </div>
           </div>
-        </Card>
+        </div>
 
-        <Card className="shadow-none !bg-black/40 border border-white/5">
+        {/* Factor Breakdown */}
+        <div className="p-4 bg-surface border border-border-hairline rounded-md">
           <CriticalityFactorBars score={task.criticalityScore} factors={mockFactors} />
-          
-          <div className="mt-6 p-4 border-l border-[#EF4444] bg-black/50 font-mono text-xs leading-relaxed text-gray-400">
-            <span className="font-bold text-white mb-2 block uppercase tracking-widest text-[10px]">Deterministic Explanation:</span>
-            "High severity, critical safety risk, and extreme urgency dominate the score. Immediate track possession required prior to {task.dueAt?.split('T')[0]}."
-            <div className="mt-3 text-[10px] uppercase text-gray-500 tracking-wider">Model: criticality_v1_rule_2026Q4 | Mode: RULE_BASED</div>
-          </div>
-        </Card>
+        </div>
 
-        <div className="pt-6 flex flex-col gap-3">
-           <Button variant="secondary" className="w-full">Recalculate Priority</Button>
-           <Button variant="primary" className="w-full">Schedule in Block</Button>
+        {/* Deterministic Explanation Box */}
+        <div className="p-4 bg-surface-sunken border-l-4 border-l-accent-500 border border-border-hairline rounded-sm space-y-2">
+          <div className="flex items-center gap-1.5 text-accent-400 text-micro font-mono font-semibold uppercase tracking-wider">
+            <ShieldCheck size={14} />
+            <span>Deterministic Rule-Engine Explanation</span>
+          </div>
+          <p className="text-small text-content-secondary font-mono leading-relaxed">
+            "High severity, critical safety risk, and extreme urgency dominate the score. Track possession recommended prior to {task.dueAt?.split('T')[0] || 'horizon'}."
+          </p>
+          <div className="text-[10px] font-mono text-content-tertiary pt-1 border-t border-border-subtle">
+            ENGINE: criticality_v2.4_audit | MODE: RULE_BASED_DETERMINISTIC
+          </div>
         </div>
       </div>
     </Drawer>
   );
 };
+
+export default TaskDetailSheet;

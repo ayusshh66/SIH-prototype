@@ -1,5 +1,5 @@
 import React from 'react';
-import { Inbox } from 'lucide-react';
+import { Database } from 'lucide-react';
 import { Button } from './Button';
 
 export interface EmptyStateProps {
@@ -12,22 +12,24 @@ export interface EmptyStateProps {
 }
 
 export const EmptyState: React.FC<EmptyStateProps> = ({
-  title = 'No Data Available',
-  description = 'No operational records or alerts to display for this criteria.',
-  icon = <Inbox size={36} />,
+  title = 'No Records Available',
+  description = 'No operational data or alerts match the current filter parameters.',
+  icon = <Database size={40} strokeWidth={1.5} className="text-content-tertiary" />,
   actionLabel,
   onAction,
   className = '',
 }) => {
   return (
-    <div className={`p-12 border border-white/5 border-dashed rounded-xl bg-black/20 flex flex-col items-center justify-center text-center ${className}`}>
-      <div className="text-[#06B6D4] opacity-50 mb-4">
+    <div
+      className={`p-12 border border-border-hairline border-dashed rounded-md bg-surface-sunken/40 flex flex-col items-center justify-center text-center ${className}`}
+    >
+      <div className="mb-4 text-content-tertiary">
         {icon}
       </div>
-      <div className="font-mono font-bold text-[11px] text-gray-300 uppercase tracking-widest mb-2">
+      <div className="text-h3 font-semibold text-content-primary mb-1.5">
         {title}
       </div>
-      <div className="font-mono text-xs text-gray-500 mb-6 max-w-md">
+      <div className="text-small text-content-secondary max-w-sm mb-6">
         {description}
       </div>
       {actionLabel && onAction && (
@@ -38,3 +40,5 @@ export const EmptyState: React.FC<EmptyStateProps> = ({
     </div>
   );
 };
+
+export default EmptyState;

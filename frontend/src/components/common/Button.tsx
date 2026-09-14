@@ -1,9 +1,13 @@
 import React from 'react';
+import { motion, HTMLMotionProps } from 'framer-motion';
+import { Loader2 } from 'lucide-react';
 
-export interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
+export interface ButtonProps extends Omit<HTMLMotionProps<'button'>, 'children'> {
   variant?: 'primary' | 'secondary' | 'outline' | 'danger' | 'ghost';
   size?: 'sm' | 'md' | 'lg';
   icon?: React.ReactNode;
+  iconRight?: React.ReactNode;
+  loading?: boolean;
   children?: React.ReactNode;
 }
 
@@ -12,41 +16,53 @@ export const Button: React.FC<ButtonProps> = ({
   variant = 'primary',
   size = 'md',
   icon,
+  iconRight,
+  loading = false,
   className = '',
   disabled,
   ...props
 }) => {
   const base =
-    'inline-flex items-center justify-center font-semibold tracking-wide border transition-all focus:outline-none cursor-pointer disabled:opacity-50 disabled:pointer-events-none rounded-lg';
+    'relative inline-flex items-center justify-center font-medium transition-colors border select-none focus:outline-none focus-visible:ring-2 focus-visible:ring-accent-500/50 cursor-pointer disabled:opacity-45 disabled:pointer-events-none disabled:cursor-not-allowed';
 
   const sizeStyles = {
-    sm: 'px-2.5 py-1.5 text-xs gap-1.5',
-    md: 'px-4 py-2 text-sm gap-2',
-    lg: 'px-6 py-2.5 text-base gap-2.5',
+    sm: 'h-7 px-2.5 text-small gap-1.5 rounded-sm',
+    md: 'h-9 px-3.5 text-body gap-2 rounded-md',
+    lg: 'h-11 px-5 text-mono-lg gap-2.5 rounded-md',
   };
 
   const variants = {
     primary:
-      'bg-[#F97316] text-white border-[#F97316] hover:bg-[#EA580C] hover:border-[#EA580C] shadow-[0_0_15px_rgba(249,115,22,0.3)]',
+      'bg-accent-500 text-white border-accent-600 hover:bg-accent-600 active:bg-accent-600 shadow-sm',
     secondary:
-      'bg-black/50 text-gray-300 border-white/10 hover:text-white hover:bg-white/5 hover:border-white/20',
-    danger:
-      'bg-[#EF4444]/20 text-[#EF4444] border-[#EF4444]/50 hover:bg-[#EF4444]/30 hover:border-[#EF4444]',
+      'bg-surface text-content-primary border-border-hairline hover:bg-surface-raised hover:border-border-strong active:bg-surface-sunken',
     outline:
-      'bg-transparent text-gray-300 border-white/10 hover:text-white hover:bg-white/5 hover:border-white/20',
+      'bg-transparent text-content-primary border-border-hairline hover:bg-surface-raised hover:border-border-strong',
+    danger:
+      'bg-crit-p1-bg text-crit-p1 border-crit-p1-border hover:bg-crit-p1 hover:text-white',
     ghost:
-      'bg-transparent text-gray-500 border-transparent hover:text-white hover:bg-white/5 hover:border-white/10',
+      'bg-transparent text-content-secondary border-transparent hover:text-content-primary hover:bg-surface-sunken',
   };
 
   return (
-    <button
+    <motion.button
+      whileHover={disabled || loading ? undefined : { y: -1 }}
+      whileTap={disabled || loading ? undefined : { scale: 0.97 }}
+      transition={{ duration: 0.12 }}
       className={`${base} ${sizeStyles[size]} ${variants[variant]} ${className}`}
-      disabled={disabled}
+      disabled={disabled || loading}
       {...props}
     >
-      {icon && <span className="inline-flex shrink-0 items-center">{icon}</span>}
+      {loading ? (
+        <Loader2 className="animate-spin shrink-0" size={size === 'sm' ? 12 : size === 'lg' ? 18 : 15} />
+      ) : (
+        icon && <span className="inline-flex shrink-0 items-center">{icon}</span>
+      )}
       {children}
-    </button>
+      {!loading && iconRight && (
+        <span className="inline-flex shrink-0 items-center">{iconRight}</span>
+      )}
+    </motion.button>
   );
 };
 

@@ -258,7 +258,7 @@ class TestModelBasedOutputMetadata(unittest.TestCase):
         result = self.engine.score(self.task, scoring_mode="MODEL_BASED")
         self.assertEqual(result["scoring_mode"], "MODEL_BASED")
         self.assertEqual(result["model_name"], "GradientBoostingRegressor")
-        self.assertEqual(result["model_version"], "criticality_gbr_v1")
+        self.assertEqual(result["model_version"], "criticality_gbr_v2")
         self.assertIn("predicted_criticality", result)
         self.assertIn("priority_level", result)
         self.assertIn("text_severity_used", result)
@@ -266,13 +266,15 @@ class TestModelBasedOutputMetadata(unittest.TestCase):
     def test_predicted_criticality_matches_model_output(self):
         result = self.engine.score(self.task, scoring_mode="MODEL_BASED")
         model = self.engine._load_model()
+        feature_map = self.engine._model_feature_vector(self.task, datetime.now(timezone.utc))
         feature_vector = [
-            self.engine._model_feature_vector(self.task, datetime.now(timezone.utc))["severity"],
-            self.engine._model_feature_vector(self.task, datetime.now(timezone.utc))["urgency"],
-            self.engine._model_feature_vector(self.task, datetime.now(timezone.utc))["safety_risk"],
-            self.engine._model_feature_vector(self.task, datetime.now(timezone.utc))["traffic_density"],
-            self.engine._model_feature_vector(self.task, datetime.now(timezone.utc))["speed_class"],
-            self.engine._model_feature_vector(self.task, datetime.now(timezone.utc))["deadline_proximity"],
+            feature_map["severity"],
+            feature_map["urgency"],
+            feature_map["safety_risk"],
+            feature_map["traffic_density"],
+            feature_map["speed_class"],
+            feature_map["deadline_proximity"],
+            feature_map["text_severity"],
         ]
         model_prediction = float(model.predict([feature_vector])[0])
         self.assertEqual(result["predicted_criticality"], float(self.engine._clamp(model_prediction)))
@@ -508,7 +510,7 @@ class TestModelBasedIntegration(unittest.TestCase):
             "deadline": "2026-11-03T18:00:00Z",
         }, scoring_mode="MODEL_BASED")
         self.assertIn("model_metadata", result)
-        self.assertEqual(result["model_metadata"]["model_version"], "criticality_gbr_v1")
+        self.assertEqual(result["model_metadata"]["model_version"], "criticality_gbr_v2")
         self.assertIn("top_contributing_features", result["model_metadata"])
 
     def test_model_based_contributing_features_are_valid(self):

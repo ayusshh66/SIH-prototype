@@ -17,25 +17,25 @@ export const Button: React.FC<ButtonProps> = ({
   ...props
 }) => {
   const base =
-    'inline-flex items-center justify-center font-bold font-mono uppercase tracking-wide border-2 transition-transform active:translate-y-0.5 active:translate-x-0.5 focus:outline-none cursor-pointer disabled:opacity-50 disabled:pointer-events-none';
+    'inline-flex items-center justify-center font-semibold tracking-wide border transition-all focus:outline-none cursor-pointer disabled:opacity-50 disabled:pointer-events-none rounded-lg';
 
   const sizeStyles = {
-    sm: 'px-2.5 py-1 text-xs gap-1.5',
+    sm: 'px-2.5 py-1.5 text-xs gap-1.5',
     md: 'px-4 py-2 text-sm gap-2',
-    lg: 'px-6 py-3 text-base gap-2.5',
+    lg: 'px-6 py-2.5 text-base gap-2.5',
   };
 
   const variants = {
     primary:
-      'bg-text-primary text-background-main border-text-primary shadow-[4px_4px_0px_0px_rgba(156,163,175,0.5)] hover:bg-gray-200',
+      'bg-[#F97316] text-white border-[#F97316] hover:bg-[#EA580C] hover:border-[#EA580C] shadow-[0_0_15px_rgba(249,115,22,0.3)]',
     secondary:
-      'bg-surface-card text-text-primary border-surface-border shadow-[4px_4px_0px_0px_rgba(31,41,55,1)] hover:bg-surface-border',
+      'bg-black/50 text-gray-300 border-white/10 hover:text-white hover:bg-white/5 hover:border-white/20',
     danger:
-      'bg-status-critical text-white border-status-critical shadow-[4px_4px_0px_0px_rgba(153,27,27,1)] hover:bg-red-600',
+      'bg-[#EF4444]/20 text-[#EF4444] border-[#EF4444]/50 hover:bg-[#EF4444]/30 hover:border-[#EF4444]',
     outline:
-      'bg-transparent text-text-primary border-surface-border hover:bg-surface-card',
+      'bg-transparent text-gray-300 border-white/10 hover:text-white hover:bg-white/5 hover:border-white/20',
     ghost:
-      'bg-transparent text-text-muted border-transparent hover:text-text-primary hover:bg-surface-card hover:border-surface-border',
+      'bg-transparent text-gray-500 border-transparent hover:text-white hover:bg-white/5 hover:border-white/10',
   };
 
   return (

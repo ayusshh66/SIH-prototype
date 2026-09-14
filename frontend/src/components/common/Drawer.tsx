@@ -43,7 +43,7 @@ export const Drawer: React.FC<DrawerProps> = ({
   return (
     <>
       <div
-        className={`fixed inset-0 bg-background-main/60 backdrop-blur-md z-40 transition-opacity duration-300 ${
+        className={`fixed inset-0 bg-black/60 backdrop-blur-sm z-40 transition-opacity duration-300 ${
           isOpen ? 'opacity-100' : 'opacity-0'
         }`}
         onClick={onClose}
@@ -52,7 +52,7 @@ export const Drawer: React.FC<DrawerProps> = ({
       <div
         className={`fixed inset-y-0 right-0 w-full ${
           width ? '' : 'md:w-[480px]'
-        } bg-surface-card/95 backdrop-blur-lg border-l-2 border-surface-border shadow-[-8px_0px_0px_0px_rgba(31,41,55,0.5)] z-50 flex flex-col transform transition-transform duration-300 ${
+        } bg-[#18181B]/95 backdrop-blur-xl border-l border-white/10 shadow-2xl z-50 flex flex-col transform transition-transform duration-300 ${
           isOpen ? 'translate-x-0' : 'translate-x-full'
         }`}
         style={width ? { width } : undefined}
@@ -60,21 +60,21 @@ export const Drawer: React.FC<DrawerProps> = ({
         role="dialog"
         aria-modal="true"
       >
-        <div className="flex items-center justify-between p-4 border-b-2 border-surface-border bg-background-main/80 backdrop-blur-sm shrink-0">
-          <div className="text-lg font-bold font-mono text-text-primary tracking-tight uppercase">
+        <div className="flex items-center justify-between p-4 border-b border-white/10 bg-black/40 shrink-0">
+          <div className="text-lg font-semibold tracking-wide text-white">
             {title}
           </div>
           <button
             onClick={onClose}
-            className="p-1 hover:bg-surface-border transition-colors border-2 border-transparent hover:border-surface-border text-text-muted hover:text-text-primary"
+            className="p-1 rounded-lg hover:bg-white/5 transition-colors text-gray-400 hover:text-white"
             aria-label="Close drawer"
           >
             <X size={20} />
           </button>
         </div>
-        <div className="p-6 flex-1 overflow-y-auto">{children}</div>
+        <div className="p-6 flex-1 overflow-y-auto custom-scrollbar">{children}</div>
         {footer && (
-          <div className="p-4 border-t-2 border-surface-border bg-background-main/80 backdrop-blur-sm shrink-0">
+          <div className="p-4 border-t border-white/10 bg-black/40 shrink-0">
             {footer}
           </div>
         )}

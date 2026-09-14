@@ -41,7 +41,7 @@ export const SystemPage: React.FC = () => {
         title="Design System & Operations Foundation"
         description="Living specification of reusable UI primitives, domain status tokens, and accessibility standards."
         badge={
-          <span className="badge badge-optimal font-mono text-xs">
+          <span className="bg-[#10B981]/10 text-[#10B981] border border-[#10B981]/30 px-2 py-1 rounded font-mono text-[10px] uppercase tracking-widest shadow-[0_0_10px_rgba(16,185,129,0.2)]">
             FOUNDATION V1.0.0
           </span>
         }
@@ -73,16 +73,17 @@ export const SystemPage: React.FC = () => {
                   ['AI Engines', health.ai_engines.status],
                   ['Mode', health.mode.source.toUpperCase()],
                 ].map(([label, status]) => (
-                  <div key={label} className="p-3 bg-background-main border-2 border-surface-border">
-                    <span className="block text-text-muted uppercase mb-1">{label}</span>
+                  <div key={label} className="p-4 bg-black/40 backdrop-blur-md rounded-xl border border-white/10 relative overflow-hidden group">
+                    <div className="absolute inset-0 bg-gradient-to-t from-white/[0.02] to-transparent opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none" />
+                    <span className="block text-gray-500 text-[10px] uppercase tracking-widest mb-1 relative z-10">{label}</span>
                     <span
-                      className={
+                      className={`relative z-10 ${
                         status === 'HEALTHY' || status === 'LIVE'
-                          ? 'text-status-optimal font-bold'
+                          ? 'text-[#10B981] font-bold shadow-[0_0_8px_rgba(16,185,129,0.2)]'
                           : status === 'MOCK' || status === 'NOT_CONFIGURED'
-                            ? 'text-status-warning font-bold'
-                            : 'text-status-critical font-bold'
-                      }
+                            ? 'text-[#F59E0B] font-bold shadow-[0_0_8px_rgba(245,158,11,0.2)]'
+                            : 'text-[#EF4444] font-bold shadow-[0_0_8px_rgba(239,68,68,0.2)]'
+                      }`}
                     >
                       {status}
                     </span>
@@ -91,8 +92,8 @@ export const SystemPage: React.FC = () => {
               </div>
             )}
             {health?.ai_engines.engines.length ? (
-              <div className="mt-4 text-xs font-mono text-text-muted">
-                Engines: {health.ai_engines.engines.join(', ')}
+              <div className="mt-4 text-[10px] font-mono text-gray-500 uppercase tracking-widest">
+                Engines: <span className="text-white">{health.ai_engines.engines.join(', ')}</span>
               </div>
             ) : null}
           </Card>
@@ -103,7 +104,7 @@ export const SystemPage: React.FC = () => {
               <PriorityBadge priority="HIGH" />
               <PriorityBadge priority="MEDIUM" />
               <PriorityBadge priority="LOW" />
-              <span className="text-text-muted">|</span>
+              <span className="text-gray-600">|</span>
               <PriorityBadge priority="P1" />
               <PriorityBadge priority="P2" />
               <PriorityBadge priority="P3" />
@@ -158,7 +159,7 @@ export const SystemPage: React.FC = () => {
       {activeTab === 'primitives' && (
         <div className="space-y-6 mt-4">
           <Card title="Interactive Buttons">
-            <div className="flex gap-3 flex-wrap items-center">
+            <div className="flex gap-3 flex-wrap items-center p-4 bg-black/20 rounded-xl border border-white/5">
               <Button variant="primary">Primary Action</Button>
               <Button variant="secondary">Secondary Action</Button>
               <Button variant="outline">Outline Action</Button>
@@ -190,7 +191,7 @@ export const SystemPage: React.FC = () => {
       {activeTab === 'states' && (
         <div className="space-y-6 mt-4">
           <Card title="Shimmer Loading Skeletons">
-            <div className="space-y-2">
+            <div className="space-y-3 p-4 bg-black/20 rounded-xl border border-white/5">
               <Skeleton height="24px" width="60%" />
               <Skeleton height="16px" width="90%" />
               <Skeleton height="16px" width="75%" />
@@ -236,7 +237,7 @@ export const SystemPage: React.FC = () => {
           </>
         }
       >
-        <p className="text-sm text-text-muted">
+        <p className="text-sm text-gray-400">
           This dialog verifies keyboard accessibility (Tab focus trap, Enter submit, Escape dismiss) for operational confirmations.
         </p>
       </Modal>
@@ -253,7 +254,7 @@ export const SystemPage: React.FC = () => {
           </Button>
         }
       >
-        <p className="text-sm text-text-muted">
+        <p className="text-sm text-gray-400">
           Standard drawer used for inspecting blocks, tasks, and conflicts without leaving the main operational canvas.
         </p>
       </DetailDrawer>

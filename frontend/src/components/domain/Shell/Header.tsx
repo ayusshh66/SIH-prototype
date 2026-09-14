@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { Train, Bell, Activity } from 'lucide-react';
+import { Bell, SunMoon, User, Calendar } from 'lucide-react';
+import { motion } from 'framer-motion';
 
 export const Header: React.FC = () => {
   const [time, setTime] = useState(new Date());
@@ -10,37 +11,39 @@ export const Header: React.FC = () => {
   }, []);
 
   return (
-    <header className="fixed top-0 left-0 right-0 h-14 bg-background-main border-b-2 border-surface-border flex items-center justify-between px-4 z-30">
-      <div className="flex items-center gap-4">
-        <div className="flex items-center justify-center w-8 h-8 bg-surface-card border-2 border-surface-border shadow-[2px_2px_0px_0px_rgba(31,41,55,1)]">
-          <Train size={18} className="text-text-primary" />
-        </div>
-        <div>
-          <h1 className="text-sm font-bold tracking-widest text-text-primary uppercase leading-tight">
-            IR Operations Command
-          </h1>
-          <p className="text-[10px] text-text-muted font-mono uppercase tracking-wider">
-            AI Block Planning System
-          </p>
-        </div>
-      </div>
-
-      <div className="flex items-center gap-6">
-        <div className="hidden md:flex items-center gap-2 px-3 py-1 bg-surface-card border-2 border-surface-border">
-          <Activity size={14} className="text-status-optimal" />
-          <span className="text-xs font-mono font-bold text-status-optimal">SYSTEM ACTIVE</span>
+    <motion.header 
+      initial={{ y: -50, opacity: 0 }}
+      animate={{ y: 0, opacity: 1 }}
+      className="fixed top-4 right-4 h-12 bg-[#18181B]/90 backdrop-blur-xl border border-white/10 rounded-full flex items-center justify-end px-2 z-50 shadow-[0_4px_24px_rgba(0,0,0,0.5)]"
+    >
+      <div className="flex items-center gap-1">
+        <div className="flex items-center gap-2 px-3 py-1 text-gray-300 font-mono text-xs">
+          <Calendar size={14} className="text-gray-500" />
+          <span>Mon | {time.toLocaleDateString('en-GB')}</span>
         </div>
 
-        <div className="text-xs font-mono text-text-muted bg-surface-card px-3 py-1 border-2 border-surface-border shadow-[2px_2px_0px_0px_rgba(31,41,55,1)]">
-          {time.toISOString().replace('T', ' ').slice(0, 19)} UTC
+        <div className="w-px h-5 bg-white/10 mx-1" />
+
+        <div className="flex items-center gap-2 px-3 py-1 text-gray-300 font-mono text-xs w-24 justify-center">
+          {time.toLocaleTimeString('en-US', { hour12: false, hour: '2-digit', minute:'2-digit', second:'2-digit' })}
         </div>
 
-        <button className="relative p-1.5 hover:bg-surface-card border-2 border-transparent hover:border-surface-border transition-colors">
-          <Bell size={18} className="text-text-muted" />
-          <span className="absolute top-1 right-1 w-2 h-2 bg-status-critical rounded-none border border-background-main"></span>
+        <div className="w-px h-5 bg-white/10 mx-1" />
+
+        <button className="p-2 text-gray-400 hover:text-white transition-colors rounded-full hover:bg-white/5">
+          <SunMoon size={16} />
         </button>
+
+        <button className="relative p-2 text-gray-400 hover:text-white transition-colors rounded-full hover:bg-white/5">
+          <Bell size={16} />
+          <span className="absolute top-2 right-2 w-1.5 h-1.5 bg-[#F97316] rounded-full shadow-[0_0_8px_#F97316]"></span>
+        </button>
+
+        <div className="ml-1 w-8 h-8 rounded-full bg-gradient-to-tr from-gray-700 to-gray-500 border border-white/20 overflow-hidden flex items-center justify-center">
+          <User size={16} className="text-white" />
+        </div>
       </div>
-    </header>
+    </motion.header>
   );
 };
 

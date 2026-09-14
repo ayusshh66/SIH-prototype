@@ -26,13 +26,14 @@ export function Table<T>({
   onRowClick,
 }: TableProps<T>) {
   return (
-    <div className={`table-container ${className}`}>
-      <table className="data-table">
-        <thead>
+    <div className={`w-full overflow-x-auto bg-[#131316]/90 backdrop-blur-xl border border-white/5 rounded-xl shadow-lg ${className}`}>
+      <table className="w-full text-sm text-left text-gray-400">
+        <thead className="text-xs text-gray-500 uppercase bg-black/40 border-b border-white/10 font-bold tracking-wider">
           <tr>
             {columns.map((col) => (
               <th
                 key={col.key}
+                className="px-4 py-3 whitespace-nowrap"
                 style={{ width: col.width, textAlign: col.align || 'left' }}
               >
                 {col.header}
@@ -45,7 +46,7 @@ export function Table<T>({
             <tr>
               <td
                 colSpan={columns.length}
-                style={{ textAlign: 'center', color: 'var(--text-muted)', padding: 'var(--space-8)' }}
+                className="px-4 py-8 text-center text-gray-500 font-mono"
               >
                 {emptyText}
               </td>
@@ -55,11 +56,14 @@ export function Table<T>({
               <tr
                 key={keyExtractor(item, index)}
                 onClick={onRowClick ? () => onRowClick(item) : undefined}
-                style={onRowClick ? { cursor: 'pointer' } : undefined}
+                className={`border-b border-white/5 hover:bg-white/5 transition-colors ${
+                  onRowClick ? 'cursor-pointer' : ''
+                }`}
               >
                 {columns.map((col) => (
                   <td
                     key={col.key}
+                    className="px-4 py-3 font-mono text-xs text-gray-300"
                     style={{ textAlign: col.align || 'left' }}
                   >
                     {col.render ? col.render(item, index) : (item as any)[col.key]}

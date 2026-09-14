@@ -20,7 +20,7 @@ export async function invokeAiBridge<TInput = unknown, TOutput = unknown>(
   timeoutMs = 20000
 ): Promise<TOutput> {
   return new Promise<TOutput>((resolve, reject) => {
-    const pythonBin = process.env.PYTHON_BIN || "python";
+    const pythonBin = process.env.PYTHON_BIN || "python3";
     // Target project root (where ai/ package resides)
     const rootDir = path.resolve(__dirname, "../../../../");
 

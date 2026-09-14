@@ -19,34 +19,35 @@ export const Input: React.FC<InputProps> = ({
   const inputId = id || (label ? label.toLowerCase().replace(/\s+/g, '-') : undefined);
 
   return (
-    <div className="input-group">
+    <div className="flex flex-col gap-1 w-full">
       {label && (
-        <label htmlFor={inputId} className="input-label">
+        <label htmlFor={inputId} className="text-[10px] font-bold text-gray-400 uppercase tracking-wide">
           {label}
         </label>
       )}
-      <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
+      <div className="relative flex items-center w-full">
         {icon && (
-          <span style={{ position: 'absolute', left: '10px', color: 'var(--text-muted)' }}>
+          <span className="absolute left-3 text-gray-500 flex items-center pointer-events-none">
             {icon}
           </span>
         )}
         <input
           id={inputId}
-          className={`input-control ${className}`}
-          style={icon ? { paddingLeft: '34px' } : undefined}
+          className={`w-full bg-black/50 border border-white/10 rounded-lg py-2 ${icon ? 'pl-9' : 'pl-3'} pr-3 text-sm text-white placeholder-gray-500 focus:outline-none focus:border-[#F97316]/50 transition-colors ${className}`}
           {...props}
         />
       </div>
       {error ? (
-        <span style={{ fontSize: 'var(--text-xs)', color: 'var(--priority-critical)' }}>
+        <span className="text-[10px] text-red-500">
           {error}
         </span>
       ) : helperText ? (
-        <span style={{ fontSize: 'var(--text-xs)', color: 'var(--text-muted)' }}>
+        <span className="text-[10px] text-gray-500">
           {helperText}
         </span>
       ) : null}
     </div>
   );
 };
+
+export default Input;

@@ -32,49 +32,29 @@ export const Modal: React.FC<ModalProps> = ({
 
   return (
     <div
-      style={{
-        position: 'fixed',
-        inset: 0,
-        backgroundColor: 'rgba(8, 12, 20, 0.75)',
-        backdropFilter: 'blur(3px)',
-        zIndex: 60,
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        padding: 'var(--space-4)',
-      }}
+      className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 transition-opacity"
       onClick={onClose}
       role="dialog"
       aria-modal="true"
     >
       <div
-        className="panel"
-        style={{
-          width: '100%',
-          maxWidth,
-          boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.5), 0 8px 10px -6px rgba(0, 0, 0, 0.5)',
-          border: '1px solid var(--border-default)',
-        }}
+        className="bg-[#18181B]/95 backdrop-blur-xl border border-white/10 rounded-xl shadow-2xl flex flex-col overflow-hidden w-full"
+        style={{ maxWidth }}
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="panel-header">
-          <div className="panel-title">{title}</div>
-          <button className="btn btn-ghost" onClick={onClose} aria-label="Close modal">
-            <X size={18} />
+        <div className="flex items-center justify-between p-4 border-b border-white/10 bg-black/40">
+          <div className="text-lg font-semibold tracking-wide text-white">{title}</div>
+          <button 
+            className="p-1 rounded-lg hover:bg-white/5 transition-colors text-gray-400 hover:text-white" 
+            onClick={onClose} 
+            aria-label="Close modal"
+          >
+            <X size={20} />
           </button>
         </div>
-        <div className="panel-body">{children}</div>
+        <div className="p-6 overflow-y-auto max-h-[80vh] custom-scrollbar">{children}</div>
         {footer && (
-          <div
-            style={{
-              padding: 'var(--space-4) var(--space-5)',
-              borderTop: '1px solid var(--border-subtle)',
-              display: 'flex',
-              justifyContent: 'flex-end',
-              gap: 'var(--space-2)',
-              backgroundColor: 'var(--bg-surface-raised)',
-            }}
-          >
+          <div className="p-4 border-t border-white/10 flex justify-end gap-3 bg-black/40">
             {footer}
           </div>
         )}
@@ -82,3 +62,5 @@ export const Modal: React.FC<ModalProps> = ({
     </div>
   );
 };
+
+export default Modal;

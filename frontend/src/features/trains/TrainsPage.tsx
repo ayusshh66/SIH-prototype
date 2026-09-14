@@ -64,35 +64,36 @@ export const TrainsPage: React.FC = () => {
         title="Trains & Movement Timetable"
         description="Scheduled passenger and freight train paths, speed classes, and estimated maintenance disruption penalties."
         badge={
-          <span className="px-2.5 py-1 bg-status-optimal/10 text-status-optimal border border-status-optimal font-mono text-xs font-bold uppercase">
+          <span className="px-2 py-1 bg-[#10B981]/10 text-[#10B981] border border-[#10B981]/30 rounded font-mono text-[10px] font-bold uppercase tracking-widest shadow-[0_0_8px_rgba(16,185,129,0.2)]">
             {trains.length} SERVICES TRACKED
           </span>
         }
       />
 
       {/* ── Search & Filter Controls ─────────────────────────────── */}
-      <div className="flex flex-wrap items-center justify-between gap-4 bg-surface-card border-2 border-surface-border p-4">
-        <div className="relative flex-1 min-w-[240px] max-w-md">
-          <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-text-muted" />
+      <div className="flex flex-wrap items-center justify-between gap-4 bg-black/40 backdrop-blur-md rounded-xl border border-white/10 p-4 shadow-lg relative overflow-hidden">
+        <div className="absolute inset-0 bg-gradient-to-r from-white/[0.02] to-transparent pointer-events-none" />
+        <div className="relative flex-1 min-w-[240px] max-w-md z-10">
+          <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500" />
           <input
             type="text"
             placeholder="Search train no., name, or section..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="w-full bg-background-main border border-surface-border pl-9 pr-3 py-2 text-xs font-mono text-text-primary focus:outline-none focus:border-text-primary"
+            className="w-full bg-black/50 border border-white/10 rounded-lg pl-9 pr-3 py-2 text-sm font-mono text-white focus:outline-none focus:border-[#06B6D4]/50 transition-colors placeholder:text-gray-600"
           />
         </div>
 
-        <div className="flex items-center gap-2 font-mono text-xs">
-          <span className="text-text-muted uppercase font-bold">Type:</span>
+        <div className="flex items-center gap-2 font-mono text-xs z-10">
+          <span className="text-gray-500 uppercase font-bold tracking-widest text-[10px] mr-2">Type:</span>
           {['ALL', 'EXPRESS', 'PASSENGER', 'GOODS'].map((type) => (
             <button
               key={type}
               onClick={() => setTypeFilter(type)}
-              className={`px-3 py-1.5 border font-bold uppercase transition-colors ${
+              className={`px-3 py-1.5 border rounded-lg font-bold uppercase tracking-widest text-[10px] transition-colors ${
                 typeFilter === type
-                  ? 'bg-status-primary text-background-main border-status-primary'
-                  : 'bg-background-main text-text-muted border-surface-border hover:text-text-primary'
+                  ? 'bg-[#3B82F6]/20 text-[#3B82F6] border-[#3B82F6]/50 shadow-[0_0_10px_rgba(59,130,246,0.3)]'
+                  : 'bg-black/40 text-gray-500 border-white/10 hover:text-white'
               }`}
             >
               {type}
@@ -107,11 +108,12 @@ export const TrainsPage: React.FC = () => {
         subtitle="NDLS-AGC Golden Quadrilateral corridor passage slots and speed profiles"
       >
         {loading ? (
-          <div className="p-8 text-center font-mono text-xs text-text-muted">
+          <div className="p-12 border border-white/5 border-dashed rounded-xl bg-black/20 text-center font-mono text-[10px] text-gray-500 tracking-widest font-bold uppercase flex flex-col items-center">
+            <div className="w-8 h-8 border-4 border-[#06B6D4] border-t-transparent rounded-full animate-spin mb-4 shadow-[0_0_10px_rgba(6,182,212,0.5)]" />
             LOADING TRAIN MOVEMENT DATA...
           </div>
         ) : filteredTrains.length === 0 ? (
-          <div className="p-8 text-center font-mono text-xs text-text-muted">
+          <div className="p-12 border border-white/5 border-dashed rounded-xl bg-black/20 text-center font-mono text-[10px] text-gray-500 tracking-widest font-bold uppercase">
             NO TRAINS MATCHING QUERY.
           </div>
         ) : (
@@ -131,71 +133,71 @@ export const TrainsPage: React.FC = () => {
               return (
                 <div
                   key={train.id}
-                  className="flex flex-wrap items-center justify-between gap-4 p-4 bg-background-main border-2 border-surface-border hover:border-text-muted transition-colors"
+                  className="flex flex-wrap items-center justify-between gap-4 p-4 bg-black/40 backdrop-blur-sm rounded-xl border border-white/10 hover:border-white/30 transition-all group"
                 >
-                  <div className="flex items-center gap-3 min-w-[260px]">
-                    <div className="w-10 h-10 bg-surface-card border-2 border-surface-border flex items-center justify-center text-text-cyan shrink-0">
+                  <div className="flex items-center gap-4 min-w-[260px]">
+                    <div className="w-10 h-10 bg-black/50 rounded-lg border border-white/10 flex items-center justify-center text-[#06B6D4] shrink-0 group-hover:scale-110 group-hover:bg-[#06B6D4]/10 transition-all group-hover:shadow-[0_0_15px_rgba(6,182,212,0.2)]">
                       <Train size={20} />
                     </div>
                     <div>
-                      <div className="flex items-center gap-2">
-                        <span className="font-mono font-bold text-sm text-text-primary">
+                      <div className="flex items-center gap-3">
+                        <span className="font-mono font-bold text-sm text-white tracking-widest">
                           {train.trainNumber}
                         </span>
-                        <span className="font-medium text-xs text-text-primary">
+                        <span className="font-medium text-xs text-gray-300">
                           {train.trainName}
                         </span>
                         <span
-                          className={`px-1.5 py-0.5 font-mono text-[10px] font-bold uppercase border ${
+                          className={`px-2 py-0.5 font-mono text-[9px] rounded font-bold uppercase tracking-widest border ${
                             train.trainType === 'EXPRESS'
-                              ? 'bg-status-optimal/10 text-status-optimal border-status-optimal/40'
+                              ? 'bg-[#10B981]/10 text-[#10B981] border-[#10B981]/40 shadow-[0_0_8px_rgba(16,185,129,0.15)]'
                               : train.trainType === 'GOODS'
-                              ? 'bg-status-warning/10 text-status-warning border-status-warning/40'
-                              : 'bg-surface-card text-text-muted border-surface-border'
+                              ? 'bg-[#F59E0B]/10 text-[#F59E0B] border-[#F59E0B]/40 shadow-[0_0_8px_rgba(245,158,11,0.15)]'
+                              : 'bg-black/50 text-gray-400 border-white/10'
                           }`}
                         >
                           {train.trainType}
                         </span>
                       </div>
-                      <div className="flex items-center gap-3 text-[11px] font-mono text-text-muted mt-1">
+                      <div className="flex items-center gap-3 text-[10px] font-mono text-gray-500 uppercase tracking-widest mt-2">
                         <span className="flex items-center gap-1">
-                          <Navigation size={11} /> {train.direction} LINE
+                          <Navigation size={10} className="text-[#3B82F6]" /> {train.direction} LINE
                         </span>
-                        <span>•</span>
-                        <span>SPEED: {train.speedClass}</span>
-                        <span>•</span>
-                        <span>SECTION: {train.sectionId}</span>
+                        <span className="text-gray-700">•</span>
+                        <span>SPEED: <span className="text-gray-300">{train.speedClass}</span></span>
+                        <span className="text-gray-700">•</span>
+                        <span>SECTION: <span className="text-gray-300">{train.sectionId}</span></span>
                       </div>
                     </div>
                   </div>
 
                   {/* Timetable Slot */}
-                  <div className="flex items-center gap-3 font-mono text-xs">
+                  <div className="flex items-center gap-6 font-mono">
                     <div className="text-right">
-                      <span className="text-[10px] text-text-muted block uppercase">Passage Window</span>
-                      <span className="font-bold text-text-primary">
-                        {startTime} <ArrowRight size={11} className="inline mx-1 text-text-muted" /> {endTime}
+                      <span className="text-[9px] text-gray-500 font-bold block uppercase tracking-widest mb-1">Passage Window</span>
+                      <span className="font-bold text-white text-sm tracking-wider flex items-center justify-end">
+                        {startTime} <ArrowRight size={12} className="mx-2 text-gray-500" /> {endTime}
                       </span>
                     </div>
 
-                    <div className="pl-3 border-l border-surface-border">
-                      <span className="text-[10px] text-text-muted block uppercase">Priority</span>
+                    <div className="pl-6 border-l border-white/10">
+                      <span className="text-[9px] text-gray-500 font-bold block uppercase tracking-widest mb-1">Priority</span>
                       <span
-                        className={`font-bold ${
+                        className={`font-bold text-sm tracking-widest ${
                           train.priority === 'HIGH'
-                            ? 'text-status-critical'
+                            ? 'text-[#EF4444] drop-shadow-[0_0_5px_rgba(239,68,68,0.5)]'
                             : train.priority === 'MEDIUM'
-                            ? 'text-status-warning'
-                            : 'text-text-muted'
+                            ? 'text-[#F59E0B] drop-shadow-[0_0_5px_rgba(245,158,11,0.5)]'
+                            : 'text-gray-500'
                         }`}
                       >
                         {train.priority}
                       </span>
                     </div>
 
-                    <div className="pl-3 border-l border-surface-border">
-                      <span className="text-[10px] text-text-muted block uppercase">Status</span>
-                      <span className="px-2 py-0.5 bg-status-optimal/10 text-status-optimal border border-status-optimal/30 text-[10px] font-bold">
+                    <div className="pl-6 border-l border-white/10">
+                      <span className="text-[9px] text-gray-500 font-bold block uppercase tracking-widest mb-1">Status</span>
+                      <span className="px-2 py-1 bg-[#10B981]/10 text-[#10B981] rounded border border-[#10B981]/30 text-[10px] font-bold tracking-widest shadow-[0_0_8px_rgba(16,185,129,0.2)]">
                         ON TIME
                       </span>
                     </div>

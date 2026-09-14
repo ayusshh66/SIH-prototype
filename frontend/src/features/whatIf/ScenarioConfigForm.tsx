@@ -75,13 +75,13 @@ export const ScenarioConfigForm: React.FC<Props> = ({ onSimulate, isSimulating }
     <Card title="Scenario Configuration" className="h-full">
       <form onSubmit={handleSubmit} className="flex flex-col h-full space-y-5">
         <div className="space-y-2">
-          <label className="text-xs font-bold text-text-muted uppercase tracking-widest font-mono block">
+          <label className="text-[10px] font-bold text-gray-500 uppercase tracking-widest font-mono block">
             Incident / Disruption Type
           </label>
           <select
             value={scenarioType}
             onChange={(e) => setScenarioType(e.target.value as any)}
-            className="w-full bg-background-main border-2 border-surface-border p-3 font-mono text-sm focus:border-text-primary focus:outline-none text-text-primary"
+            className="w-full bg-black/50 border border-white/10 rounded-lg p-3 font-mono text-sm focus:border-[#F97316]/50 focus:outline-none text-white transition-colors"
           >
             <option value="TRAIN_DELAY">Train Delay / Late Running</option>
             <option value="BLOCK_UNAVAILABLE">Possession Window Curtailed</option>
@@ -93,13 +93,13 @@ export const ScenarioConfigForm: React.FC<Props> = ({ onSimulate, isSimulating }
         {scenarioType === 'TRAIN_DELAY' && (
           <>
             <div className="space-y-2">
-              <label className="text-xs font-bold text-text-muted uppercase tracking-widest font-mono block">
+              <label className="text-[10px] font-bold text-gray-500 uppercase tracking-widest font-mono block">
                 Affected Train Movement
               </label>
               <select
                 value={affectedTrain}
                 onChange={(e) => setAffectedTrain(e.target.value)}
-                className="w-full bg-background-main border-2 border-surface-border p-3 font-mono text-sm focus:border-text-primary focus:outline-none text-text-primary"
+                className="w-full bg-black/50 border border-white/10 rounded-lg p-3 font-mono text-sm focus:border-[#F97316]/50 focus:outline-none text-white transition-colors"
               >
                 <option value="12002">12002 Bhopal Shatabdi Exp (Priority: High)</option>
                 <option value="12050">12050 Gatimaan Express (Priority: High)</option>
@@ -110,10 +110,10 @@ export const ScenarioConfigForm: React.FC<Props> = ({ onSimulate, isSimulating }
 
             <div className="space-y-3 pt-1">
               <div className="flex justify-between items-center font-mono">
-                <span className="text-xs font-bold text-text-muted uppercase tracking-widest">
+                <span className="text-[10px] font-bold text-gray-500 uppercase tracking-widest">
                   Delay Incurred
                 </span>
-                <span className="text-status-warning font-bold text-sm bg-status-warning/10 px-2 py-0.5 border border-status-warning/40">
+                <span className="text-[#F59E0B] font-bold text-sm bg-[#F59E0B]/10 rounded px-2 py-0.5 border border-[#F59E0B]/40">
                   +{delayMinutes} mins
                 </span>
               </div>
@@ -124,9 +124,9 @@ export const ScenarioConfigForm: React.FC<Props> = ({ onSimulate, isSimulating }
                 step="15"
                 value={delayMinutes}
                 onChange={(e) => setDelayMinutes(Number(e.target.value))}
-                className="w-full h-2 bg-surface-border appearance-none cursor-pointer accent-status-warning"
+                className="w-full h-2 bg-white/10 rounded-full appearance-none cursor-pointer accent-[#F59E0B]"
               />
-              <div className="flex justify-between text-[10px] font-mono text-text-muted">
+              <div className="flex justify-between text-[10px] font-mono text-gray-500">
                 <span>15 min</span>
                 <span>60 min</span>
                 <span>120 min</span>
@@ -139,13 +139,13 @@ export const ScenarioConfigForm: React.FC<Props> = ({ onSimulate, isSimulating }
         {scenarioType === 'BLOCK_UNAVAILABLE' && (
           <>
             <div className="space-y-2">
-              <label className="text-xs font-bold text-text-muted uppercase tracking-widest font-mono block">
+              <label className="text-[10px] font-bold text-gray-500 uppercase tracking-widest font-mono block">
                 Curtailed Block Possession
               </label>
               <select
                 value={affectedBlock}
                 onChange={(e) => setAffectedBlock(e.target.value)}
-                className="w-full bg-background-main border-2 border-surface-border p-3 font-mono text-sm focus:border-text-primary focus:outline-none text-text-primary"
+                className="w-full bg-black/50 border border-white/10 rounded-lg p-3 font-mono text-sm focus:border-[#EF4444]/50 focus:outline-none text-white transition-colors"
               >
                 <option value="blk_55a1">BLK-NDLS-01 (NDLS-AGC Main Track)</option>
                 <option value="blk_shifted_01">BLK-AGC-02 (Palwal Yard Siding)</option>
@@ -154,10 +154,10 @@ export const ScenarioConfigForm: React.FC<Props> = ({ onSimulate, isSimulating }
 
             <div className="space-y-3 pt-1">
               <div className="flex justify-between items-center font-mono">
-                <span className="text-xs font-bold text-text-muted uppercase tracking-widest">
+                <span className="text-[10px] font-bold text-gray-500 uppercase tracking-widest">
                   Window Reduction
                 </span>
-                <span className="text-status-critical font-bold text-sm bg-status-critical/10 px-2 py-0.5 border border-status-critical/40">
+                <span className="text-[#EF4444] font-bold text-sm bg-[#EF4444]/10 rounded px-2 py-0.5 border border-[#EF4444]/40">
                   -{curtailMinutes} mins
                 </span>
               </div>
@@ -168,7 +168,7 @@ export const ScenarioConfigForm: React.FC<Props> = ({ onSimulate, isSimulating }
                 step="15"
                 value={curtailMinutes}
                 onChange={(e) => setCurtailMinutes(Number(e.target.value))}
-                className="w-full h-2 bg-surface-border appearance-none cursor-pointer accent-status-critical"
+                className="w-full h-2 bg-white/10 rounded-full appearance-none cursor-pointer accent-[#EF4444]"
               />
             </div>
           </>
@@ -176,19 +176,19 @@ export const ScenarioConfigForm: React.FC<Props> = ({ onSimulate, isSimulating }
 
         {scenarioType === 'RESOURCE_UNAVAILABLE' && (
           <div className="space-y-2">
-            <label className="text-xs font-bold text-text-muted uppercase tracking-widest font-mono block">
+            <label className="text-[10px] font-bold text-gray-500 uppercase tracking-widest font-mono block">
               Failed Asset / Crew Resource
             </label>
             <select
               value={unavailableResource}
               onChange={(e) => setUnavailableResource(e.target.value)}
-              className="w-full bg-background-main border-2 border-surface-border p-3 font-mono text-sm focus:border-text-primary focus:outline-none text-text-primary"
+              className="w-full bg-black/50 border border-white/10 rounded-lg p-3 font-mono text-sm focus:border-[#F59E0B]/50 focus:outline-none text-white transition-colors"
             >
               <option value="track_machine">Track Machine (CSM/Tamping Machine 01)</option>
               <option value="tower_wagon">OHE Tower Wagon (TRD Depot NDLS)</option>
               <option value="USFD_VEHICLE">USFD Ultrasonic Flaw Tester Rake</option>
             </select>
-            <p className="text-[11px] font-mono text-text-muted mt-1">
+            <p className="text-[10px] font-mono text-gray-500 mt-1">
               Simulates immediate unavailability requiring asset substitution or reschedule.
             </p>
           </div>
@@ -197,13 +197,13 @@ export const ScenarioConfigForm: React.FC<Props> = ({ onSimulate, isSimulating }
         {scenarioType === 'TASK_DURATION_CHANGED' && (
           <>
             <div className="space-y-2">
-              <label className="text-xs font-bold text-text-muted uppercase tracking-widest font-mono block">
+              <label className="text-[10px] font-bold text-gray-500 uppercase tracking-widest font-mono block">
                 Target Maintenance Work Order
               </label>
               <select
                 value={affectedTask}
                 onChange={(e) => setAffectedTask(e.target.value)}
-                className="w-full bg-background-main border-2 border-surface-border p-3 font-mono text-sm focus:border-text-primary focus:outline-none text-text-primary"
+                className="w-full bg-black/50 border border-white/10 rounded-lg p-3 font-mono text-sm focus:border-[#F59E0B]/50 focus:outline-none text-white transition-colors"
               >
                 <option value="TSK-ENG-NDLS-045-01">TSK-ENG-045-01: Rail Grinding & Deep Screening</option>
                 <option value="TSK-TRD-NDLS-046-02">TSK-TRD-046-02: OHE Tensioning & Insulator Wash</option>
@@ -212,10 +212,10 @@ export const ScenarioConfigForm: React.FC<Props> = ({ onSimulate, isSimulating }
 
             <div className="space-y-3 pt-1">
               <div className="flex justify-between items-center font-mono">
-                <span className="text-xs font-bold text-text-muted uppercase tracking-widest">
+                <span className="text-[10px] font-bold text-gray-500 uppercase tracking-widest">
                   Overrun Duration
                 </span>
-                <span className="text-status-warning font-bold text-sm bg-status-warning/10 px-2 py-0.5 border border-status-warning/40">
+                <span className="text-[#F59E0B] font-bold text-sm bg-[#F59E0B]/10 rounded px-2 py-0.5 border border-[#F59E0B]/40">
                   +{extraDuration} mins
                 </span>
               </div>
@@ -226,28 +226,28 @@ export const ScenarioConfigForm: React.FC<Props> = ({ onSimulate, isSimulating }
                 step="15"
                 value={extraDuration}
                 onChange={(e) => setExtraDuration(Number(e.target.value))}
-                className="w-full h-2 bg-surface-border appearance-none cursor-pointer accent-status-warning"
+                className="w-full h-2 bg-white/10 rounded-full appearance-none cursor-pointer accent-[#F59E0B]"
               />
             </div>
           </>
         )}
 
-        <div className="border-t-2 border-surface-border pt-4 mt-auto">
-          <div className="text-[11px] font-mono text-text-muted mb-3 flex items-center justify-between">
-            <label htmlFor="baseScheduleId" className="font-bold uppercase">
+        <div className="border-t border-white/10 pt-4 mt-auto">
+          <div className="text-[10px] font-mono text-gray-500 mb-3 flex items-center justify-between">
+            <label htmlFor="baseScheduleId" className="font-bold uppercase tracking-widest">
               Base Schedule
             </label>
             <input
               id="baseScheduleId"
               value={baseScheduleId}
               onChange={(e) => setBaseScheduleId(e.target.value)}
-              className="w-40 bg-background-main border border-surface-border px-2 py-1 text-text-primary font-bold"
+              className="w-40 bg-black/50 border border-white/10 rounded px-2 py-1 text-white font-bold focus:border-white/30 focus:outline-none transition-colors"
             />
           </div>
           <Button
             type="submit"
             disabled={isSimulating}
-            className="w-full py-3.5 text-background-main bg-status-warning border-status-warning hover:bg-yellow-500 font-bold uppercase tracking-wider disabled:opacity-50"
+            className="w-full py-3.5 text-white bg-[#F97316] border border-[#F97316] hover:bg-[#EA580C] font-bold uppercase tracking-widest disabled:opacity-50"
           >
             {isSimulating ? 'Simulating AI Solver...' : 'Execute What-If Re-Optimization'}
           </Button>

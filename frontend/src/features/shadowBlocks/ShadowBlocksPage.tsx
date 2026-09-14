@@ -18,8 +18,8 @@ export const ShadowBlocksPage: React.FC = () => {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-2xl font-bold uppercase tracking-widest text-text-primary">Shadow Blocks</h2>
-          <p className="text-text-muted font-mono text-sm mt-1">INTEGRATED MULTI-DEPARTMENT POSSESSIONS</p>
+          <h2 className="text-2xl font-bold uppercase tracking-widest text-white drop-shadow-md">Shadow Blocks</h2>
+          <p className="text-gray-400 font-mono text-xs mt-1 tracking-wider">INTEGRATED MULTI-DEPARTMENT POSSESSIONS</p>
         </div>
       </div>
 
@@ -30,7 +30,7 @@ export const ShadowBlocksPage: React.FC = () => {
            <ShadowBlockCard key={candidate.shadow_block_id} candidate={candidate} />
         ))}
         {!error && candidates.length === 0 && (
-          <div className="col-span-full p-8 border-2 border-surface-border text-center font-mono text-text-muted bg-surface-card">
+          <div className="col-span-full p-8 border border-white/10 rounded-2xl text-center font-mono text-gray-500 bg-black/20 backdrop-blur-md shadow-xl flex items-center justify-center">
             NO SHADOW BLOCK CANDIDATES RETURNED BY AI ENGINE.
           </div>
         )}

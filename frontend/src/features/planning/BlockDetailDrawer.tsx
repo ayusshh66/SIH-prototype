@@ -19,35 +19,35 @@ export const BlockDetailDrawer: React.FC<{ block: any, isOpen: boolean, onClose:
         </div>
 
         <div className="grid grid-cols-2 gap-4">
-          <Card className="p-3 shadow-none">
-             <span className="text-[10px] text-text-muted font-mono block">START KM</span>
-             <span className="font-bold font-mono text-lg text-text-primary">{block.locationStartKm}</span>
+          <Card className="p-3 shadow-none !bg-black/30">
+             <span className="text-[10px] text-gray-500 font-mono block tracking-widest uppercase">Start KM</span>
+             <span className="font-bold font-mono text-lg text-white">{block.locationStartKm}</span>
           </Card>
-          <Card className="p-3 shadow-none">
-             <span className="text-[10px] text-text-muted font-mono block">END KM</span>
-             <span className="font-bold font-mono text-lg text-text-primary">{block.locationEndKm}</span>
+          <Card className="p-3 shadow-none !bg-black/30">
+             <span className="text-[10px] text-gray-500 font-mono block tracking-widest uppercase">End KM</span>
+             <span className="font-bold font-mono text-lg text-white">{block.locationEndKm}</span>
           </Card>
         </div>
         
-        <Card className="shadow-none">
+        <Card className="shadow-none !bg-black/30">
           <div className="flex justify-between items-center mb-4">
-            <span className="font-mono text-sm text-text-muted">DURATION</span>
-            <span className="font-bold font-mono text-xl text-text-primary">{block.durationMinutes} mins</span>
+            <span className="font-mono text-sm text-gray-500 tracking-wider">DURATION</span>
+            <span className="font-bold font-mono text-xl text-white">{block.durationMinutes} mins</span>
           </div>
-          <div className="flex justify-between items-center pt-2 border-t border-surface-border">
-            <span className="font-mono text-sm text-text-muted">TIME SAVED</span>
-            <span className="font-bold font-mono text-status-shadow">+{block.savedMinutes} mins</span>
+          <div className="flex justify-between items-center pt-2 border-t border-white/10">
+            <span className="font-mono text-sm text-gray-500 tracking-wider">TIME SAVED</span>
+            <span className="font-bold font-mono text-[#8B5CF6]">+{block.savedMinutes} mins</span>
           </div>
         </Card>
 
         <div>
-          <h3 className="font-mono font-bold text-sm mb-3 border-b-2 border-surface-border pb-2 text-text-primary">SCHEDULED TASKS</h3>
+          <h3 className="font-mono font-bold text-sm mb-3 border-b border-white/10 pb-2 text-white uppercase tracking-widest">Scheduled Tasks</h3>
           <div className="space-y-3">
             {block.blockTasks.map((bt: any) => (
-              <div key={bt.id} className="bg-surface-card border-2 border-surface-border p-3 flex justify-between items-center">
+              <div key={bt.id} className="bg-black/40 backdrop-blur-md border border-white/10 p-3 rounded-lg flex justify-between items-center hover:bg-white/5 transition-colors">
                 <div className="flex flex-col">
-                   <span className="font-mono text-xs font-bold text-text-primary">{bt.maintenanceTaskId}</span>
-                   <span className="text-[10px] text-text-muted uppercase mt-1 tracking-widest">{bt.status}</span>
+                   <span className="font-mono text-xs font-bold text-white">{bt.maintenanceTaskId}</span>
+                   <span className="text-[10px] text-gray-500 uppercase mt-1 tracking-widest">{bt.status}</span>
                 </div>
                 <Badge variant={bt.departmentId as any}>{bt.departmentId}</Badge>
               </div>
@@ -56,7 +56,7 @@ export const BlockDetailDrawer: React.FC<{ block: any, isOpen: boolean, onClose:
         </div>
 
         <div className="pt-6 flex flex-col gap-3">
-           <Button variant="primary" className="w-full py-3">Approve Block</Button>
+           <Button variant="primary" className="w-full">Approve Block</Button>
            <Button variant="secondary" className="w-full">View AI Explanation</Button>
            <Button variant="danger" className="w-full">Reject / Infeasible</Button>
         </div>

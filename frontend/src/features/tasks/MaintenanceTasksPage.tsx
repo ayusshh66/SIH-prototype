@@ -18,12 +18,13 @@ export const MaintenanceTasksPage: React.FC = () => {
     <div className="h-full flex flex-col space-y-6">
       <div className="flex items-center justify-between shrink-0">
         <div>
-          <h2 className="text-2xl font-bold uppercase tracking-widest text-text-primary">Maintenance Tasks</h2>
-          <p className="text-text-muted font-mono text-sm mt-1">BACKLOG & PENDING WORK ORDERS</p>
+          <h2 className="text-2xl font-bold uppercase tracking-widest text-white drop-shadow-md">Maintenance Tasks</h2>
+          <p className="text-gray-400 font-mono text-xs mt-1 tracking-wider">BACKLOG & PENDING WORK ORDERS</p>
         </div>
       </div>
       
-      <div className="flex-1 bg-surface-card border-2 border-surface-border shadow-[4px_4px_0px_0px_rgba(31,41,55,1)] p-0 overflow-hidden flex flex-col">
+      <div className="flex-1 bg-black/20 backdrop-blur-md border border-white/5 rounded-2xl shadow-2xl p-0 overflow-hidden flex flex-col relative group">
+        <div className="absolute inset-0 bg-gradient-to-r from-white/[0.02] to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none" />
         <TaskDataTable tasks={tasks} onRowClick={setSelectedTask} />
       </div>
 

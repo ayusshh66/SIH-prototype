@@ -15,7 +15,8 @@ export type BadgeVariant =
   | 'p4'
   | 'ENG'
   | 'TRD'
-  | 'SNT';
+  | 'SNT'
+  | 'shadow';
 
 export interface BadgeProps {
   children: React.ReactNode;
@@ -31,31 +32,32 @@ export const Badge: React.FC<BadgeProps> = ({
   className = '',
 }) => {
   const baseStyle =
-    'inline-flex items-center px-2 py-0.5 text-xs font-bold uppercase tracking-wider border-2 border-surface-border shadow-[2px_2px_0px_0px_rgba(255,255,255,0.1)] rounded-none bg-surface-card';
+    'inline-flex items-center px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider rounded text-white shrink-0';
 
   const variants: Record<BadgeVariant, string> = {
-    default: 'text-text-primary border-surface-border',
-    primary: 'text-department-eng border-department-eng',
-    success: 'text-status-optimal border-status-optimal',
-    optimal: 'text-status-optimal border-status-optimal',
-    warning: 'text-status-warning border-status-warning',
-    danger: 'text-status-critical border-status-critical',
-    critical: 'text-status-critical border-status-critical',
-    info: 'text-department-eng border-department-eng',
-    p1: 'text-status-critical border-status-critical',
-    p2: 'text-status-warning border-status-warning',
-    p3: 'text-department-eng border-department-eng',
-    p4: 'text-text-muted border-surface-border',
-    ENG: 'text-department-eng border-department-eng',
-    TRD: 'text-department-trd border-department-trd',
-    SNT: 'text-department-snt border-department-snt',
+    default: 'bg-white/10 text-gray-300',
+    primary: 'bg-[#F97316]',
+    success: 'bg-[#10B981]',
+    optimal: 'bg-[#10B981]',
+    warning: 'bg-[#F59E0B]',
+    danger: 'bg-[#EF4444]',
+    critical: 'bg-[#EF4444]',
+    info: 'bg-[#3B82F6]',
+    p1: 'bg-[#EF4444]',
+    p2: 'bg-[#F59E0B]',
+    p3: 'bg-[#3B82F6]',
+    p4: 'bg-white/20',
+    ENG: 'bg-[#3B82F6]',
+    TRD: 'bg-[#F59E0B]',
+    SNT: 'bg-[#10B981]',
+    shadow: 'bg-[#8B5CF6]',
   };
 
   return (
     <span
-      className={`badge badge-${variant} ${baseStyle} ${variants[variant] || variants.default} ${className}`}
+      className={`${baseStyle} ${variants[variant] || variants.default} ${className}`}
     >
-      {icon && <span className="inline-flex mr-1.5 items-center shrink-0">{icon}</span>}
+      {icon && <span className="inline-flex mr-1 items-center shrink-0">{icon}</span>}
       {children}
     </span>
   );

@@ -1,10 +1,33 @@
 import { spawn } from "child_process";
 import path from "path";
+import fs from "fs";
 
 export interface AiBridgeError {
   status: "FAILED";
   error: string;
   traceback?: string;
+}
+
+/**
+ * Resolves the root directory containing the `ai/` package.
+ */
+export function resolveProjectRoot(): string {
+  const configured = (process.env.PROJECT_ROOT || process.env.AI_ROOT_DIR)?.trim();
+  if (configured) {
+    return path.resolve(configured);
+  }
+
+  // Check if cwd has ai/
+  if (fs.existsSync(path.resolve(process.cwd(), "ai"))) {
+    return path.resolve(process.cwd());
+  }
+
+  // Check if parent directory has ai/
+  if (fs.existsSync(path.resolve(process.cwd(), "..", "ai"))) {
+    return path.resolve(process.cwd(), "..");
+  }
+
+  return path.resolve(__dirname, "../../../../");
 }
 
 /**
@@ -15,7 +38,7 @@ export interface AiBridgeError {
  * @param timeoutMs Maximum execution time in milliseconds (default: 20000ms)
  */
 export function resolvePythonExecutable(): string {
-  const configured = process.env.PYTHON_BIN?.trim();
+  const configured = (process.env.PYTHON_BIN || process.env.PYTHON_EXECUTABLE)?.trim();
   if (configured) {
    return configured;
   }
@@ -31,7 +54,7 @@ export async function invokeAiBridge<TInput = unknown, TOutput = unknown>(
   return new Promise<TOutput>((resolve, reject) => {
    const pythonBin = resolvePythonExecutable();
    // Target project root (where ai/ package resides)
-   const rootDir = path.resolve(__dirname, "../../../../");
+   const rootDir = resolveProjectRoot();
 
     const proc = spawn(pythonBin, ["-m", "ai.bridge", command], {
       cwd: rootDir,

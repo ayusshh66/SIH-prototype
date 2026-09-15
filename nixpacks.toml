@@ -1,0 +1,16 @@
+[phases.setup]
+nixPkgs = ["nodejs_20", "python311"]
+
+[phases.install]
+cmds = [
+  "pip install --no-cache-dir -r requirements.txt",
+  "npm --prefix backend install"
+]
+
+[phases.build]
+cmds = [
+  "npm --prefix backend run build"
+]
+
+[start]
+cmd = "node backend/dist/server.js"

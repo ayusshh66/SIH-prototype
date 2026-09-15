@@ -3,10 +3,15 @@
   "version": "1.0.0",
   "private": true,
   "description": "Indian Railways — AI Automatic Block Planning System",
+  "engines": {
+    "node": ">=20.0.0"
+  },
   "scripts": {
     "dev:all": "npx -y concurrently -n \"backend,frontend\" -c \"cyan,magenta\" \"npm run dev --prefix backend\" \"npm run dev --prefix frontend\"",
     "dev:backend": "npm run dev --prefix backend",
     "dev:frontend": "npm run dev --prefix frontend",
-    "build:all": "npm run build --prefix backend && npm run build --prefix frontend"
+    "build:all": "npm run build --prefix backend && npm run build --prefix frontend",
+    "build": "npm --prefix backend install && npm --prefix backend run build",
+    "start": "node backend/dist/server.js"
   }
 }

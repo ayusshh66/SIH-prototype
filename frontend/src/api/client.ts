@@ -18,7 +18,8 @@ import {
 } from '../mocks/mockData';
 
 export const USE_MOCK = import.meta.env.VITE_USE_MOCK === 'true';
-export const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:5002';
+const rawBaseUrl = (import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:5002').trim();
+export const API_BASE_URL = rawBaseUrl.replace(/\/+$/, '');
 
 export interface ApiEnvelope<T> {
   success: boolean;

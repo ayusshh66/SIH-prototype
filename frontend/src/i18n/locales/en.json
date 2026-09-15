@@ -1,0 +1,73 @@
+{
+  "brand_title": "AVIRAT",
+  "brand_subtitle": "AUTO-BLOCK v2.4",
+  "nav": {
+    "planning_group": "Planning",
+    "monitoring_group": "Monitoring",
+    "system_group": "System",
+    "dashboard": "Dashboard",
+    "planning": "Schedule Gantt",
+    "tasks": "Maintenance Tasks",
+    "shadow_blocks": "Shadow Blocks",
+    "what_if": "What-If Scenarios",
+    "trains": "Train Operations",
+    "conflicts": "Conflicts & Alerts",
+    "emergency": "Emergency Block",
+    "explain": "Decision Audit",
+    "collapse": "Collapse Rail",
+    "solver_online": "SOLVER ONLINE"
+  },
+  "header": {
+    "breadcrumb_division": "IR_NORTHERN // AGRA",
+    "search_placeholder": "Quick search corridor...",
+    "lang_toggle": "हि"
+  },
+  "tasks": {
+    "title": "Maintenance Tasks & Defects",
+    "description": "Unified task backlog across Civil Engineering (P-Way), Overhead Traction (TRD), and Signal & Telecommunication (S&T).",
+    "registered_defects": "REGISTERED DEFECTS",
+    "export_csv": "Export CSV",
+    "log_work_order": "Log Work Order",
+    "modal_title": "Log Operational Maintenance Work Order",
+    "modal_dept": "Department",
+    "modal_asset": "Asset Identifier",
+    "modal_start_km": "Start Km",
+    "modal_end_km": "End Km",
+    "modal_desc": "Inspection Description",
+    "modal_cancel": "Cancel",
+    "modal_submit": "Register Task",
+    "modal_success": "Work order logged and queued for AI priority scoring."
+  },
+  "shadow": {
+    "title": "Shadow Block Optimization",
+    "description": "Combine compatible maintenance work into shared traffic blocks to use available time efficiently.",
+    "feasible_combos": "FEASIBLE COMBOS",
+    "approve_combo": "Approve Combo",
+    "audit_feasibility": "Audit Feasibility",
+    "benefit_score": "Benefit Score",
+    "time_saved": "Time Saved",
+    "anchor_possession": "Anchor Possession:",
+    "piggyback_tasks": "Piggyback Tasks",
+    "safety_evidence": "Safety Incompatibility Evidence:",
+    "approved_title": "Combo Approved!",
+    "approved_desc": "Shadow block {{id}} has been approved and queued for dispatch.",
+    "audit_title": "Audit — {{id}}",
+    "audit_benefit": "Benefit Score",
+    "audit_time_saved": "Potential Time Saved",
+    "audit_occupancy": "Corridor Occupancy",
+    "audit_departments": "Departments",
+    "audit_close": "Close"
+  },
+  "explain": {
+    "title": "Decision Explainability & Audit Ledger",
+    "description": "Understand why the AI selected, rejected, or grouped each maintenance task.",
+    "proof_certified": "DETERMINISTIC PROOF CERTIFIED",
+    "export_audit": "Export Compliance Audit",
+    "inspect_btn": "Inspect Proof Trace"
+  },
+  "common": {
+    "close": "Close",
+    "cancel": "Cancel",
+    "confirm": "Confirm"
+  }
+}

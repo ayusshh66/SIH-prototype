@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useTranslation } from 'react-i18next';
 import {
   LayoutDashboard,
   Calendar,
@@ -17,44 +18,35 @@ import {
   Radio,
 } from 'lucide-react';
 
-interface NavGroup {
-  group: string;
-  items: {
-    path: string;
-    label: string;
-    icon: React.ElementType;
-    badge?: string;
-  }[];
-}
-
-const navGroups: NavGroup[] = [
-  {
-    group: 'Planning',
-    items: [
-      { path: '/', label: 'Dashboard', icon: LayoutDashboard },
-      { path: '/planning', label: 'Schedule Gantt', icon: Calendar },
-      { path: '/tasks', label: 'Maintenance Tasks', icon: Wrench },
-      { path: '/shadow-blocks', label: 'Shadow Blocks', icon: Combine, badge: 'AI' },
-      { path: '/what-if', label: 'What-If Scenarios', icon: GitBranch },
-    ],
-  },
-  {
-    group: 'Monitoring',
-    items: [
-      { path: '/trains', label: 'Train Operations', icon: Activity },
-      { path: '/conflicts', label: 'Conflicts & Alerts', icon: AlertTriangle },
-      { path: '/emergency', label: 'Emergency Block', icon: BellElectric },
-    ],
-  },
-  {
-    group: 'System',
-    items: [{ path: '/explain', label: 'Decision Audit', icon: ShieldAlert }],
-  },
-];
-
 export const Sidebar: React.FC = () => {
+  const { t } = useTranslation();
   const [collapsed, setCollapsed] = useState(false);
   const location = useLocation();
+
+  const navGroups = [
+    {
+      group: t('nav.planning_group'),
+      items: [
+        { path: '/', label: t('nav.dashboard'), icon: LayoutDashboard },
+        { path: '/planning', label: t('nav.planning'), icon: Calendar },
+        { path: '/tasks', label: t('nav.tasks'), icon: Wrench },
+        { path: '/shadow-blocks', label: t('nav.shadow_blocks'), icon: Combine, badge: 'AI' },
+        { path: '/what-if', label: t('nav.what_if'), icon: GitBranch },
+      ],
+    },
+    {
+      group: t('nav.monitoring_group'),
+      items: [
+        { path: '/trains', label: t('nav.trains'), icon: Activity },
+        { path: '/conflicts', label: t('nav.conflicts'), icon: AlertTriangle },
+        { path: '/emergency', label: t('nav.emergency'), icon: BellElectric },
+      ],
+    },
+    {
+      group: t('nav.system_group'),
+      items: [{ path: '/explain', label: t('nav.explain'), icon: ShieldAlert }],
+    },
+  ];
 
   return (
     <motion.aside
@@ -77,10 +69,10 @@ export const Sidebar: React.FC = () => {
               className="flex flex-col truncate"
             >
               <span className="font-semibold text-small text-content-primary tracking-tight truncate">
-                RAIL-CONSOLE
+                {t('brand_title')}
               </span>
               <span className="text-micro font-mono text-content-tertiary uppercase tracking-wider">
-                AUTO-BLOCK v2.4
+                {t('brand_subtitle')}
               </span>
             </motion.div>
           )}
@@ -150,7 +142,7 @@ export const Sidebar: React.FC = () => {
                             className="relative z-10 truncate flex-1 flex items-center justify-between"
                           >
                             <span>{item.label}</span>
-                            {item.badge && (
+                            {'badge' in item && item.badge && (
                               <span className="text-[10px] font-mono px-1 py-0.2 rounded-sm bg-accent-500/20 text-accent-400">
                                 {item.badge}
                               </span>
@@ -180,7 +172,7 @@ export const Sidebar: React.FC = () => {
           ) : (
             <>
               <ChevronLeft size={16} />
-              <span className="text-micro font-mono uppercase tracking-wider">Collapse Rail</span>
+              <span className="text-micro font-mono uppercase tracking-wider">{t('nav.collapse')}</span>
             </>
           )}
         </button>

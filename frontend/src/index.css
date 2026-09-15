@@ -50,3 +50,18 @@
     rgba(255, 159, 67, 0.25) 20px
   );
 }
+
+/* Hindi / Devanagari mode — applied when html.lang-hi is set */
+html.lang-hi body,
+html.lang-hi button,
+html.lang-hi input,
+html.lang-hi select,
+html.lang-hi textarea,
+html.lang-hi label,
+html.lang-hi span:not(.font-mono),
+html.lang-hi p,
+html.lang-hi h1,
+html.lang-hi h2,
+html.lang-hi h3 {
+  font-family: 'Noto Sans Devanagari', 'Inter', system-ui, sans-serif;
+}

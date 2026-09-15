@@ -1,0 +1,73 @@
+{
+  "brand_title": "AVIRAT",
+  "brand_subtitle": "ऑटो-ब्लॉक v2.4",
+  "nav": {
+    "planning_group": "योजना",
+    "monitoring_group": "निगरानी",
+    "system_group": "सिस्टम",
+    "dashboard": "डैशबोर्ड",
+    "planning": "अनुसूची गैंट",
+    "tasks": "रखरखाव कार्य",
+    "shadow_blocks": "शैडो ब्लॉक",
+    "what_if": "क्या-अगर परिदृश्य",
+    "trains": "ट्रेन संचालन",
+    "conflicts": "संघर्ष और अलर्ट",
+    "emergency": "आपातकालीन ब्लॉक",
+    "explain": "निर्णय ऑडिट",
+    "collapse": "साइडबार बंद करें",
+    "solver_online": "सॉल्वर ऑनलाइन"
+  },
+  "header": {
+    "breadcrumb_division": "IR_उत्तर // आगरा",
+    "search_placeholder": "कॉरिडोर खोजें...",
+    "lang_toggle": "EN"
+  },
+  "tasks": {
+    "title": "रखरखाव कार्य एवं दोष",
+    "description": "सिविल इंजीनियरिंग (पी-वे), ओवरहेड ट्रैक्शन (TRD) और सिग्नल एवं दूरसंचार (S&T) का एकीकृत कार्य बैकलॉग।",
+    "registered_defects": "पंजीकृत दोष",
+    "export_csv": "CSV निर्यात करें",
+    "log_work_order": "कार्य आदेश दर्ज करें",
+    "modal_title": "परिचालन रखरखाव कार्य आदेश दर्ज करें",
+    "modal_dept": "विभाग",
+    "modal_asset": "संपत्ति पहचानकर्ता",
+    "modal_start_km": "प्रारंभ किमी",
+    "modal_end_km": "अंत किमी",
+    "modal_desc": "निरीक्षण विवरण",
+    "modal_cancel": "रद्द करें",
+    "modal_submit": "कार्य पंजीकृत करें",
+    "modal_success": "कार्य आदेश दर्ज किया गया और AI प्राथमिकता स्कोरिंग के लिए कतार में है।"
+  },
+  "shadow": {
+    "title": "शैडो ब्लॉक अनुकूलन",
+    "description": "उपलब्ध समय का कुशलतापूर्वक उपयोग करने के लिए संगत रखरखाव कार्यों को साझा ट्रैफ़िक ब्लॉक में संयोजित करें।",
+    "feasible_combos": "व्यवहार्य संयोजन",
+    "approve_combo": "संयोजन अनुमोदित करें",
+    "audit_feasibility": "व्यवहार्यता ऑडिट",
+    "benefit_score": "लाभ स्कोर",
+    "time_saved": "समय बचत",
+    "anchor_possession": "एंकर अधिकार:",
+    "piggyback_tasks": "सहयोगी कार्य",
+    "safety_evidence": "सुरक्षा असंगति साक्ष्य:",
+    "approved_title": "संयोजन अनुमोदित!",
+    "approved_desc": "शैडो ब्लॉक {{id}} अनुमोदित कर दिया गया है और प्रेषण के लिए कतार में है।",
+    "audit_title": "ऑडिट — {{id}}",
+    "audit_benefit": "लाभ स्कोर",
+    "audit_time_saved": "संभावित समय बचत",
+    "audit_occupancy": "कॉरिडोर अधिभोग",
+    "audit_departments": "विभाग",
+    "audit_close": "बंद करें"
+  },
+  "explain": {
+    "title": "निर्णय व्याख्या एवं ऑडिट खाता",
+    "description": "समझें कि AI ने प्रत्येक रखरखाव कार्य को क्यों चुना, अस्वीकार किया या समूहबद्ध किया।",
+    "proof_certified": "निर्धारक प्रमाण प्रमाणित",
+    "export_audit": "अनुपालन ऑडिट निर्यात करें",
+    "inspect_btn": "प्रमाण ट्रेस देखें"
+  },
+  "common": {
+    "close": "बंद करें",
+    "cancel": "रद्द करें",
+    "confirm": "पुष्टि करें"
+  }
+}

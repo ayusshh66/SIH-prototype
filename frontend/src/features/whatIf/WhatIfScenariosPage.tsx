@@ -70,7 +70,7 @@ export const WhatIfScenariosPage: React.FC = () => {
     <div className="space-y-6">
       <SectionHeader
         title="What-If Disruption Sandbox"
-        description="Simulate real-time operational failures, late running express trains, and machinery breakdowns to evaluate CP-SAT re-optimization schedule shifts."
+        description="Test planning changes before applying them to understand their operational impact."
         badge={
           <span className="text-micro font-mono px-2 py-0.5 rounded-sm bg-accent-500/15 border border-accent-500/30 text-accent-400">
             SANDBOX MODE

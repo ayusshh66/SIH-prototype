@@ -1,8 +1,27 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { aiAdapter, ValidationError } from "../src/services/ai/aiAdapter.service";
+import { resolvePythonExecutable } from "../src/services/ai/aiBridge";
 import { dataStore } from "../src/services/data/dataStore";
 import type { WhatIfScenarioPayload, MaintenanceTaskItem } from "../src/services/ai/contracts";
+
+test("resolvePythonExecutable uses platform default and env override", () => {
+  const original = process.env.PYTHON_BIN;
+
+  try {
+    delete process.env.PYTHON_BIN;
+    assert.equal(resolvePythonExecutable(), process.platform === "win32" ? "python" : "python3");
+
+    process.env.PYTHON_BIN = "custom-python";
+    assert.equal(resolvePythonExecutable(), "custom-python");
+  } finally {
+    if (original === undefined) {
+      delete process.env.PYTHON_BIN;
+    } else {
+      process.env.PYTHON_BIN = original;
+    }
+  }
+});
 
 test("What-If validation: rejects 'current' and 'latest' magic strings", async () => {
   const payloadCurrent: WhatIfScenarioPayload = {

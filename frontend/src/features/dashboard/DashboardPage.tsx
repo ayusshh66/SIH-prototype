@@ -13,6 +13,51 @@ import { Button } from '../../components/common/Button';
 import { Skeleton } from '../../components/common/Skeleton';
 import { fadeInUp, staggerContainer } from '../../lib/motion';
 
+const buildConflictCards = (dashboardData: any) => {
+  const latestRun = Array.isArray(dashboardData?.recentRuns) ? dashboardData.recentRuns[0] : null;
+  const summary = dashboardData?.summary || {};
+
+  const trainConflicts = Array.isArray(latestRun?.train_conflicts) ? latestRun.train_conflicts.length : 0;
+  const resourceUtilization = latestRun?.resource_utilization || {};
+  const peakResourceUtilization = Object.values(resourceUtilization).length
+    ? Math.max(...Object.values(resourceUtilization).map((value: any) => Number(value) || 0))
+    : 0;
+  const pendingTasks = Number(summary.pendingTasks || 0);
+  const unscheduledTasks = Array.isArray(latestRun?.unscheduled_task_ids)
+    ? latestRun.unscheduled_task_ids.length
+    : 0;
+
+  return [
+    {
+      type: 'TRAIN_CONFLICT',
+      severity: trainConflicts > 0 ? 'CRITICAL' : 'MEDIUM',
+      affectedEntityId: trainConflicts > 0 ? `RUN-${latestRun?.runCode || 'latest'}` : 'LATEST-RUN',
+      description:
+        trainConflicts > 0
+          ? `${trainConflicts} train conflict(s) remain in the latest optimization run.`
+          : 'No train conflicts detected in the latest optimization run.',
+    },
+    {
+      type: 'RESOURCE_CONFLICT',
+      severity: peakResourceUtilization > 0.85 ? 'HIGH' : 'MEDIUM',
+      affectedEntityId: Object.keys(resourceUtilization).length ? 'UTILIZATION' : 'NO-CONFLICT',
+      description:
+        peakResourceUtilization > 0
+          ? `Peak tracked resource utilization is ${peakResourceUtilization.toFixed(2)} across the latest run.`
+          : 'No tracked resource contention was reported in the latest optimization run.',
+    },
+    {
+      type: 'WINDOW_CONFLICT',
+      severity: pendingTasks > 0 || unscheduledTasks > 0 ? 'MEDIUM' : 'LOW',
+      affectedEntityId: 'WINDOW-PRESSURE',
+      description:
+        pendingTasks > 0 || unscheduledTasks > 0
+          ? `${pendingTasks} pending task(s) and ${unscheduledTasks} unscheduled task(s) indicate current window pressure.`
+          : 'No immediate window pressure was reported in the latest dashboard snapshot.',
+    },
+  ];
+};
+
 export const DashboardPage: React.FC = () => {
   const [data, setData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
@@ -43,6 +88,8 @@ export const DashboardPage: React.FC = () => {
     );
   }
 
+  const conflictCards = buildConflictCards(data);
+
   return (
     <motion.div
       variants={staggerContainer}
@@ -52,12 +99,12 @@ export const DashboardPage: React.FC = () => {
     >
       {/* Page Header */}
       <SectionHeader
-        title="Operations Control Console"
-        description="Real-time corridor telemetry, AI auto-block scheduling horizon, and active safety conflicts across Northern Railway."
+        title="Rail Operations Dashboard"
+        description="See the current rail operations status, priorities, and conflicts in one place."
         badge={
           <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-sm bg-status-feasible-bg text-status-feasible border border-status-feasible/30 text-micro font-mono">
             <span className="w-1.5 h-1.5 rounded-full bg-status-feasible animate-pulse" />
-            TELEMETRY STREAM LIVE
+            Live Corridor Data
           </span>
         }
         actions={
@@ -107,24 +154,15 @@ export const DashboardPage: React.FC = () => {
           className="h-full"
         >
           <div className="space-y-3">
-            <ConflictIndicator
-              type="TRAIN_CONFLICT"
-              severity="CRITICAL"
-              affectedEntityId="BLK-04 / 12002"
-              description="Block BLK-04 overlaps 12002 Shatabdi Exp at Km 45.2. Safety clearance violated."
-            />
-            <ConflictIndicator
-              type="RESOURCE_CONFLICT"
-              severity="HIGH"
-              affectedEntityId="USFD-V12"
-              description="USFD vehicle double-allocated between Task 01 (Track Renewal) and Task 04."
-            />
-            <ConflictIndicator
-              type="WINDOW_CONFLICT"
-              severity="MEDIUM"
-              affectedEntityId="OHE-L1"
-              description="Traction isolation window ends 15 mins prior to catenary tower wagon arrival."
-            />
+            {conflictCards.map((conflict) => (
+              <ConflictIndicator
+                key={conflict.type}
+                type={conflict.type}
+                severity={conflict.severity}
+                affectedEntityId={conflict.affectedEntityId}
+                description={conflict.description}
+              />
+            ))}
           </div>
         </Card>
       </motion.div>

@@ -23,7 +23,7 @@ export const ShadowBlocksPage: React.FC = () => {
     <div className="space-y-6">
       <SectionHeader
         title="Shadow Block Optimization"
-        description="AI-generated joint possession windows clustering Engineering, TRD, and S&T tasks under single track possessions to minimize train disruption."
+        description="Combine compatible maintenance work into shared traffic blocks to use available time efficiently."
         badge={
           <span className="text-micro font-mono px-2 py-0.5 rounded-sm bg-status-feasible-bg border border-status-feasible/30 text-status-feasible">
             {candidates.filter((c) => c.conflict_status !== 'REJECTED').length} FEASIBLE COMBOS

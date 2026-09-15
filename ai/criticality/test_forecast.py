@@ -17,8 +17,9 @@ class TestCriticalityForecast(unittest.TestCase):
             "deadline": "2026-11-03T18:00:00Z",
             "text_severity": 8.5,
         }
-        first = forecast_task_criticality(task, horizon_days=7)
-        second = forecast_task_criticality(task, horizon_days=7)
+        reference_time = datetime(2026, 11, 1, 8, 0, tzinfo=timezone.utc)
+        first = forecast_task_criticality(task, horizon_days=7, reference_time=reference_time)
+        second = forecast_task_criticality(task, horizon_days=7, reference_time=reference_time)
         self.assertEqual(first, second)
 
     def test_scores_are_bounded(self):

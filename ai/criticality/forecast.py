@@ -137,14 +137,19 @@ def _current_score(inputs: dict[str, Any], *, reference_time: datetime | None = 
     return _clamp(score)
 
 
-def forecast_task_criticality(inputs: dict[str, Any], horizon_days: int = 7) -> dict[str, Any]:
+def forecast_task_criticality(
+    inputs: dict[str, Any],
+    horizon_days: int = 7,
+    reference_time: datetime | None = None,
+) -> dict[str, Any]:
     """Estimate whether task criticality likely increases over a future horizon."""
     if not isinstance(inputs, dict):
         raise ValueError("Forecast inputs must be a dictionary.")
     if horizon_days < 0:
         raise ValueError("horizon_days must be non-negative.")
 
-    reference_time = datetime.now(timezone.utc)
+    if reference_time is None:
+        reference_time = datetime.now(timezone.utc)
     current_score = _current_score(inputs, reference_time=reference_time)
     current_priority = _priority_from_score(current_score)
 

@@ -63,7 +63,7 @@ export const PlanningSchedulePage: React.FC = () => {
     <div className="space-y-6">
       <SectionHeader
         title="Schedule Planning & Possession Gantt"
-        description="Flagship multi-department possession timeline powered by OR-Tools CP-SAT solver. De-conflict track possessions and optimize shadow blocks."
+        description="Find maintenance windows that fit operational constraints while reducing train disruption."
         badge={
           <span className="text-micro font-mono px-2 py-0.5 rounded-sm bg-accent-500/15 border border-accent-500/30 text-accent-400">
             {blocks.length} SCHEDULED BLOCKS

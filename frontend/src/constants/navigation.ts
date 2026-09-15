@@ -84,11 +84,4 @@ export const NAV_ITEMS: NavItem[] = [
     icon: Flame,
     description: 'Urgent defect injection and expedited block insertion',
   },
-  {
-    id: 'system',
-    label: 'System & Foundation',
-    path: '/system',
-    icon: Activity,
-    description: 'Design primitives, domain status tokens, and backend health',
-  },
 ];

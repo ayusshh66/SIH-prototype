@@ -132,7 +132,7 @@ export const EmergencyPage: React.FC = () => {
 
       <SectionHeader
         title="Emergency Track Possession Engine"
-        description="Immediate ultrasonic rail fracture repair, track buckle restoration, and traction OHE breakdown clearance."
+        description="Re-plan urgent maintenance while keeping operational and safety constraints visible."
       />
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">

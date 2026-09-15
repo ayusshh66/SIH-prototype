@@ -53,12 +53,14 @@ Usage
 from __future__ import annotations
 
 import logging
+import os
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
 import joblib
 
+from ai.criticality.live_weather import LiveWeatherSource
 from ai.criticality.weather_risk import SyntheticWeatherSource, _as_weather_signal
 from ai.nlp.text_severity_model import predict_text_severity
 
@@ -151,7 +153,12 @@ class CriticalityEngine:
                     self.weights[k] = weights[k]
         self.model_path = MODEL_ARTIFACT_PATH
         self._model_cache: Any | None = None
-        self.weather_source = weather_source or SyntheticWeatherSource()
+        if weather_source is not None:
+            self.weather_source = weather_source
+        elif os.getenv("AVIRAT_WEATHER_ENDPOINT"):
+            self.weather_source = LiveWeatherSource()
+        else:
+            self.weather_source = SyntheticWeatherSource()
 
     # ── Public API ────────────────────────────────────────────────
 

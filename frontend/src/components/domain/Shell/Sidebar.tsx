@@ -48,10 +48,7 @@ const navGroups: NavGroup[] = [
   },
   {
     group: 'System',
-    items: [
-      { path: '/explain', label: 'Decision Audit', icon: ShieldAlert },
-      { path: '/system', label: 'Engine Health', icon: Server },
-    ],
+    items: [{ path: '/explain', label: 'Decision Audit', icon: ShieldAlert }],
   },
 ];
 

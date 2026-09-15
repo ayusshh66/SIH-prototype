@@ -32,7 +32,7 @@ export const ExplainPage: React.FC = () => {
     <div className="space-y-6">
       <SectionHeader
         title="Decision Explainability & Audit Ledger"
-        description="Audit-ready deterministic proof traces, constraint validation reasons, and mathematical solver rationales for every scheduled block."
+        description="Understand why the AI selected, rejected, or grouped each maintenance task."
         badge={
           <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-sm bg-status-feasible-bg border border-status-feasible/30 text-status-feasible text-micro font-mono">
             <ShieldCheck size={14} />

@@ -40,7 +40,7 @@ export const ConflictsAlertsPage: React.FC = () => {
     <div className="space-y-6">
       <SectionHeader
         title="Operational Conflicts & Safety Alerts"
-        description="Active timetable overlaps, resource contentions, and safety isolation buffer violations detected across corridor possession schedules."
+        description="Review scheduling conflicts and understand what is preventing tasks from being planned."
         badge={
           criticalCount > 0 ? (
             <span className="text-micro font-mono px-2 py-0.5 rounded-sm bg-crit-p1-bg border border-crit-p1/30 text-crit-p1 font-semibold animate-pulse">

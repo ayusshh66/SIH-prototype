@@ -30,9 +30,13 @@ Directory structure:
     │   │   ├── diagnostics.py
     │   │   ├── engine.py
     │   │   ├── evaluate_criticality_model.py
+    │   │   ├── forecast.py
+    │   │   ├── live_weather.py
     │   │   ├── test_criticality.py
     │   │   ├── test_diagnostics.py
     │   │   ├── test_evaluate_criticality_model.py
+    │   │   ├── test_forecast.py
+    │   │   ├── test_live_weather.py
     │   │   ├── test_model_integration.py
     │   │   ├── test_train_criticality_model.py
     │   │   ├── test_weather_risk.py
@@ -57,6 +61,9 @@ Directory structure:
     │   │   ├── validator.py
     │   │   └── datasets/
     │   │       └── criticality_v1_seed42.csv
+    │   ├── evaluation/
+    │   │   ├── impact_simulator.py
+    │   │   └── test_impact_simulator.py
     │   ├── explainability/
     │   │   ├── __init__.py
     │   │   ├── engine.py
@@ -5238,12 +5245,14 @@ Usage
 from __future__ import annotations
 
 import logging
+import os
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
 import joblib
 
+from ai.criticality.live_weather import LiveWeatherSource
 from ai.criticality.weather_risk import SyntheticWeatherSource, _as_weather_signal
 from ai.nlp.text_severity_model import predict_text_severity
 
@@ -5336,7 +5345,12 @@ class CriticalityEngine:
                     self.weights[k] = weights[k]
         self.model_path = MODEL_ARTIFACT_PATH
         self._model_cache: Any | None = None
-        self.weather_source = weather_source or SyntheticWeatherSource()
+        if weather_source is not None:
+            self.weather_source = weather_source
+        elif os.getenv("AVIRAT_WEATHER_ENDPOINT"):
+            self.weather_source = LiveWeatherSource()
+        else:
+            self.weather_source = SyntheticWeatherSource()
 
     # â”€â”€ Public API â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
@@ -6055,6 +6069,335 @@ if __name__ == "__main__":
         "top_3_important_features": result["top_3_important_features"],
         "report_path": str(REPORT_PATH),
     }, indent=2))
+
+
+
+================================================
+FILE: ai/criticality/forecast.py
+================================================
+from __future__ import annotations
+
+from datetime import datetime, timedelta, timezone
+from typing import Any
+
+SEVERITY_MAP = {
+    "MINOR": 0.15,
+    "MODERATE": 0.45,
+    "SEVERE": 0.75,
+    "CRITICAL": 1.00,
+}
+
+SPEED_CLASS_MAP = {
+    "LOW": 0.20,
+    "MEDIUM": 0.45,
+    "HIGH": 0.75,
+    "EXPRESS": 1.00,
+}
+
+
+def _clamp(value: float, lower: float = 0.0, upper: float = 1.0) -> float:
+    return max(lower, min(upper, value))
+
+
+def _to_float(value: Any, default: float = 0.5) -> float:
+    if value is None:
+        return default
+    try:
+        return _clamp(float(value), 0.0, 1.0)
+    except (TypeError, ValueError):
+        return default
+
+
+def _normalize_severity(value: Any) -> float:
+    if isinstance(value, str):
+        return SEVERITY_MAP.get(value.upper(), 0.45)
+    return 0.45
+
+
+def _normalize_speed(value: Any) -> float:
+    if isinstance(value, str):
+        return SPEED_CLASS_MAP.get(value.upper(), 0.45)
+    return 0.45
+
+
+def _normalize_text_severity(value: Any) -> float:
+    if value is None:
+        return 0.5
+    try:
+        return _clamp(float(value) / 10.0, 0.0, 1.0)
+    except (TypeError, ValueError):
+        return 0.5
+
+
+def _parse_deadline(deadline: Any) -> datetime | None:
+    if deadline is None:
+        return None
+    if isinstance(deadline, datetime):
+        return deadline
+    if isinstance(deadline, str):
+        try:
+            return datetime.fromisoformat(deadline.replace("Z", "+00:00"))
+        except ValueError:
+            return None
+    return None
+
+
+def _deadline_proximity(deadline: Any, reference_time: datetime) -> float:
+    dt = _parse_deadline(deadline)
+    if dt is None:
+        return 0.0
+    if reference_time.tzinfo is None:
+        reference_time = reference_time.replace(tzinfo=timezone.utc)
+    if dt.tzinfo is None:
+        dt = dt.replace(tzinfo=timezone.utc)
+    hours_remaining = (dt - reference_time).total_seconds() / 3600.0
+    if hours_remaining <= 0:
+        return 1.0
+    if hours_remaining <= 6:
+        return 0.9
+    if hours_remaining <= 24:
+        return 0.7
+    if hours_remaining <= 72:
+        return 0.4
+    return 0.1
+
+
+def _priority_from_score(score: float) -> str:
+    if score >= 0.85:
+        return "P1"
+    if score >= 0.70:
+        return "P2"
+    if score >= 0.50:
+        return "P3"
+    return "P4"
+
+
+def _priority_rank(priority: str) -> int:
+    return {"P4": 0, "P3": 1, "P2": 2, "P1": 3}[priority]
+
+
+def _build_reason(current_score: float, forecast_score: float, current_priority: str, forecast_priority: str, horizon_days: int, crossing: bool) -> str:
+    if crossing:
+        return (
+            f"Projected criticality rises from {current_score:.2f} ({current_priority}) to {forecast_score:.2f} ({forecast_priority}) "
+            f"over {horizon_days} day(s), indicating a threshold crossing."
+        )
+    return (
+        f"Projected criticality remains {forecast_score:.2f} ({forecast_priority}) over {horizon_days} day(s); "
+        f"current score is {current_score:.2f} ({current_priority})."
+    )
+
+
+def _current_score(inputs: dict[str, Any], *, reference_time: datetime | None = None) -> float:
+    if reference_time is None:
+        reference_time = datetime.now(timezone.utc)
+
+    severity = _normalize_severity(inputs.get("severity"))
+    urgency = _to_float(inputs.get("urgency"), 0.5)
+    safety_risk = _to_float(inputs.get("safety_risk"), 0.5)
+    traffic_density = _to_float(inputs.get("traffic_density"), 0.5)
+    speed_class = _normalize_speed(inputs.get("speed_class"))
+    deadline_proximity = _deadline_proximity(inputs.get("deadline"), reference_time)
+    text_severity = _normalize_text_severity(inputs.get("text_severity"))
+
+    score = (
+        0.28 * severity
+        + 0.22 * urgency
+        + 0.22 * safety_risk
+        + 0.12 * traffic_density
+        + 0.08 * speed_class
+        + 0.08 * deadline_proximity
+        + 0.10 * text_severity
+        + 0.08 * urgency * safety_risk
+        + 0.05 * deadline_proximity * traffic_density
+    )
+    return _clamp(score)
+
+
+def forecast_task_criticality(
+    inputs: dict[str, Any],
+    horizon_days: int = 7,
+    reference_time: datetime | None = None,
+) -> dict[str, Any]:
+    """Estimate whether task criticality likely increases over a future horizon."""
+    if not isinstance(inputs, dict):
+        raise ValueError("Forecast inputs must be a dictionary.")
+    if horizon_days < 0:
+        raise ValueError("horizon_days must be non-negative.")
+
+    if reference_time is None:
+        reference_time = datetime.now(timezone.utc)
+    current_score = _current_score(inputs, reference_time=reference_time)
+    current_priority = _priority_from_score(current_score)
+
+    horizon = max(0, int(horizon_days))
+    deadline = inputs.get("deadline")
+    deadline_proximity_now = _deadline_proximity(deadline, reference_time)
+    if deadline is not None:
+        future_time = reference_time + timedelta(days=horizon)
+        deadline_proximity_future = _deadline_proximity(deadline, future_time)
+    else:
+        deadline_proximity_future = 0.0
+
+    urgency = _to_float(inputs.get("urgency"), 0.5)
+    safety_risk = _to_float(inputs.get("safety_risk"), 0.5)
+    traffic_density = _to_float(inputs.get("traffic_density"), 0.5)
+    text_severity = _normalize_text_severity(inputs.get("text_severity"))
+
+    uplift = (
+        0.17 * max(0.0, deadline_proximity_future - deadline_proximity_now)
+        + 0.12 * max(0.0, urgency - 0.6)
+        + 0.10 * max(0.0, safety_risk - 0.6)
+        + 0.08 * max(0.0, traffic_density - 0.6)
+        + 0.10 * max(0.0, text_severity - 0.5)
+    )
+    forecast_score = _clamp(current_score + uplift)
+    forecast_priority = _priority_from_score(forecast_score)
+    crossing = _priority_rank(forecast_priority) > _priority_rank(current_priority)
+
+    return {
+        "current_score": round(float(current_score), 6),
+        "forecast_score": round(float(forecast_score), 6),
+        "forecast_horizon_days": horizon,
+        "current_priority": current_priority,
+        "forecast_priority": forecast_priority,
+        "threshold_crossing": crossing,
+        "reason": _build_reason(current_score, forecast_score, current_priority, forecast_priority, horizon, crossing),
+    }
+
+
+
+================================================
+FILE: ai/criticality/live_weather.py
+================================================
+from __future__ import annotations
+
+import json
+import os
+import re
+from socket import timeout as SocketTimeout
+from typing import Any
+from urllib.error import HTTPError, URLError
+from urllib.request import Request, urlopen
+
+
+class LiveWeatherSource:
+    """Optional HTTP-backed weather adapter that conforms to the existing weather-source contract."""
+
+    def __init__(self, endpoint: str | None = None, api_key: str | None = None, timeout: float = 5.0):
+        self.endpoint = endpoint or os.getenv("AVIRAT_WEATHER_ENDPOINT")
+        self.api_key = api_key or os.getenv("AVIRAT_WEATHER_KEY")
+        self.timeout = float(timeout)
+
+    def resolve_weather_context(self, payload: dict[str, Any]) -> Any:
+        """Fetch weather context from a configured endpoint and normalize it for the existing risk layer."""
+        endpoint = self.endpoint or os.getenv("AVIRAT_WEATHER_ENDPOINT")
+        api_key = self.api_key or os.getenv("AVIRAT_WEATHER_KEY")
+
+        if not endpoint or not api_key:
+            return "NORMAL"
+
+        request = Request(
+            endpoint,
+            headers={
+                "Accept": "application/json",
+                "Authorization": f"Bearer {api_key}",
+            },
+            method="GET",
+        )
+
+        try:
+            with urlopen(request, timeout=self.timeout) as response:
+                if getattr(response, "status", 200) >= 400:
+                    return "NORMAL"
+                raw = response.read()
+                if not raw:
+                    return "NORMAL"
+                try:
+                    payload_obj = json.loads(raw.decode("utf-8"))
+                except (TypeError, UnicodeDecodeError, json.JSONDecodeError):
+                    return "NORMAL"
+                condition = _extract_condition(payload_obj)
+                return condition if condition else "NORMAL"
+        except Exception:
+            return "NORMAL"
+
+
+def _extract_condition(value: Any) -> str:
+    if value is None:
+        return "NORMAL"
+
+    if isinstance(value, str):
+        return _normalize_condition(value)
+
+    if isinstance(value, dict):
+        for key in (
+            "weather_context",
+            "weather",
+            "condition",
+            "weather_condition",
+            "state",
+            "code",
+            "value",
+            "status",
+            "current",
+            "forecast",
+            "data",
+            "summary",
+            "main",
+            "description",
+            "text",
+        ):
+            if key in value:
+                candidate = _extract_condition(value[key])
+                if candidate != "NORMAL":
+                    return candidate
+        for nested_value in value.values():
+            candidate = _extract_condition(nested_value)
+            if candidate != "NORMAL":
+                return candidate
+        return "NORMAL"
+
+    if isinstance(value, list):
+        for item in value:
+            candidate = _extract_condition(item)
+            if candidate != "NORMAL":
+                return candidate
+        return "NORMAL"
+
+    return "NORMAL"
+
+
+def _normalize_condition(value: str) -> str:
+    text = str(value).strip()
+    if not text:
+        return "NORMAL"
+
+    token = re.sub(r"[^A-Za-z0-9]+", " ", text).strip().upper()
+    token = token.replace(" ", "_")
+    token = re.sub(r"_+", "_", token)
+
+    if token in {"HIGH_WIND", "STRONG_WIND", "WIND", "WINDY", "GUSTY_WIND", "GUSTS"}:
+        return "HIGH_WIND"
+    if token in {"LIGHTNING", "THUNDERSTORM", "THUNDER", "STORM", "ELECTRICAL_STORM"}:
+        return "LIGHTNING"
+    if token in {"HEAVY_RAIN", "RAIN", "RAINY", "DOWNPOUR", "RAINFALL", "PRECIPITATION", "RAIN_STORM"}:
+        return "HEAVY_RAIN"
+    if token in {"DENSE_FOG", "FOG", "MIST", "HAZE", "DENSE_FOGGY"}:
+        return "DENSE_FOG"
+    if token in {"NORMAL", "CLEAR", "CLEAR_SKY", "SUNNY", "NONE", "NO_RAIN"}:
+        return "NORMAL"
+
+    if any(part in token for part in ("THUNDER", "LIGHTNING", "STORM")):
+        return "LIGHTNING"
+    if any(part in token for part in ("RAIN", "DRIZZLE", "PRECIP", "DOWNPOUR")):
+        return "HEAVY_RAIN"
+    if any(part in token for part in ("FOG", "MIST", "HAZE")):
+        return "DENSE_FOG"
+    if any(part in token for part in ("WIND", "GUST")):
+        return "HIGH_WIND"
+
+    return "NORMAL"
 
 
 
@@ -6877,6 +7220,225 @@ class TestCriticalityEvaluation(unittest.TestCase):
             self.assertEqual(len(report["top_3_important_features"]), 3)
             self.assertGreaterEqual(sum(item["importance"] for item in report["feature_importance"]), 0.0)
             self.assertLessEqual(sum(item["importance"] for item in report["feature_importance"]), 1.0 + 1e-9)
+
+
+if __name__ == "__main__":
+    unittest.main(verbosity=2)
+
+
+
+================================================
+FILE: ai/criticality/test_forecast.py
+================================================
+from __future__ import annotations
+
+import unittest
+from datetime import datetime, timezone
+
+from ai.criticality.forecast import forecast_task_criticality
+
+
+class TestCriticalityForecast(unittest.TestCase):
+    def test_deterministic_output(self):
+        task = {
+            "severity": "CRITICAL",
+            "urgency": 0.9,
+            "safety_risk": 0.88,
+            "traffic_density": 0.82,
+            "speed_class": "EXPRESS",
+            "deadline": "2026-11-03T18:00:00Z",
+            "text_severity": 8.5,
+        }
+        reference_time = datetime(2026, 11, 1, 8, 0, tzinfo=timezone.utc)
+        first = forecast_task_criticality(task, horizon_days=7, reference_time=reference_time)
+        second = forecast_task_criticality(task, horizon_days=7, reference_time=reference_time)
+        self.assertEqual(first, second)
+
+    def test_scores_are_bounded(self):
+        task = {
+            "severity": "CRITICAL",
+            "urgency": 0.95,
+            "safety_risk": 0.99,
+            "traffic_density": 1.0,
+            "speed_class": "EXPRESS",
+            "deadline": "2026-11-03T06:00:00Z",
+            "text_severity": 10.0,
+        }
+        result = forecast_task_criticality(task, horizon_days=3)
+        self.assertGreaterEqual(result["current_score"], 0.0)
+        self.assertLessEqual(result["current_score"], 1.0)
+        self.assertGreaterEqual(result["forecast_score"], 0.0)
+        self.assertLessEqual(result["forecast_score"], 1.0)
+
+    def test_future_score_can_increase_for_at_risk_task(self):
+        task = {
+            "severity": "SEVERE",
+            "urgency": 0.80,
+            "safety_risk": 0.75,
+            "traffic_density": 0.70,
+            "speed_class": "HIGH",
+            "deadline": "2026-11-03T12:00:00Z",
+            "text_severity": 7.5,
+        }
+        result = forecast_task_criticality(task, horizon_days=7)
+        self.assertGreater(result["forecast_score"], result["current_score"])
+
+    def test_no_invalid_priority_class(self):
+        task = {
+            "severity": "MODERATE",
+            "urgency": 0.50,
+            "safety_risk": 0.50,
+            "traffic_density": 0.55,
+            "speed_class": "MEDIUM",
+            "deadline": "2026-11-05T12:00:00Z",
+            "text_severity": 5.0,
+        }
+        result = forecast_task_criticality(task, horizon_days=6)
+        self.assertIn(result["current_priority"], ("P1", "P2", "P3", "P4"))
+        self.assertIn(result["forecast_priority"], ("P1", "P2", "P3", "P4"))
+
+    def test_threshold_crossing_detection(self):
+        task = {
+            "severity": "MODERATE",
+            "urgency": 0.6,
+            "safety_risk": 0.65,
+            "traffic_density": 0.6,
+            "speed_class": "HIGH",
+            "deadline": "2026-11-03T14:00:00Z",
+            "text_severity": 6.0,
+        }
+        result = forecast_task_criticality(task, horizon_days=2)
+        self.assertIsInstance(result["threshold_crossing"], bool)
+
+    def test_different_horizons_produce_valid_results(self):
+        task = {
+            "severity": "CRITICAL",
+            "urgency": 0.85,
+            "safety_risk": 0.80,
+            "traffic_density": 0.75,
+            "speed_class": "HIGH",
+            "deadline": "2026-11-03T18:00:00Z",
+            "text_severity": 8.0,
+        }
+        short = forecast_task_criticality(task, horizon_days=2)
+        long = forecast_task_criticality(task, horizon_days=14)
+        self.assertGreaterEqual(short["forecast_score"], 0.0)
+        self.assertLessEqual(short["forecast_score"], 1.0)
+        self.assertGreaterEqual(long["forecast_score"], 0.0)
+        self.assertLessEqual(long["forecast_score"], 1.0)
+        self.assertIn(short["forecast_priority"], ("P1", "P2", "P3", "P4"))
+        self.assertIn(long["forecast_priority"], ("P1", "P2", "P3", "P4"))
+
+
+if __name__ == "__main__":
+    unittest.main(verbosity=2)
+
+
+
+================================================
+FILE: ai/criticality/test_live_weather.py
+================================================
+from __future__ import annotations
+
+import os
+import socket
+import unittest
+from unittest.mock import patch
+
+from ai.criticality.engine import CriticalityEngine
+from ai.criticality.live_weather import LiveWeatherSource
+from ai.criticality.weather_risk import SyntheticWeatherSource
+
+
+class _FakeResponse:
+    def __init__(self, body: bytes, status: int = 200):
+        self._body = body
+        self.status = status
+
+    def read(self) -> bytes:
+        return self._body
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        return False
+
+
+class TestLiveWeatherSource(unittest.TestCase):
+    def test_valid_response_parsing(self):
+        source = LiveWeatherSource(endpoint="https://example.test/weather", api_key="secret")
+        with patch("ai.criticality.live_weather.urlopen", return_value=_FakeResponse(b'{"weather": [{"main": "Rain"}]}')):
+            result = source.resolve_weather_context({})
+        self.assertEqual(result, "HEAVY_RAIN")
+
+    def test_missing_configuration(self):
+        with patch.dict(os.environ, {}, clear=True):
+            source = LiveWeatherSource()
+            self.assertEqual(source.resolve_weather_context({}), "NORMAL")
+
+    def test_timeout_safe_fallback(self):
+        source = LiveWeatherSource(endpoint="https://example.test/weather", api_key="secret")
+        with patch("ai.criticality.live_weather.urlopen", side_effect=socket.timeout("timed out")):
+            result = source.resolve_weather_context({})
+        self.assertEqual(result, "NORMAL")
+
+    def test_http_failure_safe_fallback(self):
+        source = LiveWeatherSource(endpoint="https://example.test/weather", api_key="secret")
+        with patch("ai.criticality.live_weather.urlopen", side_effect=Exception("http failure")):
+            result = source.resolve_weather_context({})
+        self.assertEqual(result, "NORMAL")
+
+    def test_malformed_response_safe_fallback(self):
+        source = LiveWeatherSource(endpoint="https://example.test/weather", api_key="secret")
+        with patch("ai.criticality.live_weather.urlopen", return_value=_FakeResponse(b'{oops')):
+            result = source.resolve_weather_context({})
+        self.assertEqual(result, "NORMAL")
+
+    def test_deterministic_normalized_output(self):
+        source = LiveWeatherSource(endpoint="https://example.test/weather", api_key="secret")
+        with patch("ai.criticality.live_weather.urlopen", return_value=_FakeResponse(b'{"weather": [{"description": "High wind gusts"}]}')):
+            first = source.resolve_weather_context({})
+        with patch("ai.criticality.live_weather.urlopen", return_value=_FakeResponse(b'{"weather": [{"description": "WIND"}]}')):
+            second = source.resolve_weather_context({})
+        self.assertEqual(first, "HIGH_WIND")
+        self.assertEqual(second, "HIGH_WIND")
+
+    def test_safe_normal_fallback_for_clear_sky(self):
+        source = LiveWeatherSource(endpoint="https://example.test/weather", api_key="secret")
+        with patch("ai.criticality.live_weather.urlopen", return_value=_FakeResponse(b'{"weather": [{"main": "Clear"}]}')):
+            result = source.resolve_weather_context({})
+        self.assertEqual(result, "NORMAL")
+
+    def test_configured_endpoint_selects_live_weather_source(self):
+        with patch.dict(os.environ, {"AVIRAT_WEATHER_ENDPOINT": "https://example.test/weather"}, clear=True):
+            engine = CriticalityEngine()
+        self.assertIsInstance(engine.weather_source, LiveWeatherSource)
+
+    def test_missing_endpoint_keeps_synthetic_weather_source(self):
+        with patch.dict(os.environ, {}, clear=True):
+            engine = CriticalityEngine()
+        self.assertIsInstance(engine.weather_source, SyntheticWeatherSource)
+
+    def test_explicit_weather_source_takes_precedence(self):
+        explicit = object()
+        engine = CriticalityEngine(weather_source=explicit)
+        self.assertIs(engine.weather_source, explicit)
+
+    def test_live_weather_failure_does_not_crash_criticality(self):
+        with patch.dict(os.environ, {"AVIRAT_WEATHER_ENDPOINT": "https://example.test/weather", "AVIRAT_WEATHER_KEY": "secret"}, clear=True):
+            engine = CriticalityEngine()
+        with patch("ai.criticality.live_weather.urlopen", side_effect=ValueError("live weather failed")):
+            result = engine.score({
+                "entity_id": "weather_fail_001",
+                "severity": "SEVERE",
+                "urgency": 0.7,
+                "safety_risk": 0.6,
+                "traffic_density": 0.5,
+                "speed_class": "HIGH",
+                "weather_context": "HIGH_WIND",
+            })
+        self.assertEqual(result["weather_risk_level"], "NORMAL")
 
 
 if __name__ == "__main__":
@@ -10897,6 +11459,187 @@ usfd_080_v6,MODERATE,0.5874,0.4201,0.4946,EXPRESS,0.1,5.2713,0.408179,test
 usfd_080_v7,MODERATE,0.6748,0.469,0.6661,EXPRESS,0.1,5.8179,0.432498,test
 usfd_080_v8,MODERATE,0.5465,0.408,0.6655,EXPRESS,0.1,5.5575,0.413299,test
 usfd_080_v9,MODERATE,0.6735,0.6127,0.5423,EXPRESS,0.1,5.3373,0.437837,test
+
+
+
+================================================
+FILE: ai/evaluation/impact_simulator.py
+================================================
+from __future__ import annotations
+
+from typing import Any
+
+
+def _safe_float(value: Any, default: float = 0.0) -> float:
+    try:
+        return float(value)
+    except (TypeError, ValueError):
+        return default
+
+
+def _selected_task_ids(result: dict[str, Any]) -> list[str]:
+    if not isinstance(result, dict):
+        return []
+    selected = result.get("selected_task_ids")
+    if isinstance(selected, list):
+        return [str(item) for item in selected]
+    schedule_candidates = result.get("schedule_candidates")
+    if isinstance(schedule_candidates, list):
+        tasks: list[str] = []
+        for candidate in schedule_candidates:
+            if isinstance(candidate, dict):
+                candidate_tasks = candidate.get("task_ids")
+                if isinstance(candidate_tasks, list):
+                    tasks.extend([str(item) for item in candidate_tasks])
+        return tasks
+    return []
+
+
+def _block_count(result: dict[str, Any]) -> int:
+    if not isinstance(result, dict):
+        return 0
+    blocks = result.get("blocks")
+    if isinstance(blocks, list):
+        return len(blocks)
+    schedule_candidates = result.get("schedule_candidates")
+    if isinstance(schedule_candidates, list):
+        count = 0
+        for candidate in schedule_candidates:
+            if isinstance(candidate, dict):
+                candidate_blocks = candidate.get("blocks")
+                if isinstance(candidate_blocks, list):
+                    count += len(candidate_blocks)
+        return count
+    return 0
+
+
+def _train_conflicts(result: dict[str, Any]) -> int:
+    if not isinstance(result, dict):
+        return 0
+    conflicts = result.get("train_conflicts")
+    if isinstance(conflicts, list):
+        return len(conflicts)
+    return 0
+
+
+def _objective_score(result: dict[str, Any]) -> float:
+    if not isinstance(result, dict):
+        return 0.0
+    value = result.get("objective_score")
+    if value is None:
+        value = result.get("score")
+    return _safe_float(value, 0.0)
+
+
+def compare_impact(baseline_result: dict[str, Any], optimized_result: dict[str, Any]) -> dict[str, Any]:
+    """Directly compare a baseline and optimized schedule result payload."""
+    baseline_status = str(baseline_result.get("status", "UNKNOWN")) if isinstance(baseline_result, dict) else "UNKNOWN"
+    optimized_status = str(optimized_result.get("status", "UNKNOWN")) if isinstance(optimized_result, dict) else "UNKNOWN"
+
+    baseline_task_count = len(_selected_task_ids(baseline_result))
+    optimized_task_count = len(_selected_task_ids(optimized_result))
+    baseline_block_count = _block_count(baseline_result)
+    optimized_block_count = _block_count(optimized_result)
+    baseline_train_conflicts = _train_conflicts(baseline_result)
+    optimized_train_conflicts = _train_conflicts(optimized_result)
+
+    baseline_objective_score = _objective_score(baseline_result)
+    optimized_objective_score = _objective_score(optimized_result)
+    objective_improvement = optimized_objective_score - baseline_objective_score
+    task_completion_change = optimized_task_count - baseline_task_count
+    train_conflict_change = optimized_train_conflicts - baseline_train_conflicts
+
+    return {
+        "baseline_status": baseline_status,
+        "optimized_status": optimized_status,
+        "baseline_task_count": baseline_task_count,
+        "optimized_task_count": optimized_task_count,
+        "baseline_block_count": baseline_block_count,
+        "optimized_block_count": optimized_block_count,
+        "baseline_train_conflicts": baseline_train_conflicts,
+        "optimized_train_conflicts": optimized_train_conflicts,
+        "baseline_objective_score": baseline_objective_score,
+        "optimized_objective_score": optimized_objective_score,
+        "objective_improvement": objective_improvement,
+        "task_completion_change": task_completion_change,
+        "train_conflict_change": train_conflict_change,
+    }
+
+
+
+================================================
+FILE: ai/evaluation/test_impact_simulator.py
+================================================
+from __future__ import annotations
+
+import unittest
+
+from ai.evaluation.impact_simulator import compare_impact
+
+
+class TestImpactSimulator(unittest.TestCase):
+    def test_identical_results(self):
+        payload = {
+            "status": "OPTIMAL",
+            "selected_task_ids": ["t1", "t2"],
+            "blocks": [{"block_id": "b1"}, {"block_id": "b2"}],
+            "train_conflicts": [],
+            "objective_score": 10.0,
+        }
+        result = compare_impact(payload, payload)
+        self.assertEqual(result["baseline_status"], "OPTIMAL")
+        self.assertEqual(result["optimized_status"], "OPTIMAL")
+        self.assertEqual(result["objective_improvement"], 0.0)
+        self.assertEqual(result["task_completion_change"], 0)
+        self.assertEqual(result["train_conflict_change"], 0)
+
+    def test_optimized_result_better_objective(self):
+        baseline = {"status": "FEASIBLE", "selected_task_ids": ["t1"], "blocks": [{"block_id": "b1"}], "train_conflicts": ["c1"], "objective_score": 5.0}
+        optimized = {"status": "OPTIMAL", "selected_task_ids": ["t1", "t2"], "blocks": [{"block_id": "b1"}, {"block_id": "b2"}], "train_conflicts": [], "objective_score": 12.0}
+        result = compare_impact(baseline, optimized)
+        self.assertEqual(result["objective_improvement"], 7.0)
+        self.assertEqual(result["task_completion_change"], 1)
+        self.assertEqual(result["train_conflict_change"], -1)
+
+    def test_fewer_train_conflicts(self):
+        baseline = {"status": "FEASIBLE", "selected_task_ids": ["t1"], "blocks": [{"block_id": "b1"}], "train_conflicts": [{"id": 1}, {"id": 2}], "objective_score": 7.0}
+        optimized = {"status": "OPTIMAL", "selected_task_ids": ["t1"], "blocks": [{"block_id": "b1"}], "train_conflicts": [{"id": 1}], "objective_score": 9.0}
+        result = compare_impact(baseline, optimized)
+        self.assertEqual(result["train_conflict_change"], -1)
+        self.assertGreater(result["optimized_objective_score"], result["baseline_objective_score"])
+
+    def test_different_task_and_block_counts(self):
+        baseline = {"status": "PARTIAL", "selected_task_ids": ["t1"], "schedule_candidates": [{"task_ids": ["t1"], "blocks": [{"block_id": "b1"}, {"block_id": "b2"}]}], "train_conflicts": [], "objective_score": 2.0}
+        optimized = {"status": "OPTIMAL", "selected_task_ids": ["t1", "t2", "t3"], "schedule_candidates": [{"task_ids": ["t1", "t2", "t3"], "blocks": [{"block_id": "b1"}, {"block_id": "b2"}, {"block_id": "b3"}]}], "train_conflicts": [], "objective_score": 6.0}
+        result = compare_impact(baseline, optimized)
+        self.assertEqual(result["baseline_task_count"], 1)
+        self.assertEqual(result["optimized_task_count"], 3)
+        self.assertEqual(result["baseline_block_count"], 2)
+        self.assertEqual(result["optimized_block_count"], 3)
+
+    def test_missing_optional_fields(self):
+        baseline = {"status": "FEASIBLE"}
+        optimized = {"status": "OPTIMAL"}
+        result = compare_impact(baseline, optimized)
+        self.assertEqual(result["baseline_task_count"], 0)
+        self.assertEqual(result["optimized_task_count"], 0)
+        self.assertEqual(result["baseline_block_count"], 0)
+        self.assertEqual(result["optimized_block_count"], 0)
+        self.assertEqual(result["baseline_train_conflicts"], 0)
+        self.assertEqual(result["optimized_train_conflicts"], 0)
+        self.assertEqual(result["baseline_objective_score"], 0.0)
+        self.assertEqual(result["optimized_objective_score"], 0.0)
+
+    def test_deterministic_repeated_comparison(self):
+        baseline = {"status": "FEASIBLE", "selected_task_ids": ["a", "b"], "blocks": [{"block_id": "x"}, {"block_id": "y"}], "train_conflicts": [{"id": 1}], "objective_score": 8.5}
+        optimized = {"status": "OPTIMAL", "selected_task_ids": ["a", "b", "c"], "blocks": [{"block_id": "x"}, {"block_id": "y"}, {"block_id": "z"}], "train_conflicts": [], "objective_score": 11.2}
+        first = compare_impact(baseline, optimized)
+        second = compare_impact(baseline, optimized)
+        self.assertEqual(first, second)
+
+
+if __name__ == "__main__":
+    unittest.main(verbosity=2)
 
 
 
@@ -28229,10 +28972,10 @@ interface EngineCheck {
 }
 
 const ENGINES = [
-  { id: 'crit', name: 'Criticality Scoring Engine', subsystem: 'XGBoost Â· P1-P4 Classifier' },
+  { id: 'crit', name: 'Criticality Scoring Engine', subsystem: 'GradientBoostingRegressor Â· P1-P4 Predictor' },
   { id: 'compat', name: 'Safety Compatibility Matrix', subsystem: 'IR Operating Manual Â§16' },
   { id: 'shadow', name: 'Shadow Block Generator', subsystem: 'Multi-Department Clustering' },
-  { id: 'opt', name: 'OR-Tools CP-SAT Solver', subsystem: 'MILP Disruption Minimizer' },
+  { id: 'opt', name: 'OR-Tools CP-SAT Solver', subsystem: 'OR-Tools CP-SAT Disruption Minimizer' },
   { id: 'explain', name: 'Explainability & Audit Ledger', subsystem: 'Deterministic Reason Codes' },
 ];
 

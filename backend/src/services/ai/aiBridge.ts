@@ -14,15 +14,24 @@ export interface AiBridgeError {
  * @param payload JSON-serializable input dictionary or list
  * @param timeoutMs Maximum execution time in milliseconds (default: 20000ms)
  */
+export function resolvePythonExecutable(): string {
+  const configured = process.env.PYTHON_BIN?.trim();
+  if (configured) {
+   return configured;
+  }
+
+  return process.platform === "win32" ? "python" : "python3";
+}
+
 export async function invokeAiBridge<TInput = unknown, TOutput = unknown>(
   command: string,
   payload: TInput,
   timeoutMs = 20000
 ): Promise<TOutput> {
   return new Promise<TOutput>((resolve, reject) => {
-    const pythonBin = process.env.PYTHON_BIN || "python3";
-    // Target project root (where ai/ package resides)
-    const rootDir = path.resolve(__dirname, "../../../../");
+   const pythonBin = resolvePythonExecutable();
+   // Target project root (where ai/ package resides)
+   const rootDir = path.resolve(__dirname, "../../../../");
 
     const proc = spawn(pythonBin, ["-m", "ai.bridge", command], {
       cwd: rootDir,

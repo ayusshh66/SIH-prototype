@@ -5,7 +5,41 @@ import { aiAdapter } from "../../services/ai/aiAdapter.service";
 
 const router = Router();
 
-router.get("/", async (_req, res) => {
+/**
+ * Liveness endpoint used by Railway. It intentionally does not contact
+ * optional services: a missing database, Redis, or Python environment must
+ * never delay the HTTP server becoming reachable.
+ */
+router.get("/", (_req, res) => {
+  res.json({
+    success: true,
+    data: {
+      backend: {
+        status: "HEALTHY",
+        timestamp: new Date().toISOString(),
+      },
+      database: {
+        status: isDatabaseConfigured ? "CONFIGURED" : "NOT_CONFIGURED",
+        configured: isDatabaseConfigured,
+      },
+      python_bridge: {
+        status: "NOT_CHECKED",
+      },
+      ai_engines: {
+        status: "NOT_CHECKED",
+        engines: [],
+      },
+      mode: {
+        mock: process.env.VITE_USE_MOCK === "true" || process.env.USE_MOCK === "true",
+        source: process.env.VITE_USE_MOCK === "true" || process.env.USE_MOCK === "true" ? "mock" : "live",
+      },
+    },
+  });
+});
+
+// Retain the previous dependency diagnostics behind an explicit endpoint so
+// operators can inspect them without making the Railway liveness probe wait.
+router.get("/details", async (_req, res) => {
   const checks = {
     backend: {
       status: "HEALTHY",

@@ -1,0 +1,15 @@
+services:
+  - type: web
+    name: sih-prototype-backend
+    runtime: node
+    buildCommand: >-
+      npm ci --include=dev --prefix backend &&
+      python3 -m pip install --no-cache-dir -r requirements.txt &&
+      python3 -c "import joblib, numpy, sklearn; print('Python dependencies OK')" &&
+      npm --prefix backend run build
+    startCommand: node backend/dist/server.js
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PYTHON_BIN
+        value: python3

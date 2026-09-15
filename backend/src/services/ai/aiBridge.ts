@@ -55,12 +55,17 @@ export async function invokeAiBridge<TInput = unknown, TOutput = unknown>(
    const pythonBin = resolvePythonExecutable();
    // Target project root (where ai/ package resides)
    const rootDir = resolveProjectRoot();
+   const pythonPath = [rootDir, process.env.PYTHONPATH]
+     .filter((entry): entry is string => Boolean(entry?.trim()))
+     .join(path.delimiter);
 
     const proc = spawn(pythonBin, ["-m", "ai.bridge", command], {
       cwd: rootDir,
       env: {
         ...process.env,
-        PYTHONPATH: rootDir,
+        // Keep Railpack's deployed Python dependency directory while making
+        // the repository's ai package importable.
+        PYTHONPATH: pythonPath,
         PYTHONUNBUFFERED: "1",
       },
     });

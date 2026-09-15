@@ -1,0 +1,25 @@
+{
+  "$schema": "https://schema.railpack.com",
+  "provider": "node",
+  "packages": {
+    "node": "20",
+    "python": "3.11"
+  },
+  "steps": {
+    "build": {
+      "commands": [
+        "npm ci --include=dev --prefix backend",
+        "python3 -m pip install --no-cache-dir --target /app/.python-packages -r requirements.txt",
+        "npm --prefix backend run build"
+      ]
+    }
+  },
+  "deploy": {
+    "startCommand": "node backend/dist/server.js",
+    "variables": {
+      "NODE_ENV": "production",
+      "PYTHON_BIN": "python3",
+      "PYTHONPATH": "/app/.python-packages"
+    }
+  }
+}
